@@ -1,34 +1,15 @@
-package store
+package store_test
 
 import (
 	"context"
-	"os"
 	"testing"
 	"time"
+
+	"github.com/praetorianer777/behoerdenbarriere/internal/storetest"
 )
 
-// The migrations are checked against a real Postgres; a mock would miss exactly what
-// matters here — that this version accepts the SQL. Without TEST_DATABASE_URL the test
-// is skipped.
-func testStore(t *testing.T) *Store {
-	t.Helper()
-	url := os.Getenv("TEST_DATABASE_URL")
-	if url == "" {
-		t.Skip("TEST_DATABASE_URL not set")
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	s, err := Open(ctx, url)
-	if err != nil {
-		t.Fatalf("Open: %v", err)
-	}
-	t.Cleanup(s.Close)
-	return s
-}
-
 func TestMigrateIsIdempotent(t *testing.T) {
-	s := testStore(t)
+	s := storetest.New(t)
 	ctx := context.Background()
 
 	if err := s.Migrate(ctx); err != nil {
@@ -61,7 +42,7 @@ func TestMigrateIsIdempotent(t *testing.T) {
 // A second running scan of the same agency would hit the website twice over; the
 // partial unique index is the lock against it.
 func TestOnlyOneActiveScanPerAgency(t *testing.T) {
-	s := testStore(t)
+	s := storetest.New(t)
 	ctx := context.Background()
 	if err := s.Migrate(ctx); err != nil {
 		t.Fatalf("migrate: %v", err)

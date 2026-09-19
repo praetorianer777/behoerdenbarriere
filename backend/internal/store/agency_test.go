@@ -1,4 +1,4 @@
-package store
+package store_test
 
 import (
 	"context"
@@ -6,14 +6,12 @@ import (
 	"time"
 
 	"github.com/praetorianer777/behoerdenbarriere/internal/model"
+	"github.com/praetorianer777/behoerdenbarriere/internal/storetest"
 )
 
 func TestUpsertAgencyIsIdempotent(t *testing.T) {
-	s := testStore(t)
+	s := storetest.New(t)
 	ctx := context.Background()
-	if err := s.Migrate(ctx); err != nil {
-		t.Fatalf("migrate: %v", err)
-	}
 
 	slug := "test-" + time.Now().Format("150405.000000")
 	a := model.Agency{
@@ -54,11 +52,8 @@ func TestUpsertAgencyIsIdempotent(t *testing.T) {
 // Without a state, a federal authority must not carry an empty string — the filter in
 // the ranking would then offer a state with no name.
 func TestUpsertAgencyStoresEmptyStateAsNull(t *testing.T) {
-	s := testStore(t)
+	s := storetest.New(t)
 	ctx := context.Background()
-	if err := s.Migrate(ctx); err != nil {
-		t.Fatalf("migrate: %v", err)
-	}
 
 	id, err := s.UpsertAgency(ctx, model.Agency{
 		Slug: "test-bund-" + time.Now().Format("150405.000000"),

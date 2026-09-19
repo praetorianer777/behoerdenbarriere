@@ -1,0 +1,142 @@
+package pipeline
+
+import (
+	"context"
+	"errors"
+	"testing"
+
+	"github.com/praetorianer777/behoerdenbarriere/internal/crawler"
+	"github.com/praetorianer777/behoerdenbarriere/internal/model"
+	"github.com/praetorianer777/behoerdenbarriere/internal/scoring"
+)
+
+type fakeStore struct {
+	scanID    int64
+	startErr  error
+	finishErr error
+
+	finished []model.PageResult
+	result   scoring.Result
+	failed   error
+	closed   bool
+}
+
+func (f *fakeStore) StartScan(context.Context, int64, map[string]any) (int64, error) {
+	return f.scanID, f.startErr
+}
+
+func (f *fakeStore) FinishScan(_ context.Context, _ int64, pages []model.PageResult, result scoring.Result) error {
+	f.finished = pages
+	f.result = result
+	f.closed = true
+	return f.finishErr
+}
+
+func (f *fakeStore) FailScan(_ context.Context, _ int64, cause error) error {
+	f.failed = cause
+	f.closed = true
+	return nil
+}
+
+type fakeCrawler struct {
+	pages []model.PageResult
+	err   error
+}
+
+func (f *fakeCrawler) Crawl(context.Context, string) ([]model.PageResult, error) {
+	return f.pages, f.err
+}
+
+func agency() model.Agency {
+	return model.Agency{ID: 1, Slug: "bmi", Name: "BMI", URL: "https://www.bmi.bund.de/"}
+}
+
+func TestRunStoresScoredPages(t *testing.T) {
+	store := &fakeStore{scanID: 42}
+	pages := []model.PageResult{
+		{URL: "https://www.bmi.bund.de/", DOMNodes: 800, IsEntry: true},
+		{URL: "https://www.bmi.bund.de/kontakt", DOMNodes: 800, Priority: true, Violations: []model.Violation{
+			{RuleID: "label", Impact: model.ImpactCritical, Principle: model.Perceivable, NodeCount: 2},
+		}},
+	}
+
+	got, err := New(store, &fakeCrawler{pages: pages}, crawler.Config{MaxPages: 10}, nil).
+		Run(context.Background(), agency())
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if got.ScanID != 42 || got.Pages != 2 {
+		t.Fatalf("result = %+v", got)
+	}
+	if len(store.finished) != 2 {
+		t.Fatalf("%d pages stored", len(store.finished))
+	}
+	if store.result.Grade == "" || store.result.Score <= 0 {
+		t.Fatalf("score not computed: %+v", store.result)
+	}
+	if store.failed != nil {
+		t.Fatalf("scan marked as failed: %v", store.failed)
+	}
+}
+
+// A site that could not be reached is not a site without barriers — and not one full
+// of them either. It has to end up as a failed scan, not as a score.
+func TestRunMarksUnreachableSiteAsFailed(t *testing.T) {
+	store := &fakeStore{scanID: 7}
+	pages := []model.PageResult{{URL: "https://www.bmi.bund.de/", Err: "timeout"}}
+
+	_, err := New(store, &fakeCrawler{pages: pages}, crawler.Config{}, nil).
+		Run(context.Background(), agency())
+	if err == nil {
+		t.Fatal("no error")
+	}
+	if store.failed == nil {
+		t.Fatal("scan was not marked as failed")
+	}
+	if store.closed != true {
+		t.Fatal("scan left open")
+	}
+}
+
+func TestRunMarksCrawlErrorAsFailed(t *testing.T) {
+	store := &fakeStore{scanID: 7}
+	boom := errors.New("robots.txt forbids the start page")
+
+	_, err := New(store, &fakeCrawler{err: boom}, crawler.Config{}, nil).
+		Run(context.Background(), agency())
+	if !errors.Is(err, boom) {
+		t.Fatalf("err = %v, want %v", err, boom)
+	}
+	if !errors.Is(store.failed, boom) {
+		t.Fatalf("recorded cause = %v", store.failed)
+	}
+}
+
+// If a scan of this authority is already running, the pipeline must not open a second
+// one — the website would be hit twice at the same time.
+func TestRunPassesThroughStartError(t *testing.T) {
+	inFlight := errors.New("already running")
+	store := &fakeStore{startErr: inFlight}
+
+	_, err := New(store, &fakeCrawler{}, crawler.Config{}, nil).Run(context.Background(), agency())
+	if !errors.Is(err, inFlight) {
+		t.Fatalf("err = %v, want %v", err, inFlight)
+	}
+	if store.closed {
+		t.Fatal("a scan that was never opened was closed")
+	}
+}
+
+// A cancelled context must not keep the scan from being closed; otherwise it stays
+// 'running' and blocks every later scan of that authority.
+func TestRunClosesScanEvenWhenContextIsGone(t *testing.T) {
+	store := &fakeStore{scanID: 3}
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	_, _ = New(store, &fakeCrawler{err: context.Canceled}, crawler.Config{}, nil).
+		Run(ctx, agency())
+	if store.failed == nil {
+		t.Fatal("scan was not closed")
+	}
+}

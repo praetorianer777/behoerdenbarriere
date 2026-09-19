@@ -9,8 +9,8 @@ import (
 	"golang.org/x/net/publicsuffix"
 )
 
-// Dateiendungen, die kein HTML sind. Chrome würde ein PDF zwar laden, axe fände
-// darin aber nichts — und der Download kostet die Behörde unnötig Bandbreite.
+// Extensions that are not HTML. Chrome would happily load a PDF, but axe finds
+// nothing in it — and the download costs the authority bandwidth for nothing.
 var skipExtensions = map[string]bool{
 	".pdf": true, ".doc": true, ".docx": true, ".xls": true, ".xlsx": true,
 	".ppt": true, ".pptx": true, ".zip": true, ".rar": true, ".7z": true,
@@ -21,16 +21,16 @@ var skipExtensions = map[string]bool{
 	".woff": true, ".woff2": true, ".ttf": true, ".eot": true,
 }
 
-// Parameter, die nur Sitzung oder Herkunft tragen und denselben Inhalt unter
-// beliebig vielen URLs erscheinen lassen.
+// Parameters that only carry a session or a referrer and make the same content show
+// up under arbitrarily many URLs.
 var dropParams = map[string]bool{
 	"utm_source": true, "utm_medium": true, "utm_campaign": true,
 	"utm_term": true, "utm_content": true, "fbclid": true, "gclid": true,
 	"sid": true, "phpsessid": true, "jsessionid": true,
 }
 
-// Normalize bringt eine URL auf eine kanonische Form, damit dieselbe Seite nicht
-// mehrfach geprüft wird. Leerer Rückgabewert heißt: nicht crawlbar.
+// Normalize brings a URL into a canonical form so the same page is not checked twice.
+// An empty return means: not crawlable.
 func Normalize(raw string) string {
 	u, err := url.Parse(strings.TrimSpace(raw))
 	if err != nil {
@@ -81,32 +81,50 @@ func Normalize(raw string) string {
 	return u.String()
 }
 
-// SameSite prüft, ob zwei URLs zur selben registrierbaren Domain gehören.
-// Behörden verteilen ihre Auftritte über Subdomains (www., service., formulare.),
-// deshalb reicht der Hostvergleich nicht.
-func SameSite(a, b string) bool {
-	da, err := registrableDomain(a)
-	if err != nil {
+// SameSite reports whether a URL still belongs to the site the crawl started from.
+//
+// The registrable domain is not the right yardstick in Germany: every federal ministry
+// sits under bund.de, so bmi.bund.de and bmf.bund.de share it, and a crawl of the
+// interior ministry would wander into the finance ministry. What counts instead is the
+// start host without a leading "www." — the candidate has to be that host or a
+// subdomain of it. Authorities do spread their site over subdomains (service.,
+// formulare.), and those are included.
+func SameSite(start, candidate string) bool {
+	host := siteHost(start)
+	if host == "" {
 		return false
 	}
-	db, err := registrableDomain(b)
-	if err != nil {
+	other, err := hostOf(candidate)
+	if err != nil || other == "" {
 		return false
 	}
-	return da == db
+	return other == host || strings.HasSuffix(other, "."+host)
 }
 
-func registrableDomain(rawURL string) (string, error) {
+func siteHost(rawURL string) string {
+	host, err := hostOf(rawURL)
+	if err != nil || host == "" {
+		return ""
+	}
+	// A start page given as www.hannover.de must not exclude hannover.de.
+	trimmed := strings.TrimPrefix(host, "www.")
+	if suffix, _ := publicsuffix.PublicSuffix(trimmed); trimmed == suffix {
+		return host
+	}
+	return trimmed
+}
+
+func hostOf(rawURL string) (string, error) {
 	u, err := url.Parse(rawURL)
 	if err != nil {
 		return "", err
 	}
-	return publicsuffix.EffectiveTLDPlusOne(u.Hostname())
+	return strings.ToLower(u.Hostname()), nil
 }
 
-// Pfadbestandteile, die eine Seite für die Prüfung besonders interessant machen:
-// die gesetzlich vorgeschriebene Erklärung zur Barrierefreiheit, die
-// Kontaktmöglichkeiten und alles, was Nutzer ausfüllen müssen.
+// Path fragments that make a page particularly worth checking: the accessibility
+// statement required by law, the ways to get in touch, and everything a citizen has to
+// fill in.
 var priorityMarkers = []string{
 	"barrierefreiheit", "barrierefrei", "accessibility",
 	"leichte-sprache", "leichtesprache", "einfache-sprache",
@@ -116,7 +134,7 @@ var priorityMarkers = []string{
 	"suche", "hilfe", "feedback",
 }
 
-// IsPriority erkennt Seiten, die im Score stärker zählen.
+// IsPriority spots the pages that weigh more in the score.
 func IsPriority(rawURL string) bool {
 	u, err := url.Parse(rawURL)
 	if err != nil {

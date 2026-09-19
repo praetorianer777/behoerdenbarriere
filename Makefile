@@ -1,7 +1,9 @@
 SHELL := /bin/sh
 COMPOSE := docker compose
 
-.PHONY: help dev down logs build test vet fmt seed scan migrate
+.PHONY: help dev down logs build test test-db vet fmt seed scan
+
+TEST_DATABASE_URL ?= postgres://behoerdenbarriere:behoerdenbarriere@localhost:5432/behoerdenbarriere?sslmode=disable
 
 help:
 	@grep -E '^[a-z-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  %-10s %s\n", $$1, $$2}'
@@ -18,8 +20,12 @@ logs: ## Follow logs
 build: ## Build the backend
 	cd backend && go build ./...
 
-test: ## Run the tests
-	cd backend && go test ./...
+test: ## Run the tests (database and browser tests are skipped)
+	cd backend && go test -short ./...
+
+test-db: ## Run all tests, including database and browser
+	$(COMPOSE) up -d postgres
+	cd backend && TEST_DATABASE_URL="$(TEST_DATABASE_URL)" go test ./...
 
 vet: ## Static analysis
 	cd backend && go vet ./...
