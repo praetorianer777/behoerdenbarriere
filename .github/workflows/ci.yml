@@ -22,13 +22,23 @@ jobs:
         options: >-
           --health-cmd "pg_isready -U behoerdenbarriere"
           --health-interval 5s --health-timeout 3s --health-retries 10
-      chrome:
-        image: chromedp/headless-shell:stable
-        ports: ["9222:9222"]
-        options: --shm-size=1g
-
     steps:
       - uses: actions/checkout@v5
+
+      # Chrome runs on the runner's own network, not as a service container. The
+      # browser tests serve their fixtures from a local httptest server, and a
+      # container on the bridge network cannot reach the runner's loopback — the
+      # scans failed with ERR_CONNECTION_REFUSED.
+      - name: Chrome starten
+        run: |
+          docker run -d --name chrome --network host --shm-size=1g \
+            chromedp/headless-shell:stable
+          for _ in $(seq 1 30); do
+            curl -sf http://localhost:9222/json/version >/dev/null && break
+            sleep 1
+          done
+          curl -sf http://localhost:9222/json/version >/dev/null
+
       - uses: actions/setup-go@v6
         with:
           go-version-file: backend/go.mod

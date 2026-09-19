@@ -249,6 +249,45 @@ func TestEnqueueDueSkipsInactiveAuthorities(t *testing.T) {
 	}
 }
 
+func TestQueueStatsCountsWaitingAndRunningJobs(t *testing.T) {
+	s := storetest.New(t)
+	ctx := context.Background()
+
+	empty, err := s.QueueStats(ctx)
+	if err != nil {
+		t.Fatalf("queue stats: %v", err)
+	}
+	if empty.Queued != 0 || empty.Running != 0 || empty.OldestAge != 0 {
+		t.Fatalf("empty queue = %+v", empty)
+	}
+
+	if err := s.EnqueueScan(ctx, freshAgency(t, s)); err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	if job, err := s.ClaimJob(ctx, "test"); err != nil || job == nil {
+		t.Fatalf("claim: %v %v", job, err)
+	}
+
+	if err := s.EnqueueScan(ctx, freshAgency(t, s)); err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+	if _, err := s.Pool.Exec(ctx,
+		`UPDATE jobs SET run_after = now() - interval '2 minutes' WHERE locked_at IS NULL`); err != nil {
+		t.Fatalf("age the job: %v", err)
+	}
+
+	stats, err := s.QueueStats(ctx)
+	if err != nil {
+		t.Fatalf("queue stats: %v", err)
+	}
+	if stats.Queued != 1 || stats.Running != 1 {
+		t.Fatalf("stats = %+v", stats)
+	}
+	if stats.OldestAge < time.Minute {
+		t.Fatalf("oldest job is %v old, want about two minutes", stats.OldestAge)
+	}
+}
+
 // Other tests run in the same database, so a claim only counts when it is ours.
 func claimOurs(t *testing.T, s *store.Store, agencyID int64) *store.Job {
 	t.Helper()

@@ -166,3 +166,53 @@ func TestLoadRejectsInvalidValues(t *testing.T) {
 		})
 	}
 }
+
+// Telemetry is off unless an endpoint is set: no collector is needed to run this.
+func TestOTelIsOffByDefault(t *testing.T) {
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if cfg.OTel.Enabled() {
+		t.Errorf("telemetry is on without an endpoint: %+v", cfg.OTel)
+	}
+	if cfg.OTel.Protocol != "grpc" || cfg.OTel.SampleRatio != 1 {
+		t.Errorf("OTel defaults: %+v", cfg.OTel)
+	}
+	if got := cfg.OTel.ServiceNameOr("behoerdenbarriere-api"); got != "behoerdenbarriere-api" {
+		t.Errorf("service name = %q", got)
+	}
+}
+
+func TestOTelFromEnv(t *testing.T) {
+	t.Setenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://collector:4318")
+	t.Setenv("OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf")
+	t.Setenv("OTEL_SERVICE_NAME", "scanner")
+	t.Setenv("OTEL_TRACES_SAMPLER_ARG", "0.25")
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if !cfg.OTel.Enabled() || cfg.OTel.Protocol != "http/protobuf" || cfg.OTel.SampleRatio != 0.25 {
+		t.Fatalf("environment not applied: %+v", cfg.OTel)
+	}
+	if got := cfg.OTel.ServiceNameOr("behoerdenbarriere-worker"); got != "scanner" {
+		t.Fatalf("service name = %q", got)
+	}
+}
+
+func TestOTelRejectsInvalidValues(t *testing.T) {
+	cases := map[string]string{
+		"OTEL_EXPORTER_OTLP_PROTOCOL": "carrier pigeon",
+		"OTEL_TRACES_SAMPLER_ARG":     "2",
+	}
+	for key, value := range cases {
+		t.Run(key, func(t *testing.T) {
+			t.Setenv(key, value)
+			if _, err := Load(); err == nil {
+				t.Fatalf("%s=%q was accepted", key, value)
+			}
+		})
+	}
+}

@@ -1,7 +1,7 @@
 SHELL := /bin/sh
 COMPOSE := docker compose
 
-.PHONY: help dev down logs build test test-db test-web vet fmt seed scan web
+.PHONY: help dev dev-telemetry down logs build test test-db test-web vet fmt seed scan web
 
 TEST_DATABASE_URL ?= postgres://behoerdenbarriere:behoerdenbarriere@localhost:5432/behoerdenbarriere?sslmode=disable
 
@@ -11,8 +11,11 @@ help:
 dev: ## Start all services
 	$(COMPOSE) up -d --build
 
+dev-telemetry: ## Start all services plus the OTLP collector
+	$(COMPOSE) --profile telemetry up -d --build
+
 down: ## Stop all services
-	$(COMPOSE) down
+	$(COMPOSE) --profile telemetry down
 
 logs: ## Follow logs
 	$(COMPOSE) logs -f api worker

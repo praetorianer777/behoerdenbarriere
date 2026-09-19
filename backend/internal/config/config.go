@@ -22,6 +22,26 @@ type Config struct {
 	Crawl  CrawlConfig
 	Scan   ScanConfig
 	Worker WorkerConfig
+	OTel   OTelConfig
+}
+
+// OTelConfig switches OpenTelemetry on. Without an endpoint nothing is exported and
+// no provider is installed, so a local run needs no collector.
+type OTelConfig struct {
+	Endpoint    string
+	Protocol    string
+	ServiceName string
+	SampleRatio float64
+}
+
+func (o OTelConfig) Enabled() bool { return o.Endpoint != "" }
+
+// ServiceNameOr lets each binary name itself while OTEL_SERVICE_NAME still wins.
+func (o OTelConfig) ServiceNameOr(def string) string {
+	if o.ServiceName != "" {
+		return o.ServiceName
+	}
+	return def
 }
 
 // APIConfig holds the guard rails of the public interface. The data is public and
@@ -122,6 +142,19 @@ func Load() (*Config, error) {
 	}
 	if c.Worker.RescanInterval, err = envDuration("RESCAN_INTERVAL", 168*time.Hour); err != nil {
 		return nil, err
+	}
+
+	c.OTel.Endpoint = env("OTEL_EXPORTER_OTLP_ENDPOINT", "")
+	c.OTel.ServiceName = env("OTEL_SERVICE_NAME", "")
+	c.OTel.Protocol = env("OTEL_EXPORTER_OTLP_PROTOCOL", "grpc")
+	if c.OTel.Protocol != "grpc" && c.OTel.Protocol != "http/protobuf" {
+		return nil, fmt.Errorf("OTEL_EXPORTER_OTLP_PROTOCOL: %q is neither grpc nor http/protobuf", c.OTel.Protocol)
+	}
+	if c.OTel.SampleRatio, err = envFloat("OTEL_TRACES_SAMPLER_ARG", 1); err != nil {
+		return nil, err
+	}
+	if c.OTel.SampleRatio < 0 || c.OTel.SampleRatio > 1 {
+		return nil, fmt.Errorf("OTEL_TRACES_SAMPLER_ARG: %v is outside 0..1", c.OTel.SampleRatio)
 	}
 	return c, nil
 }

@@ -10,9 +10,12 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/exaring/otelpgx"
+
 	"github.com/praetorianer777/behoerdenbarriere/internal/api"
 	"github.com/praetorianer777/behoerdenbarriere/internal/config"
 	"github.com/praetorianer777/behoerdenbarriere/internal/store"
+	"github.com/praetorianer777/behoerdenbarriere/internal/telemetry"
 	"github.com/praetorianer777/behoerdenbarriere/internal/usage"
 )
 
@@ -28,14 +31,42 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	slog.SetDefault(telemetry.NewLogger(os.Stderr, cfg.LogLevel))
+
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	db, err := store.Open(ctx, cfg.DatabaseURL)
+	service := cfg.OTel.ServiceNameOr("behoerdenbarriere-api")
+	shutdownTelemetry, err := telemetry.Setup(ctx, telemetry.Config{
+		ServiceName: service,
+		Endpoint:    cfg.OTel.Endpoint,
+		Protocol:    cfg.OTel.Protocol,
+		SampleRatio: cfg.OTel.SampleRatio,
+	})
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := shutdownTelemetry(context.Background()); err != nil {
+			slog.Warn("telemetry shutdown", "error", err)
+		}
+	}()
+
+	var dbOpts []store.Option
+	if cfg.OTel.Enabled() {
+		dbOpts = append(dbOpts, store.WithQueryTracer(otelpgx.NewTracer()))
+	}
+	db, err := store.Open(ctx, cfg.DatabaseURL, dbOpts...)
 	if err != nil {
 		return err
 	}
 	defer db.Close()
+
+	if cfg.OTel.Enabled() {
+		if err := otelpgx.RecordStats(db.Pool); err != nil {
+			return err
+		}
+	}
 
 	if err := db.Migrate(ctx); err != nil {
 		return err
@@ -79,7 +110,7 @@ func run() error {
 	// must not hold a slot for good.
 	srv := &http.Server{
 		Addr:              cfg.APIAddr,
-		Handler:           server.Routes(),
+		Handler:           telemetry.WrapHandler(server.Routes(), service),
 		ReadHeaderTimeout: 10 * time.Second,
 		ReadTimeout:       cfg.API.ReadTimeout,
 		WriteTimeout:      cfg.API.WriteTimeout,
