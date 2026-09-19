@@ -165,17 +165,23 @@ func SummarizeRules(pages []model.PageResult) []RuleSummary {
 	for _, s := range byRule {
 		out = append(out, *s)
 	}
-	sort.Slice(out, func(i, j int) bool {
-		wi, wj := impactWeight[out[i].Impact], impactWeight[out[j].Impact]
+	return SortRules(out)
+}
+
+// SortRules orders rules the way an authority should work through them: the severe
+// ones first, and among equals the ones that affect the most elements.
+func SortRules(rules []RuleSummary) []RuleSummary {
+	sort.Slice(rules, func(i, j int) bool {
+		wi, wj := impactWeight[rules[i].Impact], impactWeight[rules[j].Impact]
 		if wi != wj {
 			return wi > wj
 		}
-		if out[i].Nodes != out[j].Nodes {
-			return out[i].Nodes > out[j].Nodes
+		if rules[i].Nodes != rules[j].Nodes {
+			return rules[i].Nodes > rules[j].Nodes
 		}
-		return out[i].RuleID < out[j].RuleID
+		return rules[i].RuleID < rules[j].RuleID
 	})
-	return out
+	return rules
 }
 
 func round2(v float64) float64 { return math.Round(v*100) / 100 }
