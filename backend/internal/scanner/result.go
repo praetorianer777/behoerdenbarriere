@@ -7,7 +7,7 @@ import (
 	"github.com/praetorianer777/behoerdenbarriere/internal/scoring"
 )
 
-// axeResult bildet den Teil der axe.run-Antwort ab, den wir auswerten.
+// axeResult covers the part of the axe.run response we evaluate.
 type axeResult struct {
 	Violations []axeViolation `json:"violations"`
 }
@@ -56,8 +56,8 @@ func toViolations(res axeResult) []model.Violation {
 	return out
 }
 
-// axe lässt impact bei einzelnen Regeln leer; unbewertet einzustufen wäre dasselbe
-// wie zu ignorieren, deshalb gilt die mittlere Stufe.
+// axe leaves impact empty on some rules; treating those as unrated would amount to
+// ignoring them, so they count as moderate.
 func normalizeImpact(raw string) model.Impact {
 	switch model.Impact(raw) {
 	case model.ImpactCritical:

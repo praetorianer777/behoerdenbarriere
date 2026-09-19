@@ -1,4 +1,4 @@
-// Package scanner lädt eine Seite in einem headless Chrome und prüft sie mit axe-core.
+// Package scanner loads a page in a headless Chrome and checks it with axe-core.
 package scanner
 
 import (
@@ -20,8 +20,8 @@ import (
 //go:embed axe/axe.min.js
 var axeJS string
 
-// Die Seite wird gegen WCAG 2.1 A und AA geprüft — das ist der Maßstab, den
-// BITV 2.0 und EN 301 549 für öffentliche Stellen setzen.
+// Pages are checked against WCAG 2.1 A and AA — the bar that BITV 2.0 and EN 301 549
+// set for public bodies.
 const axeRunScript = `(async () => {
   const result = await axe.run(document, {
     runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'] },
@@ -38,12 +38,28 @@ const axeRunScript = `(async () => {
   });
 })()`
 
-const pageInfoScript = `JSON.stringify({
-  title: document.title || '',
-  domNodes: document.getElementsByTagName('*').length,
-  lang: document.documentElement.getAttribute('lang') || '',
-  links: Array.from(document.querySelectorAll('a[href]')).map(a => a.href).slice(0, 2000)
-})`
+// Counting and link collection descend into shadow roots. Modern government portals
+// are built from web components; counted from the light DOM alone, bund.de has 28
+// nodes instead of several thousand, and the violation density — and with it the
+// score — would be off by two orders of magnitude.
+const pageInfoScript = `(() => {
+  let nodes = 0;
+  const links = [];
+  const walk = root => {
+    for (const el of root.querySelectorAll('*')) {
+      nodes++;
+      if (el.tagName === 'A' && el.href) links.push(el.href);
+      if (el.shadowRoot) walk(el.shadowRoot);
+    }
+  };
+  walk(document);
+  return JSON.stringify({
+    title: document.title || '',
+    domNodes: nodes,
+    lang: document.documentElement.getAttribute('lang') || '',
+    links: links.slice(0, 2000)
+  });
+})()`
 
 type Scanner struct {
 	allocCtx    context.Context
@@ -52,8 +68,8 @@ type Scanner struct {
 }
 
 type Options struct {
-	// ChromeURL zeigt auf das DevTools-HTTP-Interface eines laufenden Chrome
-	// (z. B. http://chrome:9222). Leer: Chrome wird lokal gestartet.
+	// ChromeURL points at the DevTools HTTP interface of a running Chrome
+	// (e.g. http://chrome:9222). Empty: Chrome is started locally.
 	ChromeURL   string
 	PageTimeout time.Duration
 }
@@ -83,8 +99,8 @@ func New(ctx context.Context, opts Options) (*Scanner, error) {
 
 func (s *Scanner) Close() { s.cancel() }
 
-// resolveWebSocketURL fragt Chrome nach seiner DevTools-Adresse. Der Umweg ist nötig,
-// weil die WebSocket-URL bei jedem Start eine andere ist.
+// resolveWebSocketURL asks Chrome for its DevTools address. The detour is needed
+// because the WebSocket URL differs on every start.
 func resolveWebSocketURL(ctx context.Context, chromeURL string) (string, error) {
 	base := strings.TrimSuffix(chromeURL, "/")
 	if strings.HasPrefix(base, "ws://") || strings.HasPrefix(base, "wss://") {
@@ -96,7 +112,7 @@ func resolveWebSocketURL(ctx context.Context, chromeURL string) (string, error) 
 	}
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("chrome nicht erreichbar unter %s: %w", chromeURL, err)
+		return "", fmt.Errorf("chrome unreachable at %s: %w", chromeURL, err)
 	}
 	defer resp.Body.Close()
 	var payload struct {
@@ -106,21 +122,21 @@ func resolveWebSocketURL(ctx context.Context, chromeURL string) (string, error) 
 		return "", fmt.Errorf("chrome /json/version: %w", err)
 	}
 	if payload.WebSocketDebuggerURL == "" {
-		return "", fmt.Errorf("chrome unter %s liefert keine webSocketDebuggerUrl", chromeURL)
+		return "", fmt.Errorf("chrome at %s returns no webSocketDebuggerUrl", chromeURL)
 	}
 	return payload.WebSocketDebuggerURL, nil
 }
 
-// PageScan ist das Ergebnis einer geprüften Seite samt der dort gefundenen Links,
-// die der Crawler weiterverfolgen kann.
+// PageScan is the outcome of a checked page together with the links found on it,
+// which the crawler can follow.
 type PageScan struct {
 	Result model.PageResult
 	Links  []string
 }
 
-// Scan lädt eine URL, prüft sie mit axe und liest die ausgehenden Links aus.
-// Ein Fehler steckt im Ergebnis (PageResult.Err), damit ein einzelner Ausfall den
-// Scan einer Behörde nicht beendet.
+// Scan loads a URL, checks it with axe and reads the outgoing links. A failure is
+// carried in the result (PageResult.Err) so that one bad page does not end an agency's
+// scan.
 func (s *Scanner) Scan(ctx context.Context, url string) PageScan {
 	out := PageScan{Result: model.PageResult{URL: url}}
 
@@ -158,7 +174,7 @@ func (s *Scanner) Scan(ctx context.Context, url string) PageScan {
 		Links    []string `json:"links"`
 	}
 	if err := json.Unmarshal([]byte(infoJSON), &info); err != nil {
-		out.Result.Err = fmt.Sprintf("seiteninfo: %v", err)
+		out.Result.Err = fmt.Sprintf("page info: %v", err)
 		return out
 	}
 	out.Result.Title = info.Title
@@ -167,16 +183,16 @@ func (s *Scanner) Scan(ctx context.Context, url string) PageScan {
 
 	var axeRes axeResult
 	if err := json.Unmarshal([]byte(axeJSON), &axeRes); err != nil {
-		out.Result.Err = fmt.Sprintf("axe-ergebnis: %v", err)
+		out.Result.Err = fmt.Sprintf("axe result: %v", err)
 		return out
 	}
 	out.Result.Violations = toViolations(axeRes)
 	return out
 }
 
-// Behörden-CMS laden Navigation und Consent-Banner oft nach. Eine kurze Ruhephase
-// nach dem Load liefert das DOM, das ein Besucher tatsächlich vorfindet; scheitert
-// sie am Timeout, wird mit dem geprüft, was bis dahin da ist.
+// Government CMSes often load navigation and consent banners late. A short settling
+// period after load yields the DOM a visitor actually meets; if it runs into the
+// timeout, whatever is there by then gets checked.
 func waitForQuiet() chromedp.Action {
 	return chromedp.ActionFunc(func(ctx context.Context) error {
 		quiet, cancel := context.WithTimeout(ctx, 5*time.Second)
@@ -196,8 +212,8 @@ func evalPromise(script string, out *string) chromedp.Action {
 	})
 }
 
-// statusRecorder merkt sich den HTTP-Status des Hauptdokuments. chromedp liefert ihn
-// nicht direkt; ohne ihn ließen sich 404-Seiten nicht von echten Inhalten trennen.
+// statusRecorder keeps the HTTP status of the main document. chromedp does not expose
+// it directly, and without it a 404 page could not be told from real content.
 type statusRecorder struct {
 	url    string
 	status int
