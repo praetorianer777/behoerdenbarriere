@@ -1,0 +1,103 @@
+# Startbestand der geprüften Stellen. Die Liste wächst, cmd/seed spielt sie
+# idempotent über den Slug ein; eine Behörde verschwindet nie, sie wird höchstens
+# auf active: false gesetzt.
+#
+# level: bund | land | kreis | kommune
+# state: Bundesland, bei bund leer
+
+- {slug: bund-portal, name: Bundesportal, url: "https://www.bund.de/", level: bund, category: portal}
+- {slug: bundesregierung, name: Bundesregierung, url: "https://www.bundesregierung.de/", level: bund, category: regierung}
+- {slug: bundestag, name: Deutscher Bundestag, url: "https://www.bundestag.de/", level: bund, category: parlament}
+- {slug: bundesrat, name: Bundesrat, url: "https://www.bundesrat.de/", level: bund, category: parlament}
+- {slug: bundespraesident, name: Bundespräsident, url: "https://www.bundespraesident.de/", level: bund, category: verfassungsorgan}
+- {slug: bundesverfassungsgericht, name: Bundesverfassungsgericht, url: "https://www.bundesverfassungsgericht.de/", level: bund, category: gericht}
+
+- {slug: bmi, name: Bundesministerium des Innern, url: "https://www.bmi.bund.de/", level: bund, category: ministerium}
+- {slug: bmj, name: Bundesministerium der Justiz, url: "https://www.bmj.de/", level: bund, category: ministerium}
+- {slug: bmf, name: Bundesministerium der Finanzen, url: "https://www.bundesfinanzministerium.de/", level: bund, category: ministerium}
+- {slug: auswaertiges-amt, name: Auswärtiges Amt, url: "https://www.auswaertiges-amt.de/", level: bund, category: ministerium}
+- {slug: bmvg, name: Bundesministerium der Verteidigung, url: "https://www.bmvg.de/", level: bund, category: ministerium}
+- {slug: bmas, name: Bundesministerium für Arbeit und Soziales, url: "https://www.bmas.de/", level: bund, category: ministerium}
+- {slug: bmg, name: Bundesministerium für Gesundheit, url: "https://www.bundesgesundheitsministerium.de/", level: bund, category: ministerium}
+- {slug: bmbf, name: Bundesministerium für Bildung und Forschung, url: "https://www.bmbf.de/", level: bund, category: ministerium}
+- {slug: bmel, name: Bundesministerium für Ernährung und Landwirtschaft, url: "https://www.bmel.de/", level: bund, category: ministerium}
+- {slug: bmz, name: Bundesministerium für wirtschaftliche Zusammenarbeit, url: "https://www.bmz.de/", level: bund, category: ministerium}
+- {slug: bmuv, name: Bundesministerium für Umwelt und Verbraucherschutz, url: "https://www.bmuv.de/", level: bund, category: ministerium}
+- {slug: bmdv, name: Bundesministerium für Digitales und Verkehr, url: "https://bmdv.bund.de/", level: bund, category: ministerium}
+- {slug: bmwsb, name: Bundesministerium für Wohnen, Stadtentwicklung und Bauwesen, url: "https://www.bmwsb.bund.de/", level: bund, category: ministerium}
+- {slug: bmwk, name: Bundesministerium für Wirtschaft und Klimaschutz, url: "https://www.bmwk.de/", level: bund, category: ministerium}
+
+- {slug: bundesagentur-arbeit, name: Bundesagentur für Arbeit, url: "https://www.arbeitsagentur.de/", level: bund, category: behoerde}
+- {slug: deutsche-rentenversicherung, name: Deutsche Rentenversicherung, url: "https://www.deutsche-rentenversicherung.de/", level: bund, category: behoerde}
+- {slug: zoll, name: Zoll, url: "https://www.zoll.de/", level: bund, category: behoerde}
+- {slug: bamf, name: Bundesamt für Migration und Flüchtlinge, url: "https://www.bamf.de/", level: bund, category: behoerde}
+- {slug: bka, name: Bundeskriminalamt, url: "https://www.bka.de/", level: bund, category: behoerde}
+- {slug: bundespolizei, name: Bundespolizei, url: "https://www.bundespolizei.de/", level: bund, category: behoerde}
+- {slug: bsi, name: Bundesamt für Sicherheit in der Informationstechnik, url: "https://www.bsi.bund.de/", level: bund, category: behoerde}
+- {slug: bundesnetzagentur, name: Bundesnetzagentur, url: "https://www.bundesnetzagentur.de/", level: bund, category: behoerde}
+- {slug: destatis, name: Statistisches Bundesamt, url: "https://www.destatis.de/", level: bund, category: behoerde}
+- {slug: rki, name: Robert Koch-Institut, url: "https://www.rki.de/", level: bund, category: behoerde}
+- {slug: bfarm, name: Bundesinstitut für Arzneimittel und Medizinprodukte, url: "https://www.bfarm.de/", level: bund, category: behoerde}
+- {slug: umweltbundesamt, name: Umweltbundesamt, url: "https://www.umweltbundesamt.de/", level: bund, category: behoerde}
+- {slug: kba, name: Kraftfahrt-Bundesamt, url: "https://www.kba.de/", level: bund, category: behoerde}
+- {slug: dwd, name: Deutscher Wetterdienst, url: "https://www.dwd.de/", level: bund, category: behoerde}
+- {slug: bzga, name: Bundeszentrale für gesundheitliche Aufklärung, url: "https://www.bzga.de/", level: bund, category: behoerde}
+- {slug: bpb, name: Bundeszentrale für politische Bildung, url: "https://www.bpb.de/", level: bund, category: behoerde}
+
+- {slug: land-baden-wuerttemberg, name: Baden-Württemberg, url: "https://www.baden-wuerttemberg.de/", level: land, state: Baden-Württemberg, category: landesportal}
+- {slug: land-bayern, name: Bayern, url: "https://www.bayern.de/", level: land, state: Bayern, category: landesportal}
+- {slug: land-berlin, name: Berlin, url: "https://www.berlin.de/", level: land, state: Berlin, category: landesportal}
+- {slug: land-brandenburg, name: Brandenburg, url: "https://www.brandenburg.de/", level: land, state: Brandenburg, category: landesportal}
+- {slug: land-bremen, name: Bremen, url: "https://www.bremen.de/", level: land, state: Bremen, category: landesportal}
+- {slug: land-hamburg, name: Hamburg, url: "https://www.hamburg.de/", level: land, state: Hamburg, category: landesportal}
+- {slug: land-hessen, name: Hessen, url: "https://www.hessen.de/", level: land, state: Hessen, category: landesportal}
+- {slug: land-mecklenburg-vorpommern, name: Mecklenburg-Vorpommern, url: "https://www.regierung-mv.de/", level: land, state: Mecklenburg-Vorpommern, category: landesportal}
+- {slug: land-niedersachsen, name: Niedersachsen, url: "https://www.niedersachsen.de/", level: land, state: Niedersachsen, category: landesportal}
+- {slug: land-nordrhein-westfalen, name: Nordrhein-Westfalen, url: "https://www.land.nrw/", level: land, state: Nordrhein-Westfalen, category: landesportal}
+- {slug: land-rheinland-pfalz, name: Rheinland-Pfalz, url: "https://www.rlp.de/", level: land, state: Rheinland-Pfalz, category: landesportal}
+- {slug: land-saarland, name: Saarland, url: "https://www.saarland.de/", level: land, state: Saarland, category: landesportal}
+- {slug: land-sachsen, name: Sachsen, url: "https://www.sachsen.de/", level: land, state: Sachsen, category: landesportal}
+- {slug: land-sachsen-anhalt, name: Sachsen-Anhalt, url: "https://www.sachsen-anhalt.de/", level: land, state: Sachsen-Anhalt, category: landesportal}
+- {slug: land-schleswig-holstein, name: Schleswig-Holstein, url: "https://www.schleswig-holstein.de/", level: land, state: Schleswig-Holstein, category: landesportal}
+- {slug: land-thueringen, name: Thüringen, url: "https://www.thueringen.de/", level: land, state: Thüringen, category: landesportal}
+
+- {slug: stadt-muenchen, name: München, url: "https://stadt.muenchen.de/", level: kommune, state: Bayern, category: stadt}
+- {slug: stadt-koeln, name: Köln, url: "https://www.stadt-koeln.de/", level: kommune, state: Nordrhein-Westfalen, category: stadt}
+- {slug: stadt-frankfurt, name: Frankfurt am Main, url: "https://frankfurt.de/", level: kommune, state: Hessen, category: stadt}
+- {slug: stadt-stuttgart, name: Stuttgart, url: "https://www.stuttgart.de/", level: kommune, state: Baden-Württemberg, category: stadt}
+- {slug: stadt-duesseldorf, name: Düsseldorf, url: "https://www.duesseldorf.de/", level: kommune, state: Nordrhein-Westfalen, category: stadt}
+- {slug: stadt-leipzig, name: Leipzig, url: "https://www.leipzig.de/", level: kommune, state: Sachsen, category: stadt}
+- {slug: stadt-dortmund, name: Dortmund, url: "https://www.dortmund.de/", level: kommune, state: Nordrhein-Westfalen, category: stadt}
+- {slug: stadt-essen, name: Essen, url: "https://www.essen.de/", level: kommune, state: Nordrhein-Westfalen, category: stadt}
+- {slug: stadt-dresden, name: Dresden, url: "https://www.dresden.de/", level: kommune, state: Sachsen, category: stadt}
+- {slug: stadt-hannover, name: Hannover, url: "https://www.hannover.de/", level: kommune, state: Niedersachsen, category: stadt}
+- {slug: stadt-nuernberg, name: Nürnberg, url: "https://www.nuernberg.de/", level: kommune, state: Bayern, category: stadt}
+- {slug: stadt-duisburg, name: Duisburg, url: "https://www.duisburg.de/", level: kommune, state: Nordrhein-Westfalen, category: stadt}
+- {slug: stadt-bochum, name: Bochum, url: "https://www.bochum.de/", level: kommune, state: Nordrhein-Westfalen, category: stadt}
+- {slug: stadt-wuppertal, name: Wuppertal, url: "https://www.wuppertal.de/", level: kommune, state: Nordrhein-Westfalen, category: stadt}
+- {slug: stadt-bielefeld, name: Bielefeld, url: "https://www.bielefeld.de/", level: kommune, state: Nordrhein-Westfalen, category: stadt}
+- {slug: stadt-bonn, name: Bonn, url: "https://www.bonn.de/", level: kommune, state: Nordrhein-Westfalen, category: stadt}
+- {slug: stadt-muenster, name: Münster, url: "https://www.stadt-muenster.de/", level: kommune, state: Nordrhein-Westfalen, category: stadt}
+- {slug: stadt-karlsruhe, name: Karlsruhe, url: "https://www.karlsruhe.de/", level: kommune, state: Baden-Württemberg, category: stadt}
+- {slug: stadt-mannheim, name: Mannheim, url: "https://www.mannheim.de/", level: kommune, state: Baden-Württemberg, category: stadt}
+- {slug: stadt-augsburg, name: Augsburg, url: "https://www.augsburg.de/", level: kommune, state: Bayern, category: stadt}
+- {slug: stadt-wiesbaden, name: Wiesbaden, url: "https://www.wiesbaden.de/", level: kommune, state: Hessen, category: stadt}
+- {slug: stadt-moenchengladbach, name: Mönchengladbach, url: "https://www.moenchengladbach.de/", level: kommune, state: Nordrhein-Westfalen, category: stadt}
+- {slug: stadt-gelsenkirchen, name: Gelsenkirchen, url: "https://www.gelsenkirchen.de/", level: kommune, state: Nordrhein-Westfalen, category: stadt}
+- {slug: stadt-braunschweig, name: Braunschweig, url: "https://www.braunschweig.de/", level: kommune, state: Niedersachsen, category: stadt}
+- {slug: stadt-chemnitz, name: Chemnitz, url: "https://www.chemnitz.de/", level: kommune, state: Sachsen, category: stadt}
+- {slug: stadt-kiel, name: Kiel, url: "https://www.kiel.de/", level: kommune, state: Schleswig-Holstein, category: stadt}
+- {slug: stadt-aachen, name: Aachen, url: "https://www.aachen.de/", level: kommune, state: Nordrhein-Westfalen, category: stadt}
+- {slug: stadt-halle, name: Halle (Saale), url: "https://www.halle.de/", level: kommune, state: Sachsen-Anhalt, category: stadt}
+- {slug: stadt-magdeburg, name: Magdeburg, url: "https://www.magdeburg.de/", level: kommune, state: Sachsen-Anhalt, category: stadt}
+- {slug: stadt-freiburg, name: Freiburg im Breisgau, url: "https://www.freiburg.de/", level: kommune, state: Baden-Württemberg, category: stadt}
+- {slug: stadt-krefeld, name: Krefeld, url: "https://www.krefeld.de/", level: kommune, state: Nordrhein-Westfalen, category: stadt}
+- {slug: stadt-luebeck, name: Lübeck, url: "https://www.luebeck.de/", level: kommune, state: Schleswig-Holstein, category: stadt}
+- {slug: stadt-mainz, name: Mainz, url: "https://www.mainz.de/", level: kommune, state: Rheinland-Pfalz, category: stadt}
+- {slug: stadt-erfurt, name: Erfurt, url: "https://www.erfurt.de/", level: kommune, state: Thüringen, category: stadt}
+- {slug: stadt-rostock, name: Rostock, url: "https://www.rostock.de/", level: kommune, state: Mecklenburg-Vorpommern, category: stadt}
+- {slug: stadt-kassel, name: Kassel, url: "https://www.kassel.de/", level: kommune, state: Hessen, category: stadt}
+- {slug: stadt-potsdam, name: Potsdam, url: "https://www.potsdam.de/", level: kommune, state: Brandenburg, category: stadt}
+- {slug: stadt-saarbruecken, name: Saarbrücken, url: "https://www.saarbruecken.de/", level: kommune, state: Saarland, category: stadt}
+- {slug: stadt-oldenburg, name: Oldenburg, url: "https://www.oldenburg.de/", level: kommune, state: Niedersachsen, category: stadt}
+- {slug: stadt-osnabrueck, name: Osnabrück, url: "https://www.osnabrueck.de/", level: kommune, state: Niedersachsen, category: stadt}

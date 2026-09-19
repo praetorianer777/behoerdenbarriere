@@ -39,7 +39,7 @@ type WorkerConfig struct {
 
 func Load() (*Config, error) {
 	c := &Config{
-		DatabaseURL: env("DATABASE_URL", "postgres://behoerdenbarrier:behoerdenbarrier@localhost:5432/behoerdenbarrier?sslmode=disable"),
+		DatabaseURL: env("DATABASE_URL", "postgres://behoerdenbarriere:behoerdenbarriere@localhost:5432/behoerdenbarriere?sslmode=disable"),
 		ChromeURL:   env("CHROME_URL", "http://localhost:9222"),
 		APIAddr:     env("API_ADDR", ":8080"),
 		APIKey:      env("API_KEY", ""),
