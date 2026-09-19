@@ -26,11 +26,16 @@ type fakeDB struct {
 	states   []string
 	queued   []int64
 	failWith error
+
+	// calls counts every query, so a test can show that a rejected request never
+	// reached the database.
+	calls int
 }
 
-func (f *fakeDB) Ping(context.Context) error { return f.pingErr }
+func (f *fakeDB) Ping(context.Context) error { f.calls++; return f.pingErr }
 
 func (f *fakeDB) ListAgencies(_ context.Context, filter store.AgencyFilter) ([]store.AgencyListing, int, error) {
+	f.calls++
 	f.filter = filter
 	if f.failWith != nil {
 		return nil, 0, f.failWith
@@ -39,6 +44,7 @@ func (f *fakeDB) ListAgencies(_ context.Context, filter store.AgencyFilter) ([]s
 }
 
 func (f *fakeDB) AgencyBySlug(_ context.Context, slug string) (*store.AgencyListing, error) {
+	f.calls++
 	if f.failWith != nil {
 		return nil, f.failWith
 	}
@@ -51,6 +57,7 @@ func (f *fakeDB) AgencyBySlug(_ context.Context, slug string) (*store.AgencyList
 }
 
 func (f *fakeDB) AgencyIDBySlug(_ context.Context, slug string) (int64, error) {
+	f.calls++
 	if f.failWith != nil {
 		return 0, f.failWith
 	}
@@ -63,14 +70,17 @@ func (f *fakeDB) AgencyIDBySlug(_ context.Context, slug string) (int64, error) {
 }
 
 func (f *fakeDB) ScanHistory(context.Context, int64, int) ([]trend.Point, error) {
+	f.calls++
 	return f.history, nil
 }
 
 func (f *fakeDB) LastScanIDs(context.Context, int64, int) ([]int64, error) {
+	f.calls++
 	return f.scanIDs, nil
 }
 
 func (f *fakeDB) LatestScanID(context.Context, int64) (int64, error) {
+	f.calls++
 	if len(f.scanIDs) == 0 {
 		return 0, store.ErrNotFound
 	}
@@ -78,6 +88,7 @@ func (f *fakeDB) LatestScanID(context.Context, int64) (int64, error) {
 }
 
 func (f *fakeDB) ScanByID(_ context.Context, id int64) (*store.ScanDetail, error) {
+	f.calls++
 	if f.scan == nil || f.scan.ID != id {
 		return nil, store.ErrNotFound
 	}
@@ -85,14 +96,17 @@ func (f *fakeDB) ScanByID(_ context.Context, id int64) (*store.ScanDetail, error
 }
 
 func (f *fakeDB) RulesForScan(_ context.Context, scanID int64) ([]scoring.RuleSummary, error) {
+	f.calls++
 	return f.rules[scanID], nil
 }
 
 func (f *fakeDB) PagesForScan(context.Context, int64) ([]store.PageDetail, error) {
+	f.calls++
 	return f.pages, nil
 }
 
 func (f *fakeDB) Stats(context.Context) (*store.Stats, error) {
+	f.calls++
 	if f.failWith != nil {
 		return nil, f.failWith
 	}
@@ -102,9 +116,10 @@ func (f *fakeDB) Stats(context.Context) (*store.Stats, error) {
 	return f.stats, nil
 }
 
-func (f *fakeDB) States(context.Context) ([]string, error) { return f.states, nil }
+func (f *fakeDB) States(context.Context) ([]string, error) { f.calls++; return f.states, nil }
 
 func (f *fakeDB) EnqueueScan(_ context.Context, agencyID int64) error {
+	f.calls++
 	if f.failWith != nil {
 		return f.failWith
 	}

@@ -57,6 +57,38 @@ Barrierefreiheit, Kontakt, Formulare — doppelt.
 tatsächlich beschreibt, kann kein Programm beurteilen. Der Score ist ein Indikator und
 kein BITV-Prüfbericht, und eine gute Note ersetzt keine manuelle Prüfung.
 
+## Grenzen der API
+
+Die Daten sind öffentlich und sollen auch in größeren Mengen nutzbar bleiben. Die
+folgenden Grenzen gibt es aus einem einzigen Grund: Ein einzelner Client darf die Seite
+nicht für alle anderen lahmlegen.
+
+| Was | Grenze | Anmerkung |
+| --- | --- | --- |
+| Lesende Endpunkte (`/agencies`, `/scans/{id}`) | 120 Anfragen pro Minute, Spitze 60 | je Client |
+| Statistik und Regelkatalog (`/stats`, `/rules`) | 20 pro Minute, Spitze 10 | sie rechnen über alle Scans |
+| Mit API-Schlüssel (`X-API-Key`) | 600 pro Minute, Spitze 200 | lieber einen Schlüssel erfragen, als die Grenze zu umgehen |
+| `POST /agencies/{slug}/rescan` | Schlüssel nötig, dazu ein Rescan je Behörde pro Stunde | die Last landet bei der Behörde |
+| Anfragekörper | 64 KiB | |
+| Verlaufspunkte je Behörde | 200 | längere Verläufe werden gekürzt |
+| Einträge je Liste in einer Antwort | 500 | die Seitengröße ist getrennt auf 200 begrenzt |
+
+Eine abgewiesene Anfrage bekommt `429` mit `Retry-After` und `X-RateLimit-Limit`,
+`X-RateLimit-Remaining` sowie `X-RateLimit-Reset` (in Sekunden, `Reset` zählt bis zum
+vollen Eimer). Jede lesende Antwort trägt `Cache-Control: public, max-age=300` und ein
+`ETag`; wer es als `If-None-Match` zurückschickt, bekommt `304` und spart beiden Seiten
+die Arbeit — ein Scan-Ergebnis ändert sich höchstens einmal pro Woche.
+
+Clients werden über die IP-Adresse unterschieden, oder über den API-Schlüssel, wenn
+einer mitgeschickt wird. Hinter einem Proxy stammt die Adresse aus `X-Forwarded-For`,
+aber nur, wenn die Anfrage tatsächlich aus einem Netz in `API_TRUSTED_PROXIES` kam
+(voreingestellt Loopback und die privaten Bereiche, wie im Compose-Setup; `none` schaltet
+es ab). Diesen Kopf kann jeder schreiben — von einem nicht vertrauenswürdigen Gegenüber
+wird er deshalb ignoriert, sonst könnte sich ein Client für jede Anfrage eine neue
+Identität ausdenken und die Grenzen wären wertlos.
+
+Alle Grenzen sind konfigurierbar, siehe `.env.example`; eine Null schaltet eine ab.
+
 ## Rücksicht beim Crawlen
 
 `robots.txt` und Crawl-Delay werden befolgt, jede Domain wird mit höchstens einer

@@ -55,11 +55,91 @@ func TestEmptyEnvFallsBackToDefault(t *testing.T) {
 	}
 }
 
+func TestAPILimitDefaults(t *testing.T) {
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if cfg.API.ReadPerMinute != 120 || cfg.API.ReadBurst != 60 {
+		t.Errorf("read limit: %+v", cfg.API)
+	}
+	// The expensive endpoints must be stricter than the ordinary ones, or the
+	// distinction buys nothing.
+	if cfg.API.ExpensivePerMinute >= cfg.API.ReadPerMinute {
+		t.Errorf("expensive limit %d is not stricter than read limit %d",
+			cfg.API.ExpensivePerMinute, cfg.API.ReadPerMinute)
+	}
+	if cfg.API.KeyPerMinute <= cfg.API.ReadPerMinute {
+		t.Errorf("a key must be worth more than no key: %+v", cfg.API)
+	}
+	if cfg.API.RescanPerAgency != time.Hour || cfg.API.MaxBodyBytes != 64*1024 {
+		t.Errorf("rescan/body defaults: %+v", cfg.API)
+	}
+	if cfg.API.HistoryPoints != 200 || cfg.API.ListItems != 500 {
+		t.Errorf("size caps: %+v", cfg.API)
+	}
+	if len(cfg.API.TrustedProxies) == 0 {
+		t.Error("no trusted proxies by default, nginx would never be believed")
+	}
+}
+
+func TestAPILimitsFromEnv(t *testing.T) {
+	t.Setenv("API_READ_PER_MINUTE", "10")
+	t.Setenv("API_CACHE_MAX_AGE", "90s")
+	t.Setenv("API_TRUSTED_PROXIES", "10.1.0.0/16")
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if cfg.API.ReadPerMinute != 10 || cfg.API.CacheMaxAge != 90*time.Second {
+		t.Fatalf("environment not applied: %+v", cfg.API)
+	}
+	if len(cfg.API.TrustedProxies) != 1 || cfg.API.TrustedProxies[0].String() != "10.1.0.0/16" {
+		t.Fatalf("TrustedProxies = %v", cfg.API.TrustedProxies)
+	}
+}
+
+// Running without a proxy in front must be expressible: then no forwarded header is
+// believed at all.
+func TestTrustedProxiesCanBeEmptied(t *testing.T) {
+	t.Setenv("API_TRUSTED_PROXIES", "none")
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if len(cfg.API.TrustedProxies) != 0 {
+		t.Fatalf("TrustedProxies = %v", cfg.API.TrustedProxies)
+	}
+}
+
+func TestAPIKeysCollectBothVariables(t *testing.T) {
+	t.Setenv("API_KEY", "operator")
+	t.Setenv("API_KEYS", " forschung , presse ,")
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	got := cfg.APIKeys()
+	want := []string{"operator", "forschung", "presse"}
+	if len(got) != len(want) {
+		t.Fatalf("APIKeys() = %v, want %v", got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("APIKeys() = %v, want %v", got, want)
+		}
+	}
+}
+
 func TestLoadRejectsInvalidValues(t *testing.T) {
 	cases := map[string]string{
-		"CRAWL_MAX_PAGES":    "many",
-		"CRAWL_RATE_PER_SEC": "fast",
-		"CRAWL_TIMEOUT":      "soon",
+		"CRAWL_MAX_PAGES":     "many",
+		"CRAWL_RATE_PER_SEC":  "fast",
+		"CRAWL_TIMEOUT":       "soon",
+		"API_READ_PER_MINUTE": "viele",
+		"API_TRUSTED_PROXIES": "10.1.0.0",
 	}
 	for key, value := range cases {
 		t.Run(key, func(t *testing.T) {

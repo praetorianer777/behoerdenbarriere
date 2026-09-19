@@ -99,6 +99,11 @@ export function Methodology() {
         werden die geprüften Adressen, die gefundenen Verstöße mit einem kurzen Ausschnitt des
         betroffenen HTML und die daraus errechneten Zahlen.
       </p>
+      <p className="mt-4">
+        Die Daten sind öffentlich und dürfen auch am Stück abgerufen werden; die Schnittstelle
+        begrenzt nur, wie viele Anfragen pro Minute von einer Adresse kommen, damit ein einzelner
+        Abruf die Seite nicht für alle lahmlegt.
+      </p>
     </div>
   )
 }
