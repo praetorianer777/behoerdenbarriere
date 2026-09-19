@@ -30,6 +30,7 @@ type Queries interface {
 	Stats(ctx context.Context) (*store.Stats, error)
 	States(ctx context.Context) ([]string, error)
 	EnqueueScan(ctx context.Context, agencyID int64) error
+	Usage(ctx context.Context, days int) (*store.UsageSummary, error)
 }
 
 func (s *Server) handleAgencies(w http.ResponseWriter, r *http.Request) {

@@ -134,3 +134,25 @@ export interface Stats {
   states: string[]
   updated_at?: string
 }
+
+export interface UsageDay {
+  day: string
+  visitors: number
+  views: number
+}
+
+export interface UsageKey {
+  key: string
+  count: number
+}
+
+export interface Usage {
+  since: string
+  until: string
+  visitors: number
+  views: number
+  days: UsageDay[]
+  pages: UsageKey[]
+  agencies: UsageKey[]
+  endpoints: UsageKey[]
+}

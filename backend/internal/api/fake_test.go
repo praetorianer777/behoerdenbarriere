@@ -17,19 +17,20 @@ type fakeDB struct {
 	total    int
 	filter   store.AgencyFilter
 
-	history  []trend.Point
-	scanIDs  []int64
-	scan     *store.ScanDetail
-	rules    map[int64][]scoring.RuleSummary
-	pages    []store.PageDetail
-	stats    *store.Stats
-	states   []string
-	queued   []int64
-	failWith error
-
 	// calls counts every query, so a test can show that a rejected request never
 	// reached the database.
-	calls int
+	calls     int
+	history   []trend.Point
+	scanIDs   []int64
+	scan      *store.ScanDetail
+	rules     map[int64][]scoring.RuleSummary
+	pages     []store.PageDetail
+	stats     *store.Stats
+	states    []string
+	queued    []int64
+	usage     *store.UsageSummary
+	usageDays int
+	failWith  error
 }
 
 func (f *fakeDB) Ping(context.Context) error { f.calls++; return f.pingErr }
@@ -125,6 +126,17 @@ func (f *fakeDB) EnqueueScan(_ context.Context, agencyID int64) error {
 	}
 	f.queued = append(f.queued, agencyID)
 	return nil
+}
+
+func (f *fakeDB) Usage(_ context.Context, days int) (*store.UsageSummary, error) {
+	f.usageDays = days
+	if f.failWith != nil {
+		return nil, f.failWith
+	}
+	if f.usage == nil {
+		return &store.UsageSummary{}, nil
+	}
+	return f.usage, nil
 }
 
 var errBoom = errors.New("database unreachable")

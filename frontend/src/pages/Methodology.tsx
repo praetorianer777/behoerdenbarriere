@@ -91,6 +91,16 @@ export function Methodology() {
         sauberes Banner ist keine saubere Website.
       </p>
 
+      <h2 className="mt-8 text-xl font-semibold">Was wir über Besuche zählen</h2>
+      <p className="mt-2">
+        Wir zählen Seitenaufrufe und Besuche in unserer eigenen API, ohne Cookie, ohne Kennung im
+        Browser und ohne fremdes Skript. Gespeichert werden nur Tageszähler je Seite, Behörde und
+        API-Endpunkt. Ein Besuch entsteht aus einem Hash von IP-Adresse und Browserkennung, dessen
+        Schlüssel täglich neu gezogen und nie gespeichert wird — IP-Adressen selbst werden nirgends
+        abgelegt, und über Tage hinweg lässt sich nichts zusammenführen. Die Zahlen stehen offen
+        auf der <a href="/statistik" className="underline">Statistikseite</a>.
+      </p>
+
       <h2 className="mt-8 text-xl font-semibold">Rücksicht beim Prüfen</h2>
       <p className="mt-2">
         Wir befolgen <code>robots.txt</code> samt Crawl-Delay und fragen jede Domain mit höchstens

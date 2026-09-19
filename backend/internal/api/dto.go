@@ -118,6 +118,53 @@ type statsDTO struct {
 	UpdatedAt *time.Time     `json:"updated_at,omitempty"`
 }
 
+type usageDayDTO struct {
+	Day      string `json:"day"`
+	Visitors int64  `json:"visitors"`
+	Views    int64  `json:"views"`
+}
+
+type usageKeyDTO struct {
+	Key   string `json:"key"`
+	Count int64  `json:"count"`
+}
+
+type usageDTO struct {
+	Since     string        `json:"since"`
+	Until     string        `json:"until"`
+	Visitors  int64         `json:"visitors"`
+	Views     int64         `json:"views"`
+	Days      []usageDayDTO `json:"days"`
+	Pages     []usageKeyDTO `json:"pages"`
+	Agencies  []usageKeyDTO `json:"agencies"`
+	Endpoints []usageKeyDTO `json:"endpoints"`
+}
+
+func toUsageDTO(u store.UsageSummary) usageDTO {
+	dto := usageDTO{
+		Since: u.Since.Format(time.DateOnly), Until: u.Until.Format(time.DateOnly),
+		Visitors: u.Visitors, Views: u.Views,
+		Days:      make([]usageDayDTO, 0, len(u.Days)),
+		Pages:     usageKeyDTOs(u.Pages),
+		Agencies:  usageKeyDTOs(u.Agencies),
+		Endpoints: usageKeyDTOs(u.Endpoints),
+	}
+	for _, d := range u.Days {
+		dto.Days = append(dto.Days, usageDayDTO{
+			Day: d.Day.Format(time.DateOnly), Visitors: d.Visitors, Views: d.Views,
+		})
+	}
+	return dto
+}
+
+func usageKeyDTOs(in []store.UsageKey) []usageKeyDTO {
+	out := make([]usageKeyDTO, 0, len(in))
+	for _, k := range in {
+		out = append(out, usageKeyDTO{Key: k.Key, Count: k.Count})
+	}
+	return out
+}
+
 func toAgencyDTO(a store.AgencyListing) agencyDTO {
 	dto := agencyDTO{
 		Slug: a.Slug, Name: a.Name, URL: a.URL, Level: string(a.Level),

@@ -1,12 +1,22 @@
-import { NavLink, Outlet } from 'react-router'
+import { useEffect } from 'react'
+import { NavLink, Outlet, useLocation } from 'react-router'
+
+import { api } from '../api/client'
 
 const navigation = [
   { to: '/', label: 'Ranking', end: true },
   { to: '/dashboard', label: 'Überblick', end: false },
   { to: '/methodik', label: 'Methodik', end: false },
+  { to: '/statistik', label: 'Statistik', end: false },
 ]
 
 export function Layout() {
+  const { pathname } = useLocation()
+
+  useEffect(() => {
+    void api.view(pathname)
+  }, [pathname])
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       {/* Der Sprunglink ist das erste fokussierbare Element der Seite und wird
@@ -56,6 +66,10 @@ export function Layout() {
             Kriterien — der Score ist ein Hinweis, kein BITV-Prüfbericht.{' '}
             <NavLink to="/methodik" className="underline">
               Wie wir prüfen
+            </NavLink>{' '}
+            ·{' '}
+            <NavLink to="/statistik" className="underline">
+              Nutzung dieser Seite
             </NavLink>
           </p>
         </div>

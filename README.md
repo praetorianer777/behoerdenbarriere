@@ -21,8 +21,8 @@ Im Aufbau. Der Fortschritt steht in den
 | `backend/cmd/worker` | Go | Crawl, Prüfung, Bewertung, Zeitplan |
 | `backend/internal/scanner` | chromedp, axe-core | Seite laden, prüfen, Links auslesen |
 | `backend/internal/scoring` | Go | Befunde in Score und Note umrechnen |
-| `frontend` | React, Tailwind | Ranking, Detail, Dashboard, Methodik |
-| Postgres | | Behörden, Scans, Seiten, Verstöße, Job-Queue |
+| `frontend` | React, Tailwind | Ranking, Detail, Dashboard, Methodik, Statistik |
+| Postgres | | Behörden, Scans, Seiten, Verstöße, Job-Queue, Nutzungszähler |
 
 ## Loslegen
 
@@ -96,6 +96,14 @@ Anfrage pro Sekunde abgefragt, der User-Agent nennt das Projekt. Geprüft wird n
 öffentlich erreichbar ist: keine Anmeldungen, keine abgeschickten Formulare, keine
 personenbezogenen Daten. Wer seine Seiten nicht im Ranking sehen möchte, kann sie
 abschalten lassen.
+
+## Zahlen über die eigene Seite
+
+Wie oft welche Seite aufgerufen wird, zählt die API selbst — ohne Cookie, ohne fremdes
+Skript, ohne Kennung im Browser. Gespeichert werden nur Tageszähler je Seite, Behörde und
+API-Endpunkt. Ein Besuch ist ein Hash aus IP-Adresse und Browserkennung, dessen Schlüssel
+täglich neu gezogen und nie gespeichert wird; IP-Adressen selbst werden nirgends abgelegt.
+Die Zahlen stehen offen unter `/statistik`.
 
 ## Lizenz
 

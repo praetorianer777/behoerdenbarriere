@@ -13,6 +13,7 @@ import (
 	"github.com/praetorianer777/behoerdenbarriere/internal/api"
 	"github.com/praetorianer777/behoerdenbarriere/internal/config"
 	"github.com/praetorianer777/behoerdenbarriere/internal/store"
+	"github.com/praetorianer777/behoerdenbarriere/internal/usage"
 )
 
 func main() {
@@ -40,7 +41,7 @@ func run() error {
 		return err
 	}
 
-	handler := api.NewServer(db, api.Options{
+	server := api.NewServer(db, api.Options{
 		CORSOrigin: cfg.CORSOrigin,
 		APIKeys:    cfg.APIKeys(),
 		Limits: api.Limits{
@@ -59,13 +60,26 @@ func run() error {
 			BucketIdleTTL:      cfg.API.BucketIdleTTL,
 			RequestTimeout:     cfg.API.RequestTimeout,
 		},
-	}).Routes()
+	})
+
+	if cfg.Usage.Enabled {
+		recorder := usage.NewRecorder(db, cfg.Usage.RetainDays)
+		server.WithUsage(recorder)
+		done := make(chan struct{})
+		go func() {
+			defer close(done)
+			recorder.Run(ctx, cfg.Usage.FlushInterval)
+		}()
+		// The last counts are only in memory; waiting for the flush is what keeps
+		// them.
+		defer func() { <-done }()
+	}
 
 	// Timeouts on every stage: a client that opens a connection and then falls silent
 	// must not hold a slot for good.
 	srv := &http.Server{
 		Addr:              cfg.APIAddr,
-		Handler:           handler,
+		Handler:           server.Routes(),
 		ReadHeaderTimeout: 10 * time.Second,
 		ReadTimeout:       cfg.API.ReadTimeout,
 		WriteTimeout:      cfg.API.WriteTimeout,

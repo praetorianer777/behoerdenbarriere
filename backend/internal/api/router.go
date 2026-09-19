@@ -67,6 +67,7 @@ type Server struct {
 	limits        Limits
 	limiter       *limiter
 	rescanLimiter *limiter
+	usage         Recorder
 	log           *slog.Logger
 }
 
@@ -99,6 +100,13 @@ func maxDuration(a, b time.Duration) time.Duration {
 	return b
 }
 
+// WithUsage turns the usage counter on. Without it the API serves the same, only
+// without counting — the statistics are a feature of the site, not a condition of it.
+func (s *Server) WithUsage(recorder Recorder) *Server {
+	s.usage = recorder
+	return s
+}
+
 func (s *Server) Routes() http.Handler {
 	read := perMinute(s.limits.ReadPerMinute, s.limits.ReadBurst)
 	// The statistics and the rule catalogue aggregate over every scan, so they are the
@@ -120,6 +128,10 @@ func (s *Server) Routes() http.Handler {
 	r.Get("/readyz", s.handleReady)
 
 	r.Route("/api/v1", func(r chi.Router) {
+		// Counting wraps everything below it, so a request that a limit refuses is
+		// not counted as a visit — the numbers should say what was served.
+		r.Use(s.usageCounter)
+
 		r.Group(func(r chi.Router) {
 			r.Use(s.rateLimit("read", read, keyed), cache(s.limits.CacheMaxAge))
 			r.Get("/agencies", s.handleAgencies)
@@ -131,6 +143,13 @@ func (s *Server) Routes() http.Handler {
 			r.Use(s.rateLimit("expensive", expensive, keyed), cache(s.limits.CacheMaxAge))
 			r.Get("/stats", s.handleStats)
 			r.Get("/rules", s.handleRules)
+			r.Get("/usage", s.handleUsage)
+		})
+		r.Group(func(r chi.Router) {
+			// The page ping travels with every navigation, so it belongs on the read
+			// budget; caching it would be pointless, it answers nothing.
+			r.Use(s.rateLimit("read", read, keyed))
+			r.Post("/view", s.handleView)
 		})
 		r.Group(func(r chi.Router) {
 			r.Use(s.rateLimit("write", expensive, keyed))
@@ -181,7 +200,7 @@ func (s *Server) cors(next http.Handler) http.Handler {
 			w.Header().Set("Access-Control-Allow-Origin", s.corsOrigin)
 			w.Header().Set("Vary", "Origin")
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-API-Key")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-API-Key, X-Page")
 		}
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusNoContent)
