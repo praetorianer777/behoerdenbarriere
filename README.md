@@ -57,6 +57,36 @@ Barrierefreiheit, Kontakt, Formulare — doppelt.
 tatsächlich beschreibt, kann kein Programm beurteilen. Der Score ist ein Indikator und
 kein BITV-Prüfbericht, und eine gute Note ersetzt keine manuelle Prüfung.
 
+## API limits
+
+The data is public and meant to be used in bulk. The limits below exist for one reason
+only: a single client must not be able to take the site down for everyone.
+
+| What | Limit | Notes |
+| --- | --- | --- |
+| Read endpoints (`/agencies`, `/scans/{id}`) | 120 requests per minute, burst 60 | per client |
+| Statistics and rule catalogue (`/stats`, `/rules`) | 20 per minute, burst 10 | they aggregate over every scan |
+| With an API key (`X-API-Key`) | 600 per minute, burst 200 | ask for a key instead of scraping around the limit |
+| `POST /agencies/{slug}/rescan` | key required, plus one rescan per authority per hour | the traffic lands on that authority |
+| Request body | 64 KiB | |
+| History points per authority | 200 | longer histories are truncated |
+| Items per list in one response | 500 | the page size is capped at 200 separately |
+
+A rejected request answers `429` with `Retry-After` and `X-RateLimit-Limit`,
+`X-RateLimit-Remaining` and `X-RateLimit-Reset` (all seconds, `Reset` counts to a full
+bucket). Every read answer carries `Cache-Control: public, max-age=300` and an `ETag`;
+sending it back as `If-None-Match` gets a `304` and costs neither side anything, which
+is worth doing — a scan result changes at most once a week.
+
+Clients are told apart by IP address, or by API key if one is presented. Behind a proxy
+the address is taken from `X-Forwarded-For`, but only when the request actually came
+from a network listed in `API_TRUSTED_PROXIES` (by default loopback and the private
+ranges, which is what the compose setup uses; `none` disables it). Anyone can write that
+header, so from an untrusted peer it is ignored — otherwise a client could invent a new
+identity per request and the limits would mean nothing.
+
+Every limit is configurable, see `.env.example`; a zero switches one off.
+
 ## Rücksicht beim Crawlen
 
 `robots.txt` und Crawl-Delay werden befolgt, jede Domain wird mit höchstens einer

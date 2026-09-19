@@ -40,10 +40,37 @@ func run() error {
 		return err
 	}
 
+	handler := api.NewServer(db, api.Options{
+		CORSOrigin: cfg.CORSOrigin,
+		APIKeys:    cfg.APIKeys(),
+		Limits: api.Limits{
+			ReadPerMinute:      cfg.API.ReadPerMinute,
+			ReadBurst:          cfg.API.ReadBurst,
+			ExpensivePerMinute: cfg.API.ExpensivePerMinute,
+			ExpensiveBurst:     cfg.API.ExpensiveBurst,
+			KeyPerMinute:       cfg.API.KeyPerMinute,
+			KeyBurst:           cfg.API.KeyBurst,
+			TrustedProxies:     cfg.API.TrustedProxies,
+			RescanPerAgency:    cfg.API.RescanPerAgency,
+			MaxBodyBytes:       cfg.API.MaxBodyBytes,
+			HistoryPoints:      cfg.API.HistoryPoints,
+			ListItems:          cfg.API.ListItems,
+			CacheMaxAge:        cfg.API.CacheMaxAge,
+			BucketIdleTTL:      cfg.API.BucketIdleTTL,
+			RequestTimeout:     cfg.API.RequestTimeout,
+		},
+	}).Routes()
+
+	// Timeouts on every stage: a client that opens a connection and then falls silent
+	// must not hold a slot for good.
 	srv := &http.Server{
 		Addr:              cfg.APIAddr,
-		Handler:           api.NewServer(db, cfg.CORSOrigin, cfg.APIKey).Routes(),
+		Handler:           handler,
 		ReadHeaderTimeout: 10 * time.Second,
+		ReadTimeout:       cfg.API.ReadTimeout,
+		WriteTimeout:      cfg.API.WriteTimeout,
+		IdleTimeout:       cfg.API.IdleTimeout,
+		MaxHeaderBytes:    16 << 10,
 	}
 
 	errCh := make(chan error, 1)

@@ -23,8 +23,14 @@ func request(t *testing.T, db Queries, method, path string, header map[string]st
 		req.Header.Set(k, v)
 	}
 	rec := httptest.NewRecorder()
-	NewServer(db, "", "geheim").Routes().ServeHTTP(rec, req)
+	testServer(db).Routes().ServeHTTP(rec, req)
 	return rec
+}
+
+// testServer is the API as it runs in production, with the default limits and one
+// configured key.
+func testServer(db Queries) *Server {
+	return NewServer(db, Options{APIKeys: []string{"geheim"}, Limits: DefaultLimits()})
 }
 
 func decode[T any](t *testing.T, rec *httptest.ResponseRecorder) T {
@@ -320,7 +326,7 @@ func TestRescanRefusedWhenNoKeyIsConfigured(t *testing.T) {
 	db := &fakeDB{agencies: sampleAgencies()}
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/agencies/bmi/rescan", nil)
-	NewServer(db, "", "").Routes().ServeHTTP(rec, req)
+	NewServer(db, Options{Limits: DefaultLimits()}).Routes().ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusUnauthorized {
 		t.Fatalf("status = %d", rec.Code)

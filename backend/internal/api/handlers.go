@@ -65,12 +65,13 @@ func (s *Server) handleAgency(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	history, err := s.db.ScanHistory(r.Context(), agency.ID, 200)
+	history, err := s.db.ScanHistory(r.Context(), agency.ID, s.limits.HistoryPoints)
 	if err != nil {
 		s.fail(w, r, err)
 		return
 	}
 
+	history = clip(history, s.limits.HistoryPoints)
 	detail := agencyDetailDTO{
 		agencyDTO: toAgencyDTO(*agency),
 		Subscores: subscoresDTO{agency.Perceivable, agency.Operable, agency.Understandable, agency.Robust},
@@ -155,9 +156,18 @@ func (s *Server) scanDetail(ctx context.Context, id int64) (*scanDTO, error) {
 	}
 
 	dto := toScanDTO(*detail)
-	dto.Rules = toRuleDTOs(rules)
-	dto.Pages = toPageDTOs(pages)
+	dto.Rules = toRuleDTOs(clip(rules, s.limits.ListItems))
+	dto.Pages = toPageDTOs(clip(pages, s.limits.ListItems))
 	return &dto, nil
+}
+
+// clip keeps a response from growing with the database. A scan of a large authority
+// can carry thousands of pages, and nobody reads them in one answer.
+func clip[T any](items []T, limit int) []T {
+	if limit > 0 && len(items) > limit {
+		return items[:limit]
+	}
+	return items
 }
 
 func (s *Server) handleStats(w http.ResponseWriter, r *http.Request) {
@@ -172,16 +182,18 @@ func (s *Server) handleStats(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	topRules := clip(stats.TopRules, s.limits.ListItems)
 	out := statsDTO{
 		Agencies: stats.Agencies, Scanned: stats.Scanned, AvgScore: stats.AvgScore,
-		Grades: stats.Grades, States: states, UpdatedAt: stats.UpdatedAt,
-		ByLevel: groups(stats.ByLevel), ByState: groups(stats.ByState),
-		TopRules: make([]ruleCountDTO, 0, len(stats.TopRules)),
+		Grades: stats.Grades, States: clip(states, s.limits.ListItems), UpdatedAt: stats.UpdatedAt,
+		ByLevel:  groups(clip(stats.ByLevel, s.limits.ListItems)),
+		ByState:  groups(clip(stats.ByState, s.limits.ListItems)),
+		TopRules: make([]ruleCountDTO, 0, len(topRules)),
 	}
 	if out.Grades == nil {
 		out.Grades = map[string]int{}
 	}
-	for _, r := range stats.TopRules {
+	for _, r := range topRules {
 		out.TopRules = append(out.TopRules, ruleCountDTO{
 			RuleID: r.RuleID, Impact: r.Impact, Agencies: r.Agencies, Pages: r.Pages,
 		})
@@ -195,8 +207,9 @@ func (s *Server) handleRules(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, r, err)
 		return
 	}
-	out := make([]ruleCountDTO, 0, len(stats.TopRules))
-	for _, r := range stats.TopRules {
+	rules := clip(stats.TopRules, s.limits.ListItems)
+	out := make([]ruleCountDTO, 0, len(rules))
+	for _, r := range rules {
 		out = append(out, ruleCountDTO{
 			RuleID: r.RuleID, Impact: r.Impact, Agencies: r.Agencies, Pages: r.Pages,
 		})
@@ -207,12 +220,27 @@ func (s *Server) handleRules(w http.ResponseWriter, r *http.Request) {
 // handleRescan queues an authority. It changes something and costs the authority
 // traffic, so it needs the API key; queueing twice is harmless, the queue is
 // idempotent.
+//
+// The per-authority limit is counted for the authority, not for the caller: the
+// traffic lands on that authority's servers however many keys ask for it.
 func (s *Server) handleRescan(w http.ResponseWriter, r *http.Request) {
-	if s.apiKey == "" || r.Header.Get("X-API-Key") != s.apiKey {
+	if !s.hasKey(r.Header.Get("X-API-Key")) {
 		writeError(w, http.StatusUnauthorized, "api key missing or wrong")
 		return
 	}
-	agencyID, err := s.db.AgencyIDBySlug(r.Context(), chi.URLParam(r, "slug"))
+	slug := chi.URLParam(r, "slug")
+	if s.limits.RescanPerAgency > 0 {
+		d := s.rescanLimiter.allow("rescan|"+slug, rate{
+			perSecond: 1 / s.limits.RescanPerAgency.Seconds(), burst: 1,
+		})
+		writeLimitHeaders(w, d)
+		if !d.ok {
+			w.Header().Set("Retry-After", strconv.Itoa(seconds(d.retryAfter)))
+			writeError(w, http.StatusTooManyRequests, "this authority was queued recently")
+			return
+		}
+	}
+	agencyID, err := s.db.AgencyIDBySlug(r.Context(), slug)
 	if err != nil {
 		s.fail(w, r, err)
 		return
