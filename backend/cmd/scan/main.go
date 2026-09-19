@@ -19,19 +19,22 @@ import (
 func main() {
 	url := flag.String("url", "", "URL to check")
 	links := flag.Bool("links", false, "also print the links found")
+	// For the pipeline: our own site must not ship a violation, so a finding has to
+	// fail the build and not merely be printed.
+	strict := flag.Bool("strict", false, "exit non-zero if any violation is found")
 	flag.Parse()
 
 	if *url == "" {
 		fmt.Fprintln(os.Stderr, "usage: scan -url https://www.example.de")
 		os.Exit(2)
 	}
-	if err := run(*url, *links); err != nil {
+	if err := run(*url, *links, *strict); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 }
 
-func run(url string, withLinks bool) error {
+func run(url string, withLinks, strict bool) error {
 	cfg, err := config.Load()
 	if err != nil {
 		return err
@@ -75,6 +78,9 @@ func run(url string, withLinks bool) error {
 	}
 	if got.Result.Failed() {
 		return fmt.Errorf("page could not be checked: %s", got.Result.Err)
+	}
+	if strict && len(got.Result.Violations) > 0 {
+		return fmt.Errorf("%d rules violated on %s", len(got.Result.Violations), url)
 	}
 	return nil
 }
