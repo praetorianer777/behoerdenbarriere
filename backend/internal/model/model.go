@@ -57,6 +57,18 @@ type Violation struct {
 	SampleTarget string    `json:"sample_target,omitempty"`
 }
 
+// Consent says what happened to a consent layer before the page was checked. It
+// belongs in the result: a page that stayed behind a banner was not really checked,
+// and a clean banner must not be read as a clean site.
+type Consent string
+
+const (
+	ConsentNone     Consent = "none"     // no layer found
+	ConsentDeclined Consent = "declined" // declined, which is what the site must work without
+	ConsentAccepted Consent = "accepted" // nothing to decline, so accepted to get to the page
+	ConsentBlocked  Consent = "blocked"  // the layer stayed; what follows describes the banner
+)
+
 // PageResult is the outcome of checking a single page.
 type PageResult struct {
 	URL        string      `json:"url"`
@@ -65,6 +77,7 @@ type PageResult struct {
 	IsEntry    bool        `json:"is_entry"`
 	Priority   bool        `json:"priority"`
 	HTTPStatus int         `json:"http_status"`
+	Consent    Consent     `json:"consent,omitempty"`
 	DOMNodes   int         `json:"dom_nodes"`
 	LoadMS     int         `json:"load_ms"`
 	Violations []Violation `json:"violations"`

@@ -162,16 +162,19 @@ func (s *Scanner) Scan(ctx context.Context, url string) PageScan {
 	chromedp.ListenTarget(runCtx, status.handle)
 
 	var infoJSON, axeJSON string
+	consent := model.ConsentNone
 	started := time.Now()
 	err := chromedp.Run(runCtx,
 		network.Enable(),
 		chromedp.Navigate(url),
 		chromedp.WaitReady("body", chromedp.ByQuery),
 		waitForQuiet(),
+		dismissConsent(&consent),
 		evalJSON(pageInfoScript, &infoJSON),
 		chromedp.Evaluate(axeJS, nil),
 		evalPromise(axeRunScript, &axeJSON),
 	)
+	out.Result.Consent = consent
 	out.Result.LoadMS = int(time.Since(started).Milliseconds())
 	out.Result.HTTPStatus = status.code()
 
@@ -201,6 +204,57 @@ func (s *Scanner) Scan(ctx context.Context, url string) PageScan {
 	}
 	out.Result.Violations = toViolations(axeRes)
 	return out
+}
+
+// dismissConsent clears the consent layer out of the way before axe runs, and records
+// what it took. A failure here is not a failure of the scan: the page is then checked
+// as it stands, marked as blocked, and the result says so.
+func dismissConsent(out *model.Consent) chromedp.Action {
+	return chromedp.ActionFunc(func(ctx context.Context) error {
+		step, cancel := context.WithTimeout(ctx, 10*time.Second)
+		defer cancel()
+
+		var raw string
+		if err := chromedp.Run(step, chromedp.Evaluate(consentScript, &raw)); err != nil {
+			return nil
+		}
+		var attempt struct {
+			State string `json:"state"`
+		}
+		if err := json.Unmarshal([]byte(raw), &attempt); err != nil {
+			return nil
+		}
+		if attempt.State == "none" {
+			*out = model.ConsentNone
+			return nil
+		}
+		if attempt.State == "blocked" {
+			*out = model.ConsentBlocked
+			return nil
+		}
+
+		// The layer needs a moment to disappear, and the page underneath a moment to
+		// settle before it is judged.
+		var checkRaw string
+		_ = chromedp.Run(step,
+			chromedp.Sleep(1200*time.Millisecond),
+			chromedp.Evaluate(consentCheckScript, &checkRaw),
+		)
+		var check struct {
+			Blocked bool `json:"blocked"`
+		}
+		if err := json.Unmarshal([]byte(checkRaw), &check); err == nil && check.Blocked {
+			*out = model.ConsentBlocked
+			return nil
+		}
+
+		if attempt.State == "declined" {
+			*out = model.ConsentDeclined
+		} else {
+			*out = model.ConsentAccepted
+		}
+		return nil
+	})
 }
 
 // Government CMSes often load navigation and consent banners late. A short settling
