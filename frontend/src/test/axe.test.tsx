@@ -7,8 +7,9 @@ import { api } from '../api/client'
 import { Dashboard } from '../pages/Dashboard'
 import { Methodology } from '../pages/Methodology'
 import { Ranking } from '../pages/Ranking'
+import { Statistics } from '../pages/Statistics'
 import { AgencyPage } from '../pages/Agency'
-import { agencyDetail, agencyList, latestScan, stats } from './fixtures'
+import { agencyDetail, agencyList, latestScan, stats, usage } from './fixtures'
 import { renderPage } from './render'
 
 expect.extend(matchers)
@@ -31,6 +32,7 @@ describe('Barrierefreiheit der eigenen Seiten', () => {
     vi.spyOn(api, 'stats').mockResolvedValue(stats)
     vi.spyOn(api, 'agency').mockResolvedValue(agencyDetail)
     vi.spyOn(api, 'latestScan').mockResolvedValue(latestScan)
+    vi.spyOn(api, 'usage').mockResolvedValue(usage)
   })
   afterEach(() => vi.restoreAllMocks())
 
@@ -52,6 +54,12 @@ describe('Barrierefreiheit der eigenen Seiten', () => {
   it('Überblick', async () => {
     const { container } = renderPage(<Dashboard />)
     await screen.findByRole('heading', { level: 1, name: 'Überblick' })
+    await expectNoViolations(container)
+  })
+
+  it('Statistik', async () => {
+    const { container } = renderPage(<Statistics />)
+    await screen.findByRole('heading', { level: 1, name: 'Nutzung dieser Seite' })
     await expectNoViolations(container)
   })
 

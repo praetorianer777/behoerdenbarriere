@@ -19,11 +19,19 @@ type Server struct {
 	db         Queries
 	corsOrigin string
 	apiKey     string
+	usage      Recorder
 	log        *slog.Logger
 }
 
 func NewServer(db Queries, corsOrigin, apiKey string) *Server {
 	return &Server{db: db, corsOrigin: corsOrigin, apiKey: apiKey, log: slog.Default()}
+}
+
+// WithUsage turns the usage counter on. Without it the API serves the same, only
+// without counting — the statistics are a feature of the site, not a condition of it.
+func (s *Server) WithUsage(recorder Recorder) *Server {
+	s.usage = recorder
+	return s
 }
 
 func (s *Server) Routes() http.Handler {
@@ -36,6 +44,7 @@ func (s *Server) Routes() http.Handler {
 	r.Get("/readyz", s.handleReady)
 
 	r.Route("/api/v1", func(r chi.Router) {
+		r.Use(s.usageCounter)
 		r.Get("/agencies", s.handleAgencies)
 		r.Get("/agencies/{slug}", s.handleAgency)
 		r.Get("/agencies/{slug}/scans/latest", s.handleLatestScan)
@@ -43,6 +52,8 @@ func (s *Server) Routes() http.Handler {
 		r.Get("/scans/{id}", s.handleScan)
 		r.Get("/stats", s.handleStats)
 		r.Get("/rules", s.handleRules)
+		r.Get("/usage", s.handleUsage)
+		r.Post("/view", s.handleView)
 	})
 	return r
 }
@@ -88,7 +99,7 @@ func (s *Server) cors(next http.Handler) http.Handler {
 			w.Header().Set("Access-Control-Allow-Origin", s.corsOrigin)
 			w.Header().Set("Vary", "Origin")
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-API-Key")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-API-Key, X-Page")
 		}
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusNoContent)

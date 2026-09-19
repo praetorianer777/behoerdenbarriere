@@ -1,4 +1,4 @@
-import type { AgencyDetail, AgencyList, Scan, Stats } from '../api/types'
+import type { AgencyDetail, AgencyList, Scan, Stats, Usage } from '../api/types'
 
 export const agencyList: AgencyList = {
   items: [
@@ -118,4 +118,22 @@ export const stats: Stats = {
   top_rules: [{ rule_id: 'color-contrast', impact: 'serious', agencies: 2, pages: 8 }],
   states: ['Bayern', 'Schleswig-Holstein'],
   updated_at: '2026-09-18T09:00:00Z',
+}
+
+export const usage: Usage = {
+  since: '2026-09-13',
+  until: '2026-09-19',
+  visitors: 31,
+  views: 84,
+  days: [
+    { day: '2026-09-18', visitors: 12, views: 30 },
+    { day: '2026-09-19', visitors: 19, views: 54 },
+  ],
+  pages: [
+    { key: '/', count: 50 },
+    { key: '/behoerde/:slug', count: 24 },
+    { key: '/methodik', count: 10 },
+  ],
+  agencies: [{ key: 'bundesregierung', count: 18 }],
+  endpoints: [{ key: 'GET /api/v1/agencies', count: 120 }],
 }

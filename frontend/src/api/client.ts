@@ -1,4 +1,4 @@
-import type { AgencyDetail, AgencyList, Scan, Stats } from './types'
+import type { AgencyDetail, AgencyList, Scan, Stats, Usage } from './types'
 
 const base = import.meta.env.VITE_API_URL ?? '/api/v1'
 
@@ -39,4 +39,17 @@ export const api = {
   latestScan: (slug: string, signal?: AbortSignal) =>
     get<Scan>(`/agencies/${slug}/scans/latest`, signal),
   stats: (signal?: AbortSignal) => get<Stats>('/stats', signal),
+  usage: (days: number, signal?: AbortSignal) => get<Usage>(`/usage?days=${days}`, signal),
+
+  /**
+   * Meldet der eigenen API, welche Seite aufgerufen wurde. Gezählt wird dort — ohne
+   * Cookie, ohne Kennung, ohne fremden Dienst. Schlägt der Aufruf fehl, fehlt eine
+   * Zahl in der Statistik und sonst nichts, deshalb wird der Fehler verschluckt.
+   */
+  view: (path: string) =>
+    fetch(`${base}/view`, {
+      method: 'POST',
+      headers: { 'X-Page': path },
+      keepalive: true,
+    }).catch(() => undefined),
 }

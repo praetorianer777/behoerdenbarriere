@@ -22,6 +22,21 @@ func TestLoadDefaults(t *testing.T) {
 	if cfg.Worker.RescanInterval != 168*time.Hour {
 		t.Errorf("RescanInterval = %v", cfg.Worker.RescanInterval)
 	}
+	if !cfg.Usage.Enabled || cfg.Usage.RetainDays != 30 {
+		t.Errorf("usage defaults: %+v", cfg.Usage)
+	}
+}
+
+func TestUsageCanBeTurnedOff(t *testing.T) {
+	t.Setenv("USAGE_ENABLED", "false")
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if cfg.Usage.Enabled {
+		t.Fatal("USAGE_ENABLED=false was ignored")
+	}
 }
 
 func TestLoadFromEnv(t *testing.T) {
@@ -60,6 +75,7 @@ func TestLoadRejectsInvalidValues(t *testing.T) {
 		"CRAWL_MAX_PAGES":    "many",
 		"CRAWL_RATE_PER_SEC": "fast",
 		"CRAWL_TIMEOUT":      "soon",
+		"USAGE_ENABLED":      "vielleicht",
 	}
 	for key, value := range cases {
 		t.Run(key, func(t *testing.T) {

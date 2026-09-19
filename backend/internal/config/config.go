@@ -15,9 +15,19 @@ type Config struct {
 	CORSOrigin  string
 	LogLevel    string
 
+	Usage  UsageConfig
 	Crawl  CrawlConfig
 	Scan   ScanConfig
 	Worker WorkerConfig
+}
+
+// UsageConfig steers the usage counter. FlushInterval is how long counts wait in
+// memory before they are written; RetainDays how long the daily visitor hashes are
+// kept before they are deleted.
+type UsageConfig struct {
+	Enabled       bool
+	FlushInterval time.Duration
+	RetainDays    int
 }
 
 type CrawlConfig struct {
@@ -48,6 +58,15 @@ func Load() (*Config, error) {
 	}
 
 	var err error
+	if c.Usage.Enabled, err = envBool("USAGE_ENABLED", true); err != nil {
+		return nil, err
+	}
+	if c.Usage.FlushInterval, err = envDuration("USAGE_FLUSH_INTERVAL", 10*time.Second); err != nil {
+		return nil, err
+	}
+	if c.Usage.RetainDays, err = envInt("USAGE_RETAIN_DAYS", 30); err != nil {
+		return nil, err
+	}
 	if c.Crawl.MaxPages, err = envInt("CRAWL_MAX_PAGES", 100); err != nil {
 		return nil, err
 	}
@@ -90,6 +109,18 @@ func envInt(key string, def int) (int, error) {
 	v, err := strconv.Atoi(raw)
 	if err != nil {
 		return 0, fmt.Errorf("%s: %w", key, err)
+	}
+	return v, nil
+}
+
+func envBool(key string, def bool) (bool, error) {
+	raw, ok := os.LookupEnv(key)
+	if !ok || raw == "" {
+		return def, nil
+	}
+	v, err := strconv.ParseBool(raw)
+	if err != nil {
+		return false, fmt.Errorf("%s: %w", key, err)
 	}
 	return v, nil
 }

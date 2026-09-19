@@ -13,6 +13,7 @@ import (
 	"github.com/praetorianer777/behoerdenbarriere/internal/api"
 	"github.com/praetorianer777/behoerdenbarriere/internal/config"
 	"github.com/praetorianer777/behoerdenbarriere/internal/store"
+	"github.com/praetorianer777/behoerdenbarriere/internal/usage"
 )
 
 func main() {
@@ -40,9 +41,23 @@ func run() error {
 		return err
 	}
 
+	server := api.NewServer(db, cfg.CORSOrigin, cfg.APIKey)
+	if cfg.Usage.Enabled {
+		recorder := usage.NewRecorder(db, cfg.Usage.RetainDays)
+		server.WithUsage(recorder)
+		done := make(chan struct{})
+		go func() {
+			defer close(done)
+			recorder.Run(ctx, cfg.Usage.FlushInterval)
+		}()
+		// The last counts are only in memory; waiting for the flush is what keeps
+		// them.
+		defer func() { <-done }()
+	}
+
 	srv := &http.Server{
 		Addr:              cfg.APIAddr,
-		Handler:           api.NewServer(db, cfg.CORSOrigin, cfg.APIKey).Routes(),
+		Handler:           server.Routes(),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 
