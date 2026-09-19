@@ -6,9 +6,8 @@ import (
 	"github.com/praetorianer777/behoerdenbarriere/internal/model"
 )
 
-// Gewichte je axe-Impact. Das Verhältnis 10:6:3:1 bildet ab, dass ein fehlendes
-// Formularlabel eine Seite für Screenreader-Nutzer unbedienbar macht, ein fehlendes
-// title-Attribut an einem Iframe dagegen nur stört.
+// Weight per axe impact. The ratio 10:6:3:1 reflects that a missing form label makes a
+// page unusable with a screen reader, while a missing title on an iframe only annoys.
 var impactWeight = map[model.Impact]float64{
 	model.ImpactCritical: 10,
 	model.ImpactSerious:  6,
@@ -16,25 +15,25 @@ var impactWeight = map[model.Impact]float64{
 	model.ImpactMinor:    1,
 }
 
-// Steilheit der Score-Kurve. K = 18 bedeutet: eine Seite mit einer Verstoßdichte von
-// 18 Gewichtspunkten je 1000 DOM-Knoten landet bei 100/e ≈ 37 Punkten. Kalibriert an
-// Stichproben: gepflegte Auftritte liegen unter 2, erkennbar vernachlässigte über 20.
+// Steepness of the score curve. K = 18 means a page with a violation density of 18
+// weight points per 1000 DOM nodes lands at 100/e ≈ 37 points. Calibrated against
+// samples: well-kept sites stay below 2, visibly neglected ones go past 20.
 const decayK = 18.0
 
-// Mindestgröße für die Normierung. Ohne sie bekäme eine fast leere Seite mit einem
-// einzigen Verstoß eine absurd hohe Dichte und würde das Mittel der Behörde ruinieren.
+// Floor for the normalization. Without it a nearly empty page with a single violation
+// would reach an absurd density and ruin the agency's average.
 const minDOMNodes = 50
 
-// Gewichte der Seitenarten im Behörden-Mittelwert: die Einstiegsseite prägt den
-// Eindruck, die rechtlich relevanten Seiten (Erklärung zur Barrierefreiheit, Kontakt,
-// Formulare) sind der eigentliche Prüfgegenstand.
+// Weights of the page kinds in the agency average: the entry page shapes the
+// impression, and the legally relevant pages (accessibility statement, contact, forms)
+// are what an audit actually looks at.
 const (
 	weightEntry    = 3.0
 	weightPriority = 2.0
 	weightOther    = 1.0
 )
 
-// Notengrenzen.
+// Grade thresholds.
 var gradeThresholds = []struct {
 	min   float64
 	grade string
@@ -46,10 +45,10 @@ var gradeThresholds = []struct {
 	{50, "E"},
 }
 
-// Zuordnung der axe-Tags zu den vier WCAG-Prinzipien. axe liefert Tags wie
-// "wcag111" (Erfolgskriterium 1.1.1); die erste Ziffer nach "wcag" ist das Prinzip.
-// Konformitätstags derselben Familie ("wcag2aa", "wcag21aa") tragen keine Ziffernfolge
-// und dürfen nicht als Kriterium gelesen werden — "wcag2aa" wäre sonst Prinzip 2.
+// Maps axe tags onto the four WCAG principles. axe emits tags such as "wcag111"
+// (success criterion 1.1.1); the first digit after "wcag" is the principle. Conformance
+// tags of the same family ("wcag2aa", "wcag21aa") carry no digit sequence and must not
+// be read as a criterion — "wcag2aa" would otherwise come out as principle 2.
 func principleFromTags(tags []string) model.Principle {
 	for _, tag := range tags {
 		if !strings.HasPrefix(tag, "wcag") {
@@ -70,10 +69,10 @@ func principleFromTags(tags []string) model.Principle {
 			return model.Robust
 		}
 	}
-	// Regeln ohne verwertbaren WCAG-Tag (axe-eigene "best-practice"-Regeln) zählen als
-	// robust: sie betreffen fast immer die technische Auswertbarkeit des Markups.
+	// Rules without a usable WCAG tag (axe's own "best-practice" rules) count as robust:
+	// they almost always concern whether the markup can be interpreted at all.
 	return model.Robust
 }
 
-// Principle bestimmt das WCAG-Prinzip eines Verstoßes aus seinen axe-Tags.
+// Principle derives the WCAG principle of a violation from its axe tags.
 func Principle(tags []string) model.Principle { return principleFromTags(tags) }

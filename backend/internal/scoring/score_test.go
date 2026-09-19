@@ -17,7 +17,7 @@ func page(url string, nodes int, entry, priority bool, vs ...model.Violation) mo
 
 func TestPageScoreCleanPageIsPerfect(t *testing.T) {
 	if got := PageScore(page("/", 800, true, false)); got != 100 {
-		t.Fatalf("saubere Seite: got %v, want 100", got)
+		t.Fatalf("clean page: got %v, want 100", got)
 	}
 }
 
@@ -28,10 +28,10 @@ func TestPageScoreOrdering(t *testing.T) {
 	many := PageScore(page("/", 800, true, false, v("r1", model.ImpactCritical, model.Perceivable, 40)))
 
 	if !(clean > minor && minor > critical && critical > many) {
-		t.Fatalf("Reihenfolge verletzt: clean=%v minor=%v critical=%v many=%v", clean, minor, critical, many)
+		t.Fatalf("ordering violated: clean=%v minor=%v critical=%v many=%v", clean, minor, critical, many)
 	}
 	if many < 0 || clean > 100 {
-		t.Fatalf("Score außerhalb 0..100: %v / %v", many, clean)
+		t.Fatalf("score outside 0..100: %v / %v", many, clean)
 	}
 }
 
@@ -39,7 +39,7 @@ func TestPageScoreNormalizesBySize(t *testing.T) {
 	small := PageScore(page("/", 200, true, false, v("r1", model.ImpactSerious, model.Operable, 1)))
 	large := PageScore(page("/", 4000, true, false, v("r1", model.ImpactSerious, model.Operable, 1)))
 	if large <= small {
-		t.Fatalf("derselbe Verstoß wiegt auf der großen Seite nicht leichter: small=%v large=%v", small, large)
+		t.Fatalf("the same violation does not weigh less on the larger page: small=%v large=%v", small, large)
 	}
 }
 
@@ -47,7 +47,7 @@ func TestPageScoreTinyPageIsNotOverPenalized(t *testing.T) {
 	tiny := PageScore(page("/", 3, true, false, v("r1", model.ImpactMinor, model.Robust, 1)))
 	floored := PageScore(page("/", minDOMNodes, true, false, v("r1", model.ImpactMinor, model.Robust, 1)))
 	if math.Abs(tiny-floored) > 0.001 {
-		t.Fatalf("Mindestgröße greift nicht: tiny=%v floored=%v", tiny, floored)
+		t.Fatalf("size floor not applied: tiny=%v floored=%v", tiny, floored)
 	}
 }
 
@@ -65,7 +65,7 @@ func TestSiteScoreWeightsEntryPageHigher(t *testing.T) {
 		page("/b", 800, false, false),
 	})
 	if badEntry.Score >= badSubpage.Score {
-		t.Fatalf("Startseite wiegt nicht schwerer: entry=%v subpage=%v", badEntry.Score, badSubpage.Score)
+		t.Fatalf("entry page does not weigh more: entry=%v subpage=%v", badEntry.Score, badSubpage.Score)
 	}
 }
 
@@ -73,17 +73,17 @@ func TestSiteScoreIgnoresFailedPages(t *testing.T) {
 	failed := model.PageResult{URL: "/kaputt", Err: "timeout"}
 	withFailure := SiteScore([]model.PageResult{page("/", 800, true, false), failed})
 	if withFailure.Score != 100 {
-		t.Fatalf("fehlgeschlagene Seite fließt in den Score ein: %v", withFailure.Score)
+		t.Fatalf("failed page leaked into the score: %v", withFailure.Score)
 	}
 	if withFailure.Pages != 1 {
-		t.Fatalf("Seitenzahl falsch: %d", withFailure.Pages)
+		t.Fatalf("wrong page count: %d", withFailure.Pages)
 	}
 }
 
 func TestSiteScoreNoUsablePages(t *testing.T) {
 	res := SiteScore([]model.PageResult{{URL: "/x", Err: "dns"}})
 	if res.Score != 0 || res.Grade != "" || res.Pages != 0 {
-		t.Fatalf("leeres Ergebnis erwartet, got %+v", res)
+		t.Fatalf("expected an empty result, got %+v", res)
 	}
 }
 
@@ -92,10 +92,10 @@ func TestSiteScorePrincipleSubscores(t *testing.T) {
 		page("/", 800, true, false, v("image-alt", model.ImpactCritical, model.Perceivable, 30)),
 	})
 	if res.Principles[model.Perceivable] >= res.Principles[model.Operable] {
-		t.Fatalf("Teilscore trennt die Prinzipien nicht: %+v", res.Principles)
+		t.Fatalf("subscores do not separate the principles: %+v", res.Principles)
 	}
 	if res.Principles[model.Operable] != 100 {
-		t.Fatalf("unbelastetes Prinzip sollte 100 sein: %v", res.Principles[model.Operable])
+		t.Fatalf("an untouched principle should be 100: %v", res.Principles[model.Operable])
 	}
 }
 
@@ -149,15 +149,15 @@ func TestSummarizeRulesOrdersBySeverityAndCounts(t *testing.T) {
 
 	got := SummarizeRules(pages)
 	if len(got) != 3 {
-		t.Fatalf("erwartet 3 Regeln, got %d", len(got))
+		t.Fatalf("expected 3 rules, got %d", len(got))
 	}
 	if got[0].RuleID != "label" {
-		t.Errorf("schwerster Verstoß nicht zuerst: %s", got[0].RuleID)
+		t.Errorf("most severe violation is not first: %s", got[0].RuleID)
 	}
 	if got[1].RuleID != "color-contrast" || got[1].Pages != 2 || got[1].Nodes != 15 {
-		t.Errorf("Aggregation falsch: %+v", got[1])
+		t.Errorf("aggregation wrong: %+v", got[1])
 	}
 	if got[1].Sample == nil {
-		t.Error("Beispiel fehlt")
+		t.Error("sample missing")
 	}
 }

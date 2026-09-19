@@ -1,8 +1,8 @@
-// Package scoring rechnet axe-Befunde in einen Score von 0 bis 100 um.
+// Package scoring turns axe findings into a score from 0 to 100.
 //
-// Das Verfahren ist bewusst einfach nachvollziehbar: jeder Verstoß bekommt ein
-// Gewicht nach seiner Schwere, die Summe wird auf die Seitengröße normiert und
-// über eine Exponentialkurve auf 0..100 abgebildet.
+// The method is deliberately easy to follow: every violation gets a weight by its
+// severity, the sum is normalized by page size and mapped onto 0..100 through an
+// exponential curve.
 package scoring
 
 import (
@@ -19,7 +19,7 @@ type Result struct {
 	Pages      int                         `json:"pages"`
 }
 
-// PageScore bewertet eine einzelne Seite.
+// PageScore rates a single page.
 func PageScore(page model.PageResult) float64 {
 	return scoreFromViolations(page.Violations, page.DOMNodes)
 }
@@ -31,8 +31,8 @@ func scoreFromViolations(violations []model.Violation, domNodes int) float64 {
 		if nodes < 1 {
 			nodes = 1
 		}
-		// Der Logarithmus dämpft die Anzahl: 50 gleichartige Verstöße sind schlimmer
-		// als einer, aber nicht fünfzigmal so schlimm — sie haben dieselbe Ursache.
+		// The logarithm dampens the count: 50 violations of one kind are worse than one,
+		// but not fifty times worse — they share a single cause.
 		raw += impactWeight[v.Impact] * (1 + math.Log(float64(nodes)))
 	}
 	if raw == 0 {
@@ -46,9 +46,9 @@ func scoreFromViolations(violations []model.Violation, domNodes int) float64 {
 	return round2(100 * math.Exp(-density/decayK))
 }
 
-// SiteScore mittelt die Seiten einer Behörde gewichtet und liefert zusätzlich die
-// vier Teilscores nach WCAG-Prinzip. Fehlgeschlagene Seiten gehen nicht ein —
-// eine nicht erreichbare Seite ist kein Barrierefreiheitsbefund.
+// SiteScore averages an agency's pages by weight and adds the four subscores per WCAG
+// principle. Failed pages are left out — a page that would not load is an outage, not
+// an accessibility finding.
 func SiteScore(pages []model.PageResult) Result {
 	res := Result{Principles: map[model.Principle]float64{}}
 
@@ -108,7 +108,7 @@ func filterPrinciple(violations []model.Violation, principle model.Principle) []
 	return out
 }
 
-// Grade bildet einen Score auf eine Schulnote ab.
+// Grade maps a score onto a school grade.
 func Grade(score float64) string {
 	for _, t := range gradeThresholds {
 		if score >= t.min {
@@ -118,9 +118,9 @@ func Grade(score float64) string {
 	return "F"
 }
 
-// RuleSummary fasst gleiche Regelverstöße über alle Seiten eines Scans zusammen,
-// sortiert nach Schwere und Häufigkeit — die Reihenfolge, in der eine Behörde die
-// Mängel abarbeiten sollte.
+// RuleSummary folds violations of the same rule across all pages of a scan together,
+// ordered by severity and frequency — the order in which an agency should work through
+// them.
 type RuleSummary struct {
 	RuleID    string           `json:"rule_id"`
 	Impact    model.Impact     `json:"impact"`
