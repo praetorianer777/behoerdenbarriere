@@ -1,0 +1,49 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: behoerdenbarriere
+      POSTGRES_PASSWORD: behoerdenbarriere
+      POSTGRES_DB: behoerdenbarriere
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U behoerdenbarriere"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  chrome:
+    image: chromedp/headless-shell:stable
+    # Ohne --disable-dev-shm-usage stirbt Chrome im Container beim Rendern größerer
+    # Seiten an der 64-MB-Voreinstellung von /dev/shm.
+    command: ["--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage", "--remote-debugging-address=0.0.0.0", "--remote-debugging-port=9222"]
+    shm_size: 1gb
+    init: true
+    ports: ["9222:9222"]
+
+  api:
+    build:
+      context: ./backend
+      target: api
+    environment:
+      DATABASE_URL: postgres://behoerdenbarriere:behoerdenbarriere@postgres:5432/behoerdenbarriere?sslmode=disable
+      API_ADDR: ":8080"
+      CORS_ORIGIN: http://localhost:5173
+    ports: ["8080:8080"]
+    depends_on:
+      postgres: {condition: service_healthy}
+
+  worker:
+    build:
+      context: ./backend
+      target: worker
+    environment:
+      DATABASE_URL: postgres://behoerdenbarriere:behoerdenbarriere@postgres:5432/behoerdenbarriere?sslmode=disable
+      CHROME_URL: http://chrome:9222
+    depends_on:
+      postgres: {condition: service_healthy}
+      chrome: {condition: service_started}
+
+volumes:
+  pgdata:

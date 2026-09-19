@@ -30,3 +30,10 @@ go.work.sum
 # Editor/IDE
 # .idea/
 # .vscode/
+
+# Projektspezifisch
+.env
+/backend/bin/
+/frontend/node_modules/
+/frontend/dist/
+.claude/worktrees/
