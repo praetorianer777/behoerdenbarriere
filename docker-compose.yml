@@ -31,6 +31,9 @@ services:
       DATABASE_URL: postgres://behoerdenbarriere:behoerdenbarriere@postgres:5432/behoerdenbarriere?sslmode=disable
       API_ADDR: ":8080"
       CORS_ORIGIN: http://localhost:5173
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL:-grpc}
+      OTEL_TRACES_SAMPLER_ARG: ${OTEL_TRACES_SAMPLER_ARG:-1}
     ports: ["8080:8080"]
     depends_on:
       postgres: {condition: service_healthy}
@@ -42,9 +45,20 @@ services:
     environment:
       DATABASE_URL: postgres://behoerdenbarriere:behoerdenbarriere@postgres:5432/behoerdenbarriere?sslmode=disable
       CHROME_URL: http://chrome:9222
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL:-grpc}
+      OTEL_TRACES_SAMPLER_ARG: ${OTEL_TRACES_SAMPLER_ARG:-1}
     depends_on:
       postgres: {condition: service_healthy}
       chrome: {condition: service_started}
+
+  # Only started with `--profile telemetry`, so `make dev` stays lean.
+  otel-collector:
+    image: otel/opentelemetry-collector:0.139.0
+    profiles: [telemetry]
+    command: ["--config=/etc/otel-collector.yaml"]
+    volumes: ["./deploy/otel-collector.yaml:/etc/otel-collector.yaml:ro"]
+    ports: ["4317:4317", "4318:4318"]
 
   frontend:
     build:

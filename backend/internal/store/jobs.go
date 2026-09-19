@@ -127,3 +127,31 @@ func (s *Store) ReleaseStaleJobs(ctx context.Context, olderThan time.Duration) (
 	}
 	return int(tag.RowsAffected()), nil
 }
+
+// QueueStats is how the queue looks right now.
+type QueueStats struct {
+	Queued    int
+	Running   int
+	OldestAge time.Duration
+}
+
+// QueueStats counts what is waiting and what is being worked on, and how long the
+// oldest waiting job has been due.
+func (s *Store) QueueStats(ctx context.Context) (QueueStats, error) {
+	var (
+		stats     QueueStats
+		oldestSec float64
+	)
+	err := s.Pool.QueryRow(ctx, `
+		SELECT count(*) FILTER (WHERE locked_at IS NULL),
+		       count(*) FILTER (WHERE locked_at IS NOT NULL),
+		       coalesce(extract(epoch FROM now() - min(run_after)
+		                FILTER (WHERE locked_at IS NULL AND run_after <= now())), 0)
+		FROM jobs`,
+	).Scan(&stats.Queued, &stats.Running, &oldestSec)
+	if err != nil {
+		return QueueStats{}, fmt.Errorf("queue stats: %w", err)
+	}
+	stats.OldestAge = time.Duration(oldestSec * float64(time.Second))
+	return stats, nil
+}

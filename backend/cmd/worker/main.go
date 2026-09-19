@@ -10,11 +10,14 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/exaring/otelpgx"
+
 	"github.com/praetorianer777/behoerdenbarriere/internal/config"
 	"github.com/praetorianer777/behoerdenbarriere/internal/crawler"
 	"github.com/praetorianer777/behoerdenbarriere/internal/pipeline"
 	"github.com/praetorianer777/behoerdenbarriere/internal/scanner"
 	"github.com/praetorianer777/behoerdenbarriere/internal/store"
+	"github.com/praetorianer777/behoerdenbarriere/internal/telemetry"
 )
 
 // A worker that dies leaves its job locked. After this long another worker may take
@@ -33,16 +36,49 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	slog.SetDefault(telemetry.NewLogger(os.Stderr, cfg.LogLevel))
+
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	db, err := store.Open(ctx, cfg.DatabaseURL)
+	shutdownTelemetry, err := telemetry.Setup(ctx, telemetry.Config{
+		ServiceName: cfg.OTel.ServiceNameOr("behoerdenbarriere-worker"),
+		Endpoint:    cfg.OTel.Endpoint,
+		Protocol:    cfg.OTel.Protocol,
+		SampleRatio: cfg.OTel.SampleRatio,
+	})
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := shutdownTelemetry(context.Background()); err != nil {
+			slog.Warn("telemetry shutdown", "error", err)
+		}
+	}()
+
+	var dbOpts []store.Option
+	if cfg.OTel.Enabled() {
+		dbOpts = append(dbOpts, store.WithQueryTracer(otelpgx.NewTracer()))
+	}
+	db, err := store.Open(ctx, cfg.DatabaseURL, dbOpts...)
 	if err != nil {
 		return err
 	}
 	defer db.Close()
 	if err := db.Migrate(ctx); err != nil {
 		return err
+	}
+
+	if cfg.OTel.Enabled() {
+		if err := otelpgx.RecordStats(db.Pool); err != nil {
+			return err
+		}
+		if err := telemetry.ObserveQueue(func(ctx context.Context) (telemetry.QueueStats, error) {
+			stats, err := db.QueueStats(ctx)
+			return telemetry.QueueStats(stats), err
+		}); err != nil {
+			return err
+		}
 	}
 
 	sc, err := scanner.New(ctx, scanner.Options{
@@ -60,7 +96,7 @@ func run() error {
 		RatePerSec: cfg.Crawl.RatePerSec,
 		Timeout:    cfg.Crawl.Timeout,
 	}
-	pipe := pipeline.New(db, crawler.New(sc, crawlCfg), crawlCfg, slog.Default())
+	pipe := pipeline.New(db, crawler.New(telemetry.TracePageScanner(sc), crawlCfg), crawlCfg, slog.Default())
 
 	name, _ := os.Hostname()
 	slog.Info("worker ready", "name", name, "chrome", cfg.ChromeURL)

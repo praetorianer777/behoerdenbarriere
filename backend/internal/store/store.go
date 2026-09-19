@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -17,8 +18,29 @@ type Store struct {
 	Pool *pgxpool.Pool
 }
 
-func Open(ctx context.Context, databaseURL string) (*Store, error) {
-	pool, err := pgxpool.New(ctx, databaseURL)
+// Option changes how the pool is built.
+type Option func(*pgxpool.Config)
+
+// WithQueryTracer hands every query to a tracer, which is how the pool is
+// instrumented without the store knowing about OpenTelemetry. A nil tracer is
+// ignored, so the caller may pass one straight from a switched-off telemetry setup.
+func WithQueryTracer(t pgx.QueryTracer) Option {
+	return func(cfg *pgxpool.Config) {
+		if t != nil {
+			cfg.ConnConfig.Tracer = t
+		}
+	}
+}
+
+func Open(ctx context.Context, databaseURL string, opts ...Option) (*Store, error) {
+	cfg, err := pgxpool.ParseConfig(databaseURL)
+	if err != nil {
+		return nil, fmt.Errorf("database url: %w", err)
+	}
+	for _, opt := range opts {
+		opt(cfg)
+	}
+	pool, err := pgxpool.NewWithConfig(ctx, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("pgxpool: %w", err)
 	}

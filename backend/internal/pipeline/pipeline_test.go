@@ -5,6 +5,11 @@ import (
 	"errors"
 	"testing"
 
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/sdk/trace/tracetest"
+
 	"github.com/praetorianer777/behoerdenbarriere/internal/crawler"
 	"github.com/praetorianer777/behoerdenbarriere/internal/model"
 	"github.com/praetorianer777/behoerdenbarriere/internal/scoring"
@@ -139,4 +144,60 @@ func TestRunClosesScanEvenWhenContextIsGone(t *testing.T) {
 	if store.failed == nil {
 		t.Fatal("scan was not closed")
 	}
+}
+
+// The spans are what tells a slow authority from a slow scanner, so a run has to
+// leave crawl and scoring behind as children of the scan.
+func TestRunRecordsSpans(t *testing.T) {
+	spans := recordSpans(t)
+
+	pages := []model.PageResult{{URL: "https://www.bmi.bund.de/", DOMNodes: 800, IsEntry: true}}
+	_, err := New(&fakeStore{scanID: 7}, &fakeCrawler{pages: pages}, crawler.Config{MaxPages: 10}, nil).
+		Run(context.Background(), agency())
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+
+	byName := map[string]sdktrace.ReadOnlySpan{}
+	for _, span := range spans.Ended() {
+		byName[span.Name()] = span
+	}
+	scan, ok := byName["scan"]
+	if !ok {
+		t.Fatalf("no scan span: %v", byName)
+	}
+	for _, child := range []string{"crawl", "score"} {
+		span, ok := byName[child]
+		if !ok {
+			t.Fatalf("no %s span: %v", child, byName)
+		}
+		if span.Parent().SpanID() != scan.SpanContext().SpanID() {
+			t.Errorf("%s is not a child of the scan span", child)
+		}
+	}
+}
+
+func TestFailedRunMarksTheSpan(t *testing.T) {
+	spans := recordSpans(t)
+
+	_, err := New(&fakeStore{scanID: 7}, &fakeCrawler{err: errors.New("no route to host")},
+		crawler.Config{MaxPages: 10}, nil).Run(context.Background(), agency())
+	if err == nil {
+		t.Fatal("Run succeeded although the crawl failed")
+	}
+
+	for _, span := range spans.Ended() {
+		if span.Name() == "scan" && span.Status().Code != codes.Error {
+			t.Fatalf("scan span status = %v", span.Status())
+		}
+	}
+}
+
+func recordSpans(t *testing.T) *tracetest.SpanRecorder {
+	t.Helper()
+	spans := tracetest.NewSpanRecorder()
+	previous := otel.GetTracerProvider()
+	otel.SetTracerProvider(sdktrace.NewTracerProvider(sdktrace.WithSpanProcessor(spans)))
+	t.Cleanup(func() { otel.SetTracerProvider(previous) })
+	return spans
 }

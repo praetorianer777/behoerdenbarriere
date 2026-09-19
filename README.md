@@ -42,6 +42,34 @@ TEST_DATABASE_URL='postgres://behoerdenbarriere:behoerdenbarriere@localhost:5432
   go test ./internal/store/
 ```
 
+## Observability (OpenTelemetry)
+
+Traces, metrics and trace-aware logs are exported over OTLP. **Everything is off until
+`OTEL_EXPORTER_OTLP_ENDPOINT` is set**: without it no provider is installed, so a local
+run and the test suite need no collector.
+
+| | What is recorded |
+| --- | --- |
+| Traces (API) | one span per request, named after the chi route, with method, status and duration; `/healthz` and `/readyz` are left out |
+| Traces (worker) | one `scan` span per authority with `crawl`, `page scan` and `score` beneath it, so a slow authority can be told from a slow scanner |
+| Traces (database) | every query, through `otelpgx` |
+| Metrics | `scans.total` by status, `scan.duration`, `scan.pages`, `jobs.queued`, `jobs.running`, `jobs.oldest_age`, the HTTP server metrics of `otelhttp` (status code included) and the pgx pool stats |
+| Logs | `log/slog` as before, plus `trace_id` and `span_id` whenever a span is open |
+
+Switching it on:
+
+```sh
+make dev-telemetry   # brings up the collector behind the `telemetry` compose profile
+# in .env:
+# OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+```
+
+`OTEL_EXPORTER_OTLP_PROTOCOL` is `grpc` or `http/protobuf`, `OTEL_TRACES_SAMPLER_ARG`
+is the sampling ratio between 0 and 1, and `OTEL_SERVICE_NAME` overrides the names the
+binaries give themselves (`behoerdenbarriere-api`, `behoerdenbarriere-worker`). The
+collector in [deploy/otel-collector.yaml](deploy/otel-collector.yaml) only prints what
+it receives; a backend that keeps the data is added there.
+
 ## Wie bewertet wird
 
 Jeder Verstoß bekommt ein Gewicht nach seiner Schwere (critical 10, serious 6,
