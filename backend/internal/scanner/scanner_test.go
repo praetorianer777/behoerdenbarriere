@@ -19,7 +19,7 @@ func TestResolveWebSocketURL(t *testing.T) {
 			t.Errorf("unexpected path %s", r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"webSocketDebuggerUrl":"ws://chrome:9222/devtools/browser/abc"}`))
+		_, _ = w.Write([]byte(`{"webSocketDebuggerUrl":"ws://localhost:9222/devtools/browser/abc"}`))
 	}))
 	defer srv.Close()
 
@@ -27,8 +27,13 @@ func TestResolveWebSocketURL(t *testing.T) {
 	if err != nil {
 		t.Fatalf("resolveWebSocketURL: %v", err)
 	}
-	if got != "ws://chrome:9222/devtools/browser/abc" {
-		t.Fatalf("url = %q", got)
+
+	// Chrome answers with the host it knows itself by, which inside a container is
+	// "localhost" and from another container points at the wrong process. The session
+	// path is what matters; the host has to stay the one we asked.
+	want := "ws://" + strings.TrimPrefix(srv.URL, "http://") + "/devtools/browser/abc"
+	if got != want {
+		t.Fatalf("url = %q, want %q", got, want)
 	}
 }
 

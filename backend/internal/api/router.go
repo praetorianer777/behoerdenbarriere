@@ -4,26 +4,26 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"log/slog"
 	"net/http"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+
+	"github.com/praetorianer777/behoerdenbarriere/internal/store"
 )
 
-// Pinger is the part of the store the health checks need.
-type Pinger interface {
-	Ping(ctx context.Context) error
-}
-
 type Server struct {
-	db         Pinger
+	db         Queries
 	corsOrigin string
 	apiKey     string
+	log        *slog.Logger
 }
 
-func NewServer(db Pinger, corsOrigin, apiKey string) *Server {
-	return &Server{db: db, corsOrigin: corsOrigin, apiKey: apiKey}
+func NewServer(db Queries, corsOrigin, apiKey string) *Server {
+	return &Server{db: db, corsOrigin: corsOrigin, apiKey: apiKey, log: slog.Default()}
 }
 
 func (s *Server) Routes() http.Handler {
@@ -34,7 +34,35 @@ func (s *Server) Routes() http.Handler {
 
 	r.Get("/healthz", s.handleHealth)
 	r.Get("/readyz", s.handleReady)
+
+	r.Route("/api/v1", func(r chi.Router) {
+		r.Get("/agencies", s.handleAgencies)
+		r.Get("/agencies/{slug}", s.handleAgency)
+		r.Get("/agencies/{slug}/scans/latest", s.handleLatestScan)
+		r.Post("/agencies/{slug}/rescan", s.handleRescan)
+		r.Get("/scans/{id}", s.handleScan)
+		r.Get("/stats", s.handleStats)
+		r.Get("/rules", s.handleRules)
+	})
 	return r
+}
+
+// fail turns an error into an answer. Only "not found" is told to the caller; anything
+// else could carry internals, so it is logged and answered with a bare 500.
+func (s *Server) fail(w http.ResponseWriter, r *http.Request, err error) {
+	if errors.Is(err, store.ErrNotFound) {
+		writeError(w, http.StatusNotFound, "not found")
+		return
+	}
+	if errors.Is(err, context.Canceled) {
+		return
+	}
+	s.log.Error("request failed", "path", r.URL.Path, "error", err)
+	writeError(w, http.StatusInternalServerError, "internal error")
+}
+
+func writeError(w http.ResponseWriter, status int, message string) {
+	writeJSON(w, status, map[string]string{"error": message})
 }
 
 // healthz only reports that the process is up; readyz asks the database. They are

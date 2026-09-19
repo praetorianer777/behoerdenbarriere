@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -124,7 +125,19 @@ func resolveWebSocketURL(ctx context.Context, chromeURL string) (string, error) 
 	if payload.WebSocketDebuggerURL == "" {
 		return "", fmt.Errorf("chrome at %s returns no webSocketDebuggerUrl", chromeURL)
 	}
-	return payload.WebSocketDebuggerURL, nil
+
+	// Chrome answers with the host it knows itself by — inside a container that is
+	// "localhost", which from another container points at that container itself. The
+	// path carries the session id and has to be kept; the host is the one we asked.
+	ws, err := url.Parse(payload.WebSocketDebuggerURL)
+	if err != nil {
+		return "", fmt.Errorf("chrome at %s returns an unusable webSocketDebuggerUrl: %w", chromeURL, err)
+	}
+	asked, err := url.Parse(base)
+	if err == nil && asked.Host != "" {
+		ws.Host = asked.Host
+	}
+	return ws.String(), nil
 }
 
 // PageScan is the outcome of a checked page together with the links found on it,
