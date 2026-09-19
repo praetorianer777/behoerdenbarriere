@@ -103,6 +103,17 @@ export function AgencyPage() {
             {scan.data.pages_failed > 0 && `, ${scan.data.pages_failed} nicht erreichbar`}.
           </p>
 
+          {scan.data.pages_blocked > 0 && (
+            /* Ein Banner, das sich nicht wegklicken lässt, macht den Befund zu einem
+               Befund über das Banner. Wer den Score liest, muss das wissen. */
+            <p className="mt-2 rounded-lg border border-grade-d bg-white p-4">
+              Auf {scan.data.pages_blocked}{' '}
+              {scan.data.pages_blocked === 1 ? 'Seite ließ sich' : 'Seiten ließen sich'} die
+              Einwilligungsabfrage nicht schließen. Dort beschreibt das Ergebnis das Banner und
+              nicht die Seite dahinter.
+            </p>
+          )}
+
           <div className="mt-4 space-y-8">
             <RuleList
               rules={scan.data.rules ?? []}
@@ -153,6 +164,9 @@ export function AgencyPage() {
                       {page.is_entry && <span className="ml-2 text-sm text-slate-600">Startseite</span>}
                       {page.error && (
                         <span className="ml-2 text-sm text-grade-f">nicht erreichbar</span>
+                      )}
+                      {page.consent === 'blocked' && (
+                        <span className="ml-2 text-sm text-grade-d">hinter Einwilligungsabfrage</span>
                       )}
                     </th>
                     <td className="px-3 py-2">{formatScore(page.score)}</td>

@@ -70,6 +70,7 @@ type pageDTO struct {
 	Score      *float64 `json:"score"`
 	LoadMS     int      `json:"load_ms,omitempty"`
 	Error      string   `json:"error,omitempty"`
+	Consent    string   `json:"consent,omitempty"`
 	Violations int      `json:"violations"`
 }
 
@@ -86,6 +87,7 @@ type scanDTO struct {
 	Subscores    subscoresDTO      `json:"subscores"`
 	PagesScanned int               `json:"pages_scanned"`
 	PagesFailed  int               `json:"pages_failed"`
+	PagesBlocked int               `json:"pages_blocked"`
 	Rules        []ruleDTO         `json:"rules,omitempty"`
 	Pages        []pageDTO         `json:"pages,omitempty"`
 	Changes      *trend.RuleChange `json:"changes,omitempty"`
@@ -151,7 +153,8 @@ func toPageDTOs(pages []store.PageDetail) []pageDTO {
 		out = append(out, pageDTO{
 			URL: p.URL, Title: p.Title, Depth: p.Depth, IsEntry: p.IsEntry,
 			Priority: p.Priority, HTTPStatus: p.HTTPStatus, DOMNodes: p.DOMNodes,
-			Score: p.Score, LoadMS: p.LoadMS, Error: p.Error, Violations: p.Violations,
+			Score: p.Score, LoadMS: p.LoadMS, Error: p.Error, Consent: p.Consent,
+			Violations: p.Violations,
 		})
 	}
 	return out
@@ -163,7 +166,7 @@ func toScanDTO(d store.ScanDetail) scanDTO {
 		StartedAt: d.StartedAt, FinishedAt: d.FinishedAt, Error: d.Error,
 		Score: d.Score, Grade: d.Grade,
 		Subscores:    subscoresDTO{d.Perceivable, d.Operable, d.Understandable, d.Robust},
-		PagesScanned: d.PagesScanned, PagesFailed: d.PagesFailed,
+		PagesScanned: d.PagesScanned, PagesFailed: d.PagesFailed, PagesBlocked: d.PagesBlocked,
 	}
 }
 

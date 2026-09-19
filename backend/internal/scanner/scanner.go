@@ -145,6 +145,10 @@ func resolveWebSocketURL(ctx context.Context, chromeURL string) (string, error) 
 type PageScan struct {
 	Result model.PageResult
 	Links  []string
+
+	// ConsentLabel is the wording on the button that was clicked. It is not stored;
+	// it exists so that a surprising result can be traced back to what was pressed.
+	ConsentLabel string
 }
 
 // Scan loads a URL, checks it with axe and reads the outgoing links. A failure is
@@ -169,7 +173,7 @@ func (s *Scanner) Scan(ctx context.Context, url string) PageScan {
 		chromedp.Navigate(url),
 		chromedp.WaitReady("body", chromedp.ByQuery),
 		waitForQuiet(),
-		dismissConsent(&consent),
+		dismissConsent(&consent, &out.ConsentLabel),
 		evalJSON(pageInfoScript, &infoJSON),
 		chromedp.Evaluate(axeJS, nil),
 		evalPromise(axeRunScript, &axeJSON),
@@ -209,7 +213,7 @@ func (s *Scanner) Scan(ctx context.Context, url string) PageScan {
 // dismissConsent clears the consent layer out of the way before axe runs, and records
 // what it took. A failure here is not a failure of the scan: the page is then checked
 // as it stands, marked as blocked, and the result says so.
-func dismissConsent(out *model.Consent) chromedp.Action {
+func dismissConsent(out *model.Consent, label *string) chromedp.Action {
 	return chromedp.ActionFunc(func(ctx context.Context) error {
 		step, cancel := context.WithTimeout(ctx, 10*time.Second)
 		defer cancel()
@@ -220,6 +224,7 @@ func dismissConsent(out *model.Consent) chromedp.Action {
 		}
 		var attempt struct {
 			State string `json:"state"`
+			Label string `json:"label"`
 		}
 		if err := json.Unmarshal([]byte(raw), &attempt); err != nil {
 			return nil
@@ -232,6 +237,7 @@ func dismissConsent(out *model.Consent) chromedp.Action {
 			*out = model.ConsentBlocked
 			return nil
 		}
+		*label = attempt.Label
 
 		// The layer needs a moment to disappear, and the page underneath a moment to
 		// settle before it is judged.

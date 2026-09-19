@@ -173,6 +173,7 @@ type ScanDetail struct {
 	Perceivable, Operable, Understandable, Robust *float64
 	PagesScanned                                  int
 	PagesFailed                                   int
+	PagesBlocked                                  int
 }
 
 func (s *Store) ScanByID(ctx context.Context, id int64) (*ScanDetail, error) {
@@ -181,12 +182,12 @@ func (s *Store) ScanByID(ctx context.Context, id int64) (*ScanDetail, error) {
 		SELECT sc.id, sc.agency_id, a.slug, a.name, sc.status, sc.started_at, sc.finished_at,
 		       coalesce(sc.error, ''), sc.score, coalesce(sc.grade, ''),
 		       sc.score_perceivable, sc.score_operable, sc.score_understandable, sc.score_robust,
-		       sc.pages_scanned, sc.pages_failed
+		       sc.pages_scanned, sc.pages_failed, sc.pages_blocked
 		FROM scans sc JOIN agencies a ON a.id = sc.agency_id
 		WHERE sc.id = $1`, id,
 	).Scan(&d.ID, &d.AgencyID, &d.AgencySlug, &d.AgencyName, &d.Status, &d.StartedAt, &d.FinishedAt,
 		&d.Error, &d.Score, &d.Grade, &d.Perceivable, &d.Operable, &d.Understandable, &d.Robust,
-		&d.PagesScanned, &d.PagesFailed)
+		&d.PagesScanned, &d.PagesFailed, &d.PagesBlocked)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrNotFound
 	}
@@ -220,6 +221,7 @@ type PageDetail struct {
 	Score      *float64
 	LoadMS     int
 	Error      string
+	Consent    string
 	Violations int
 }
 
@@ -227,7 +229,7 @@ func (s *Store) PagesForScan(ctx context.Context, scanID int64) ([]PageDetail, e
 	rows, err := s.Pool.Query(ctx, `
 		SELECT p.url, coalesce(p.title, ''), p.depth, p.is_entry, p.priority,
 		       coalesce(p.http_status, 0), p.dom_nodes, p.page_score, coalesce(p.load_ms, 0),
-		       coalesce(p.error, ''), count(v.id)
+		       coalesce(p.error, ''), p.consent::text, count(v.id)
 		FROM pages p
 		LEFT JOIN violations v ON v.page_id = p.id
 		WHERE p.scan_id = $1
@@ -242,7 +244,8 @@ func (s *Store) PagesForScan(ctx context.Context, scanID int64) ([]PageDetail, e
 	for rows.Next() {
 		var p PageDetail
 		if err := rows.Scan(&p.URL, &p.Title, &p.Depth, &p.IsEntry, &p.Priority,
-			&p.HTTPStatus, &p.DOMNodes, &p.Score, &p.LoadMS, &p.Error, &p.Violations); err != nil {
+			&p.HTTPStatus, &p.DOMNodes, &p.Score, &p.LoadMS, &p.Error, &p.Consent,
+			&p.Violations); err != nil {
 			return nil, err
 		}
 		out = append(out, p)

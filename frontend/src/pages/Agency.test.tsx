@@ -54,6 +54,28 @@ describe('Behördenseite', () => {
     expect(await screen.findByText('nicht erreichbar')).toBeInTheDocument()
   })
 
+  // Ein Banner, das sich nicht schließen ließ, macht den Befund zu einem Befund über
+  // das Banner — und das muss auf der Seite stehen, nicht nur in den Daten.
+  it('weist auf nicht schließbare Einwilligungsabfragen hin', async () => {
+    vi.spyOn(api, 'latestScan').mockResolvedValue({
+      ...latestScan,
+      pages_blocked: 2,
+      pages: [
+        { ...latestScan.pages![0], consent: 'blocked' },
+      ],
+    })
+
+    render()
+    expect(await screen.findByText(/nicht schließen/)).toBeInTheDocument()
+    expect(screen.getByText('hinter Einwilligungsabfrage')).toBeInTheDocument()
+  })
+
+  it('schweigt über Einwilligung, wenn keine im Weg stand', async () => {
+    render()
+    await screen.findByRole('heading', { name: 'Verstöße nach Regel' })
+    expect(screen.queryByText(/nicht schließen/)).not.toBeInTheDocument()
+  })
+
   it('kommt ohne Prüfung aus', async () => {
     vi.spyOn(api, 'agency').mockResolvedValue({
       ...agencyDetail,

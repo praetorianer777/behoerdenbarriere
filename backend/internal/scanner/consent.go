@@ -16,14 +16,35 @@ package scanner
 // consentScript looks for the layer, tries to dismiss it and reports what happened.
 // It searches through shadow roots, because the common consent tools render there.
 const consentScript = `(() => {
-  const decline = [
+  // Three tiers, tried in order. An explicit refusal first; then a button that merely
+  // confirms the selection as it stands, which in these tools means nothing beyond the
+  // necessary cookies; and only then consent, because a visitor has to click something
+  // to reach the page at all.
+  //
+  // The wordings come from what German authorities actually ship: bund.de says "No, I
+  // do not agree to statistical cookies", bundesregierung.de offers "Alle auswählen"
+  // next to "Auswahl bestätigen" with nothing preselected. Patterns written for
+  // "reject"/"ablehnen" alone walk past both.
+  const refuse = [
     /nur\s+(technisch\s+)?(notwendige|erforderliche|essenzielle|essentielle)/i,
-    /alle\s+ablehnen/i, /ablehnen/i, /nicht\s+zustimmen/i, /weiter\s+ohne/i,
-    /reject\s+all/i, /reject/i, /decline/i, /deny/i, /only\s+necessary/i, /essential\s+only/i,
+    /only\s+(necessary|essential)/i, /essential\s+only/i,
+    /alle\s+ablehnen/i, /\bablehnen\b/i, /\bablehnung\b/i,
+    /nicht\s+(zustimmen|einverstanden|akzeptieren)/i, /\bwiderspre/i,
+    /\bnein\b/i, /\bno[,.]?\s/i, /do\s+not\s+agree/i, /don'?t\s+agree/i,
+    /reject\s+all/i, /\breject\b/i, /\bdecline\b/i, /\bdeny\b/i,
+    /weiter\s+ohne/i, /continue\s+without/i, /ohne\s+einwilligung/i,
+  ];
+  const confirmSelection = [
+    /auswahl\s+(bestätigen|speichern|übernehmen)/i,
+    /einstellungen\s+(speichern|bestätigen)/i,
+    /save\s+(and\s+)?(close|settings|selection)/i,
+    /confirm\s+(my\s+)?(choice|selection)/i,
+    /^\s*(speichern|bestätigen|übernehmen)\s*$/i,
   ];
   const accept = [
-    /alle\s+akzeptieren/i, /akzeptieren/i, /alle\s+zulassen/i, /zustimmen/i,
-    /einverstanden/i, /verstanden/i, /accept\s+all/i, /accept/i, /agree/i, /got\s+it/i,
+    /alle\s+akzeptieren/i, /akzeptieren/i, /alle\s+(zulassen|auswählen)/i, /zustimmen/i,
+    /einverstanden/i, /verstanden/i, /\bja\b/i, /\byes\b/i,
+    /accept\s+all/i, /\baccept\b/i, /\bagree\b/i, /got\s+it/i, /allow\s+all/i,
   ];
   const consentWords = /cookie|einwillig|zustimm|consent|datenschutzeinstellung|privacy\s+settings|tracking/i;
 
@@ -122,14 +143,25 @@ const consentScript = `(() => {
     return null;
   };
 
-  const declineButton = pick(decline);
-  const target = declineButton ?? pick(accept);
+  // A refusal expressed through markup rather than wording — some tools label the
+  // button with an icon and carry the meaning in the class.
+  const byAttribute = () =>
+    buttons().find(
+      (el) =>
+        inLayer(el) &&
+        /reject|deny|decline|refuse|necessary-only|only-necessary|ablehnen/i.test(
+          [el.id, (el.className || '').toString(), el.getAttribute('data-testid') || ''].join(' '),
+        ),
+    ) ?? null;
+
+  const refused = pick(refuse) ?? byAttribute() ?? pick(confirmSelection);
+  const target = refused ?? pick(accept);
   if (!target) {
     return JSON.stringify({ state: 'blocked', reason: 'no button found' });
   }
 
   target.click();
-  return JSON.stringify({ state: declineButton ? 'declined' : 'accepted', label: label(target).slice(0, 80) });
+  return JSON.stringify({ state: refused ? 'declined' : 'accepted', label: label(target).slice(0, 80) });
 })()`
 
 // consentCheckScript reports whether a layer is still in the way after the click.

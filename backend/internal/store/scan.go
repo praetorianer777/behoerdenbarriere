@@ -51,20 +51,24 @@ func (s *Store) FinishScan(ctx context.Context, scanID int64, pages []model.Page
 	}
 	defer func() { _ = tx.Rollback(ctx) }()
 
-	var failed int
+	var failed, blocked int
 	for _, page := range pages {
 		if page.Failed() {
 			failed++
 		}
+		if page.Consent == model.ConsentBlocked {
+			blocked++
+		}
 		var pageID int64
 		if err := tx.QueryRow(ctx, `
 			INSERT INTO pages (scan_id, url, depth, is_entry, priority, title,
-			                   http_status, dom_nodes, page_score, load_ms, error)
-			VALUES ($1, $2, $3, $4, $5, NULLIF($6, ''), NULLIF($7, 0), $8, $9, NULLIF($10, 0), NULLIF($11, ''))
+			                   http_status, dom_nodes, page_score, load_ms, error, consent)
+			VALUES ($1, $2, $3, $4, $5, NULLIF($6, ''), NULLIF($7, 0), $8, $9, NULLIF($10, 0), NULLIF($11, ''), $12)
 			ON CONFLICT (scan_id, url) DO UPDATE SET url = EXCLUDED.url
 			RETURNING id`,
 			scanID, page.URL, page.Depth, page.IsEntry, page.Priority, page.Title,
 			page.HTTPStatus, page.DOMNodes, scoring.PageScore(page), page.LoadMS, page.Err,
+			consentOrDefault(page.Consent),
 		).Scan(&pageID); err != nil {
 			return fmt.Errorf("save page %s: %w", page.URL, err)
 		}
@@ -95,12 +99,12 @@ func (s *Store) FinishScan(ctx context.Context, scanID int64, pages []model.Page
 			score = $2, grade = $3,
 			score_perceivable = $4, score_operable = $5,
 			score_understandable = $6, score_robust = $7,
-			pages_scanned = $8, pages_failed = $9
+			pages_scanned = $8, pages_failed = $9, pages_blocked = $10
 		WHERE id = $1`,
 		scanID, result.Score, nullIfEmpty(result.Grade),
 		result.Principles[model.Perceivable], result.Principles[model.Operable],
 		result.Principles[model.Understandable], result.Principles[model.Robust],
-		result.Pages, failed,
+		result.Pages, failed, blocked,
 	); err != nil {
 		return fmt.Errorf("close scan: %w", err)
 	}
@@ -130,6 +134,14 @@ func (s *Store) LatestScore(ctx context.Context, agencyID int64) (float64, strin
 		return 0, "", time.Time{}, nil
 	}
 	return score, grade, at, err
+}
+
+// A page from an older scan carries no consent state; "none" is what it meant then.
+func consentOrDefault(c model.Consent) string {
+	if c == "" {
+		return string(model.ConsentNone)
+	}
+	return string(c)
 }
 
 func nullIfEmpty(s string) any {

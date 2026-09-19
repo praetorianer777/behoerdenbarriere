@@ -58,6 +58,7 @@ export const latestScan: Scan = {
   subscores: { perceivable: 68, operable: 80, understandable: 90, robust: 85 },
   pages_scanned: 4,
   pages_failed: 1,
+  pages_blocked: 0,
   rules: [
     {
       rule_id: 'color-contrast',

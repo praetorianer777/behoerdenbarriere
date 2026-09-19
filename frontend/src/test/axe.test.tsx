@@ -1,7 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
-import * as matchers from 'vitest-axe/matchers'
 
 import { api } from '../api/client'
 import { Dashboard } from '../pages/Dashboard'
@@ -10,8 +9,6 @@ import { Ranking } from '../pages/Ranking'
 import { AgencyPage } from '../pages/Agency'
 import { agencyDetail, agencyList, latestScan, stats } from './fixtures'
 import { renderPage } from './render'
-
-expect.extend(matchers)
 
 /**
  * Ein Monitor für Barrierefreiheit, der selbst durchfällt, ist wertlos. Geprüft wird
@@ -22,7 +19,9 @@ async function expectNoViolations(container: HTMLElement) {
   const results = await axe(container, {
     runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'] },
   })
-  expect(results).toHaveNoViolations()
+  // Die Regel-Kennungen als Liste: schlägt der Test fehl, steht im Bericht, welche
+  // Regel verletzt ist, und nicht nur, dass etwas verletzt ist.
+  expect(results.violations.map((violation) => violation.id)).toEqual([])
 }
 
 describe('Barrierefreiheit der eigenen Seiten', () => {

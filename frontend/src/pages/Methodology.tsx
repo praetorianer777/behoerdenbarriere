@@ -74,8 +74,21 @@ export function Methodology() {
         belastbar: die gefundenen Verstöße sind da.
       </p>
       <p className="mt-4">
-        Auch der Zeitpunkt zählt. Ein Score beschreibt den Stand des letzten Scans, nicht den von
-        heute. Und ein Cookie-Banner, das die Seite verdeckt, verdeckt sie auch für die Prüfung.
+        Auch der Zeitpunkt zählt: Ein Score beschreibt den Stand des letzten Scans, nicht den von
+        heute.
+      </p>
+
+      <h2 className="mt-8 text-xl font-semibold">Einwilligungsabfragen</h2>
+      <p className="mt-2">
+        Ein Cookie-Banner verdeckt die Seite — auch für die Prüfung. Deshalb schließen wir es
+        vorher, und zwar so, wie es eine vorsichtige Besucherin täte: Wir lehnen ab. Eine Behörden-
+        Website muss ohne Einwilligung nutzbar sein, und Ablehnen setzt nichts. Nur wenn es keine
+        Möglichkeit zum Ablehnen gibt, klicken wir auf Zustimmen — sonst käme niemand an die Seite.
+      </p>
+      <p className="mt-4">
+        Lässt sich die Abfrage gar nicht schließen, steht das im Ergebnis. Der Score beschreibt dann
+        das Banner und nicht die Seite dahinter, und die Detailansicht sagt das ausdrücklich. Ein
+        sauberes Banner ist keine saubere Website.
       </p>
 
       <h2 className="mt-8 text-xl font-semibold">Rücksicht beim Prüfen</h2>

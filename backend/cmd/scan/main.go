@@ -55,10 +55,11 @@ func run(url string, withLinks, strict bool) error {
 	got.Result.IsEntry = true
 
 	out := struct {
-		Result any      `json:"result"`
-		Grade  string   `json:"grade,omitempty"`
-		Links  []string `json:"links,omitempty"`
-	}{Result: got.Result}
+		Result       any      `json:"result"`
+		Grade        string   `json:"grade,omitempty"`
+		ConsentLabel string   `json:"consent_label,omitempty"`
+		Links        []string `json:"links,omitempty"`
+	}{Result: got.Result, ConsentLabel: got.ConsentLabel}
 
 	// A page that did not load has no score. Grading it would turn a failed request
 	// into a perfect result — 100 points for a page nobody ever saw.

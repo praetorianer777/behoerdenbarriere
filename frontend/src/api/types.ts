@@ -81,6 +81,7 @@ export interface Page {
   score: number | null
   load_ms?: number
   error?: string
+  consent?: 'none' | 'declined' | 'accepted' | 'blocked'
   violations: number
 }
 
@@ -103,6 +104,7 @@ export interface Scan {
   subscores: Subscores
   pages_scanned: number
   pages_failed: number
+  pages_blocked: number
   rules?: Rule[]
   pages?: Page[]
   changes?: RuleChange
