@@ -215,7 +215,7 @@ func (s *Scanner) Scan(ctx context.Context, url string) PageScan {
 // as it stands, marked as blocked, and the result says so.
 func dismissConsent(out *model.Consent, label *string) chromedp.Action {
 	return chromedp.ActionFunc(func(ctx context.Context) error {
-		step, cancel := context.WithTimeout(ctx, 10*time.Second)
+		step, cancel := context.WithTimeout(ctx, 20*time.Second)
 		defer cancel()
 
 		var raw string
@@ -239,17 +239,10 @@ func dismissConsent(out *model.Consent, label *string) chromedp.Action {
 		}
 		*label = attempt.Label
 
-		// The layer needs a moment to disappear, and the page underneath a moment to
-		// settle before it is judged.
-		var checkRaw string
-		_ = chromedp.Run(step,
-			chromedp.Sleep(1200*time.Millisecond),
-			chromedp.Evaluate(consentCheckScript, &checkRaw),
-		)
-		var check struct {
-			Blocked bool `json:"blocked"`
-		}
-		if err := json.Unmarshal([]byte(checkRaw), &check); err == nil && check.Blocked {
+		// Banners take their time going away — bmi.bund.de needs close to three
+		// seconds, and a single short look afterwards declared it blocked although the
+		// click had worked. So the page is asked repeatedly until the layer is gone.
+		if blocked := stillBlocked(step); blocked {
 			*out = model.ConsentBlocked
 			return nil
 		}
@@ -261,6 +254,32 @@ func dismissConsent(out *model.Consent, label *string) chromedp.Action {
 		}
 		return nil
 	})
+}
+
+// stillBlocked waits for the layer to disappear and reports whether it is still there.
+func stillBlocked(ctx context.Context) bool {
+	deadline := time.Now().Add(6 * time.Second)
+	for {
+		var raw string
+		if err := chromedp.Run(ctx,
+			chromedp.Sleep(400*time.Millisecond),
+			chromedp.Evaluate(consentCheckScript, &raw),
+		); err != nil {
+			return false
+		}
+		var check struct {
+			Blocked bool `json:"blocked"`
+		}
+		if err := json.Unmarshal([]byte(raw), &check); err != nil {
+			return false
+		}
+		if !check.Blocked {
+			return false
+		}
+		if time.Now().After(deadline) {
+			return true
+		}
+	}
 }
 
 // Government CMSes often load navigation and consent banners late. A short settling
