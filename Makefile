@@ -1,7 +1,7 @@
 SHELL := /bin/sh
 COMPOSE := docker compose
 
-.PHONY: help dev down logs build test test-db vet fmt seed scan
+.PHONY: help dev down logs build test test-db test-web vet fmt seed scan web
 
 TEST_DATABASE_URL ?= postgres://behoerdenbarriere:behoerdenbarriere@localhost:5432/behoerdenbarriere?sslmode=disable
 
@@ -26,6 +26,12 @@ test: ## Run the tests (database and browser tests are skipped)
 test-db: ## Run all tests, including database and browser
 	$(COMPOSE) up -d postgres
 	cd backend && TEST_DATABASE_URL="$(TEST_DATABASE_URL)" go test ./...
+
+test-web: ## Run the frontend tests
+	cd frontend && npm test
+
+web: ## Start the frontend in development mode
+	cd frontend && npm run dev
 
 vet: ## Static analysis
 	cd backend && go vet ./...

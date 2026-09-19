@@ -50,18 +50,31 @@ func run(url string, withLinks bool) error {
 
 	got := s.Scan(ctx, url)
 	got.Result.IsEntry = true
-	got.Result.Score = scoring.PageScore(got.Result)
 
 	out := struct {
 		Result any      `json:"result"`
-		Grade  string   `json:"grade"`
+		Grade  string   `json:"grade,omitempty"`
 		Links  []string `json:"links,omitempty"`
-	}{Result: got.Result, Grade: scoring.Grade(got.Result.Score)}
+	}{Result: got.Result}
+
+	// A page that did not load has no score. Grading it would turn a failed request
+	// into a perfect result — 100 points for a page nobody ever saw.
+	if !got.Result.Failed() {
+		got.Result.Score = scoring.PageScore(got.Result)
+		out.Result = got.Result
+		out.Grade = scoring.Grade(got.Result.Score)
+	}
 	if withLinks {
 		out.Links = got.Links
 	}
 
 	enc := json.NewEncoder(os.Stdout)
 	enc.SetIndent("", "  ")
-	return enc.Encode(out)
+	if err := enc.Encode(out); err != nil {
+		return err
+	}
+	if got.Result.Failed() {
+		return fmt.Errorf("page could not be checked: %s", got.Result.Err)
+	}
+	return nil
 }

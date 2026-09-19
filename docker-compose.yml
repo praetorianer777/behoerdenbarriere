@@ -46,5 +46,11 @@ services:
       postgres: {condition: service_healthy}
       chrome: {condition: service_started}
 
+  frontend:
+    build:
+      context: ./frontend
+    ports: ["5173:80"]
+    depends_on: [api]
+
 volumes:
   pgdata:
