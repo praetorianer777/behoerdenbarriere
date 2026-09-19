@@ -57,35 +57,37 @@ Barrierefreiheit, Kontakt, Formulare — doppelt.
 tatsächlich beschreibt, kann kein Programm beurteilen. Der Score ist ein Indikator und
 kein BITV-Prüfbericht, und eine gute Note ersetzt keine manuelle Prüfung.
 
-## API limits
+## Grenzen der API
 
-The data is public and meant to be used in bulk. The limits below exist for one reason
-only: a single client must not be able to take the site down for everyone.
+Die Daten sind öffentlich und sollen auch in größeren Mengen nutzbar bleiben. Die
+folgenden Grenzen gibt es aus einem einzigen Grund: Ein einzelner Client darf die Seite
+nicht für alle anderen lahmlegen.
 
-| What | Limit | Notes |
+| Was | Grenze | Anmerkung |
 | --- | --- | --- |
-| Read endpoints (`/agencies`, `/scans/{id}`) | 120 requests per minute, burst 60 | per client |
-| Statistics and rule catalogue (`/stats`, `/rules`) | 20 per minute, burst 10 | they aggregate over every scan |
-| With an API key (`X-API-Key`) | 600 per minute, burst 200 | ask for a key instead of scraping around the limit |
-| `POST /agencies/{slug}/rescan` | key required, plus one rescan per authority per hour | the traffic lands on that authority |
-| Request body | 64 KiB | |
-| History points per authority | 200 | longer histories are truncated |
-| Items per list in one response | 500 | the page size is capped at 200 separately |
+| Lesende Endpunkte (`/agencies`, `/scans/{id}`) | 120 Anfragen pro Minute, Spitze 60 | je Client |
+| Statistik und Regelkatalog (`/stats`, `/rules`) | 20 pro Minute, Spitze 10 | sie rechnen über alle Scans |
+| Mit API-Schlüssel (`X-API-Key`) | 600 pro Minute, Spitze 200 | lieber einen Schlüssel erfragen, als die Grenze zu umgehen |
+| `POST /agencies/{slug}/rescan` | Schlüssel nötig, dazu ein Rescan je Behörde pro Stunde | die Last landet bei der Behörde |
+| Anfragekörper | 64 KiB | |
+| Verlaufspunkte je Behörde | 200 | längere Verläufe werden gekürzt |
+| Einträge je Liste in einer Antwort | 500 | die Seitengröße ist getrennt auf 200 begrenzt |
 
-A rejected request answers `429` with `Retry-After` and `X-RateLimit-Limit`,
-`X-RateLimit-Remaining` and `X-RateLimit-Reset` (all seconds, `Reset` counts to a full
-bucket). Every read answer carries `Cache-Control: public, max-age=300` and an `ETag`;
-sending it back as `If-None-Match` gets a `304` and costs neither side anything, which
-is worth doing — a scan result changes at most once a week.
+Eine abgewiesene Anfrage bekommt `429` mit `Retry-After` und `X-RateLimit-Limit`,
+`X-RateLimit-Remaining` sowie `X-RateLimit-Reset` (in Sekunden, `Reset` zählt bis zum
+vollen Eimer). Jede lesende Antwort trägt `Cache-Control: public, max-age=300` und ein
+`ETag`; wer es als `If-None-Match` zurückschickt, bekommt `304` und spart beiden Seiten
+die Arbeit — ein Scan-Ergebnis ändert sich höchstens einmal pro Woche.
 
-Clients are told apart by IP address, or by API key if one is presented. Behind a proxy
-the address is taken from `X-Forwarded-For`, but only when the request actually came
-from a network listed in `API_TRUSTED_PROXIES` (by default loopback and the private
-ranges, which is what the compose setup uses; `none` disables it). Anyone can write that
-header, so from an untrusted peer it is ignored — otherwise a client could invent a new
-identity per request and the limits would mean nothing.
+Clients werden über die IP-Adresse unterschieden, oder über den API-Schlüssel, wenn
+einer mitgeschickt wird. Hinter einem Proxy stammt die Adresse aus `X-Forwarded-For`,
+aber nur, wenn die Anfrage tatsächlich aus einem Netz in `API_TRUSTED_PROXIES` kam
+(voreingestellt Loopback und die privaten Bereiche, wie im Compose-Setup; `none` schaltet
+es ab). Diesen Kopf kann jeder schreiben — von einem nicht vertrauenswürdigen Gegenüber
+wird er deshalb ignoriert, sonst könnte sich ein Client für jede Anfrage eine neue
+Identität ausdenken und die Grenzen wären wertlos.
 
-Every limit is configurable, see `.env.example`; a zero switches one off.
+Alle Grenzen sind konfigurierbar, siehe `.env.example`; eine Null schaltet eine ab.
 
 ## Rücksicht beim Crawlen
 

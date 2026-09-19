@@ -3,6 +3,7 @@ package api
 import (
 	"bytes"
 	"crypto/sha256"
+	"crypto/subtle"
 	"encoding/base64"
 	"net"
 	"net/http"
@@ -76,12 +77,22 @@ func (s *Server) identify(r *http.Request) (string, bool) {
 }
 
 func (s *Server) hasKey(key string) bool {
+	if key == "" {
+		return false
+	}
+	// Constant time: a plain comparison leaks how much of a key is right through how
+	// long it takes to say no, and the answer is worth guessing at — it carries the
+	// higher quota and the rescan endpoint.
+	found := false
 	for _, k := range s.apiKeys {
-		if k != "" && k == key {
-			return true
+		if k == "" {
+			continue
+		}
+		if subtle.ConstantTimeCompare([]byte(k), []byte(key)) == 1 {
+			found = true
 		}
 	}
-	return false
+	return found
 }
 
 // rateLimit rejects with 429 before the handler runs, so a refused request never
