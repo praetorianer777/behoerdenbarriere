@@ -10,6 +10,7 @@ import { Loading, LoadError } from '../components/Loading'
 import { RuleList } from '../components/RuleList'
 import { ScoreReasons } from '../components/ScoreReasons'
 import { StatementCheck } from '../components/StatementCheck'
+import { ThirdParties } from '../components/ThirdParties'
 import {
   directionLabel,
   formatDate,
@@ -80,6 +81,8 @@ export function AgencyPage() {
       </div>
 
       {scan.data?.statement && <StatementCheck statement={scan.data.statement} />}
+
+      {scan.data?.third_parties && <ThirdParties contacts={scan.data.third_parties} />}
 
       {scan.data?.explanation && scan.data.explanation.improvements.length > 0 && (
         <section className="mt-8">

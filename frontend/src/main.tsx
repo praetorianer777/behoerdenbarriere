@@ -13,6 +13,7 @@ import { Impressum } from './pages/Impressum'
 import { Datenschutz } from './pages/Datenschutz'
 import { Barrierefreiheit } from './pages/Barrierefreiheit'
 import { Statistics } from './pages/Statistics'
+import { Drittanbieter } from './pages/Drittanbieter'
 import { NotFound } from './pages/NotFound'
 
 const queryClient = new QueryClient({
@@ -41,6 +42,7 @@ createRoot(document.getElementById('root')!).render(
             <Route path="datenschutz" element={<Datenschutz />} />
             <Route path="barrierefreiheit" element={<Barrierefreiheit />} />
             <Route path="statistik" element={<Statistics />} />
+            <Route path="drittanbieter" element={<Drittanbieter />} />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>

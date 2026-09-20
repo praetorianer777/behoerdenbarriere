@@ -1,4 +1,4 @@
-import type { AgencyDetail, AgencyList, Scan, Stats, Usage } from '../api/types'
+import type { AgencyDetail, AgencyList, Scan, Stats, ThirdPartyList, Usage } from '../api/types'
 
 export const agencyList: AgencyList = {
   items: [
@@ -148,6 +148,35 @@ export const latestScan: Scan = {
       },
     ],
   },
+  third_parties: [
+    {
+      host: 'fonts.gstatic.com',
+      domain: 'gstatic.com',
+      group: 'google-fonts' as const,
+      public_body: false,
+      phase: 'before_consent' as const,
+      requests: 6,
+      pages: 4,
+    },
+    {
+      host: 'www.service.bund.de',
+      domain: 'bund.de',
+      group: 'unknown' as const,
+      public_body: true,
+      phase: 'before_consent' as const,
+      requests: 1,
+      pages: 1,
+    },
+    {
+      host: 'www.youtube-nocookie.com',
+      domain: 'youtube-nocookie.com',
+      group: 'youtube' as const,
+      public_body: false,
+      phase: 'after_accepted' as const,
+      requests: 2,
+      pages: 1,
+    },
+  ],
   statement: {
     state: 'found' as const,
     url: 'https://www.bmwsb.bund.de/erklaerung-zur-barrierefreiheit',
@@ -208,4 +237,46 @@ export const usage: Usage = {
   ],
   agencies: [{ key: 'bundesregierung', count: 18 }],
   endpoints: [{ key: 'GET /api/v1/agencies', count: 120 }],
+}
+
+export const thirdParties: ThirdPartyList = {
+  scanned: 120,
+  items: [
+    {
+      host: 'fonts.gstatic.com',
+      domain: 'gstatic.com',
+      group: 'google-fonts',
+      public_body: false,
+      phase: 'before_consent',
+      agencies: 48,
+      pages: 900,
+    },
+    {
+      host: 'fonts.googleapis.com',
+      domain: 'googleapis.com',
+      group: 'google-fonts',
+      public_body: false,
+      phase: 'before_consent',
+      agencies: 44,
+      pages: 870,
+    },
+    {
+      host: 'www.google-analytics.com',
+      domain: 'google-analytics.com',
+      group: 'google-analytics',
+      public_body: false,
+      phase: 'before_consent',
+      agencies: 12,
+      pages: 60,
+    },
+    {
+      host: 'www.youtube-nocookie.com',
+      domain: 'youtube-nocookie.com',
+      group: 'youtube',
+      public_body: false,
+      phase: 'after_accepted',
+      agencies: 9,
+      pages: 20,
+    },
+  ],
 }

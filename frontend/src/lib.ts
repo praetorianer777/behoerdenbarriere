@@ -1,4 +1,4 @@
-import type { Direction, Impact } from './api/types'
+import type { ContactGroup, ContactPhase, Direction, Impact } from './api/types'
 
 // Die Notenfarben sind so gewählt, dass sie auf Weiß mindestens 4.5:1 erreichen —
 // und die Note steht immer als Buchstabe daneben, damit sie nicht allein die Farbe
@@ -48,6 +48,43 @@ export const requirementLabel: Record<string, string> = {
   date: 'Datum der Erstellung oder Überprüfung',
   feedback: 'Möglichkeit, Barrieren zu melden',
   enforcement: 'Hinweis auf das Schlichtungsverfahren',
+}
+
+// Die Namen, unter denen die Dienste bekannt sind. Die Zuordnung sagt, zu wem ein
+// Hostname gehört — nicht, was dort mit den Daten geschieht.
+export const groupLabel: Record<ContactGroup, string> = {
+  'google-fonts': 'Google Fonts',
+  'google-analytics': 'Google Analytics / Tag Manager',
+  'google-maps': 'Google Maps',
+  'google-ads': 'Google Werbung',
+  'google-other': 'Google (sonstiges)',
+  youtube: 'YouTube',
+  vimeo: 'Vimeo',
+  meta: 'Meta (Facebook, Instagram)',
+  x: 'X (Twitter)',
+  linkedin: 'LinkedIn',
+  matomo: 'Matomo',
+  etracker: 'etracker',
+  'consent-tool': 'Einwilligungsdienst',
+  cdn: 'Content Delivery Network',
+  unknown: 'nicht zugeordnet',
+}
+
+// Der Zeitpunkt ist der eigentliche Befund: Vor der Einwilligung hatte niemand die
+// Gelegenheit zu widersprechen.
+export const phaseLabel: Record<ContactPhase, string> = {
+  before_consent: 'vor der Einwilligung',
+  after_declined: 'nach Ablehnung',
+  after_accepted: 'nach Zustimmung',
+}
+
+export const phaseExplanation: Record<ContactPhase, string> = {
+  before_consent:
+    'Diese Hosts wurden beim Aufruf der Seite kontaktiert — bevor ein Einwilligungsbanner beantwortet werden konnte oder ohne dass eines erschien.',
+  after_declined:
+    'Diese Hosts wurden erst kontaktiert, nachdem wir alles Ablehnbare abgelehnt hatten.',
+  after_accepted:
+    'Auf diesen Seiten ließ sich nichts ablehnen, deshalb haben wir zugestimmt. Was danach geladen wurde, steht hier.',
 }
 
 export function formatScore(score: number | null | undefined): string {
