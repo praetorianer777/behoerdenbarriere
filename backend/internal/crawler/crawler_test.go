@@ -18,17 +18,22 @@ import (
 // fakeScanner stands in for the browser: it answers from a link map, so the crawl
 // logic can be tested without Chrome.
 type fakeScanner struct {
-	mu      sync.Mutex
-	links   map[string][]string
-	visited []string
-	delay   time.Duration
-	broken  map[string]bool
+	mu        sync.Mutex
+	links     map[string][]string
+	visited   []string
+	delay     time.Duration
+	broken    map[string]bool
+	redirects map[string]string
 }
 
 func (f *fakeScanner) Scan(ctx context.Context, url string) scanner.PageScan {
 	f.mu.Lock()
 	f.visited = append(f.visited, url)
-	links := f.links[url]
+	final := url
+	if to, ok := f.redirects[url]; ok {
+		final = to
+	}
+	links := f.links[final]
 	broken := f.broken[url]
 	f.mu.Unlock()
 
@@ -42,8 +47,9 @@ func (f *fakeScanner) Scan(ctx context.Context, url string) scanner.PageScan {
 		return scanner.PageScan{Result: model.PageResult{URL: url, Err: "timeout"}}
 	}
 	return scanner.PageScan{
-		Result: model.PageResult{URL: url, DOMNodes: 500, HTTPStatus: 200},
-		Links:  links,
+		Result:   model.PageResult{URL: url, DOMNodes: 500, HTTPStatus: 200},
+		Links:    links,
+		FinalURL: final,
 	}
 }
 
@@ -435,5 +441,109 @@ func TestBudgetStretchesForSlowSites(t *testing.T) {
 	// Nachmittag lang blockieren.
 	if got := budget(normal, time.Hour); got != slowSiteBudget {
 		t.Errorf("sehr langsame Seite: %v, want %v", got, slowSiteBudget)
+	}
+}
+
+func mapOf(pages []model.PageResult) map[string]model.PageResult {
+	out := map[string]model.PageResult{}
+	for _, p := range pages {
+		out[p.URL] = p
+	}
+	return out
+}
+
+// Ministries get renamed and their old domain becomes a redirect. The crawl boundary
+// has to be the site we arrived at — otherwise every link on it counts as foreign and
+// the authority is scored over its start page alone.
+func TestCrawlFollowsASiteThatHasMoved(t *testing.T) {
+	alt := robotsServer(t, "")
+	// Same server, a second name for it: SameSite compares host names, and two
+	// httptest servers would both be 127.0.0.1.
+	neu := strings.Replace(robotsServer(t, ""), "127.0.0.1", "localhost", 1)
+
+	fake := &fakeScanner{
+		redirects: map[string]string{alt + "/": neu + "/"},
+		links: map[string][]string{
+			neu + "/": {neu + "/kontakt", neu + "/presse"},
+		},
+	}
+
+	outcome, err := New(fake, Config{MaxPages: 10, MaxDepth: 2, RatePerSec: 1000}).
+		Crawl(context.Background(), alt)
+	if err != nil {
+		t.Fatalf("Crawl: %v", err)
+	}
+
+	urls := map[string]model.PageResult{}
+	for _, p := range outcome.Pages {
+		urls[p.URL] = p
+	}
+	for _, want := range []string{neu + "/", neu + "/kontakt", neu + "/presse"} {
+		if _, ok := urls[want]; !ok {
+			t.Errorf("%s not checked, got %v", want, keysOf(urls))
+		}
+	}
+	if _, ok := urls[alt+"/"]; ok {
+		t.Error("the start page is recorded under the address we asked for, not the one we reached")
+	}
+	if !urls[neu+"/"].IsEntry {
+		t.Error("the page we were redirected to is not marked as the entry page")
+	}
+}
+
+// A redirect inside the site ends on an address the crawl may already have queued.
+func TestCrawlChecksARedirectTargetOnlyOnce(t *testing.T) {
+	base := robotsServer(t, "")
+	fake := &fakeScanner{
+		redirects: map[string]string{base + "/alt": base + "/ziel"},
+		links: map[string][]string{
+			base + "/":     {base + "/alt", base + "/ziel"},
+			base + "/ziel": {base + "/"},
+		},
+	}
+
+	outcome, err := New(fake, Config{MaxPages: 10, MaxDepth: 2, RatePerSec: 1000}).
+		Crawl(context.Background(), base)
+	if err != nil {
+		t.Fatalf("Crawl: %v", err)
+	}
+
+	count := 0
+	for _, p := range outcome.Pages {
+		if p.URL == base+"/alt" {
+			t.Error("a page is recorded under the address we asked for, not the one we reached")
+		}
+		if p.URL == base+"/ziel" {
+			count++
+		}
+	}
+	if count != 1 {
+		t.Fatalf("/ziel checked %d times, want 1 — pages: %v", count, keysOf(mapOf(outcome.Pages)))
+	}
+}
+
+// A redirect that leaves the site is followed for that one page, but it must not move
+// the boundary: only the start page decides where we are.
+func TestCrawlDoesNotLeaveTheSiteOnALaterRedirect(t *testing.T) {
+	base := robotsServer(t, "")
+	fremd := strings.Replace(robotsServer(t, ""), "127.0.0.1", "localhost", 1)
+
+	fake := &fakeScanner{
+		redirects: map[string]string{base + "/weg": fremd + "/"},
+		links: map[string][]string{
+			base + "/":  {base + "/weg"},
+			fremd + "/": {fremd + "/mehr", fremd + "/noch-mehr"},
+		},
+	}
+
+	outcome, err := New(fake, Config{MaxPages: 10, MaxDepth: 3, RatePerSec: 1000}).
+		Crawl(context.Background(), base)
+	if err != nil {
+		t.Fatalf("Crawl: %v", err)
+	}
+	for _, p := range outcome.Pages {
+		if strings.HasPrefix(p.URL, fremd) {
+			t.Errorf("crawl wandered off to %s", p.URL)
+		}
 	}
 }

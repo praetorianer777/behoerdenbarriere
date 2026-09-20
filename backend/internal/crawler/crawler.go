@@ -121,17 +121,31 @@ func (c *Crawler) Crawl(ctx context.Context, startURL string) (Outcome, error) {
 		interval = delay
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, budget(c.cfg.Timeout, interval))
-	defer cancel()
+	// The budget is a point in time we check against, not a deadline on the context: a
+	// site that turns out to have moved can be entitled to more time than the one we
+	// set out for, and a context deadline cannot be moved once it is set.
+	deadline := time.Now().Add(budget(c.cfg.Timeout, interval))
 
 	f := newFrontier()
 	f.push(Target{URL: start, Depth: 0, IsEntry: true})
 
 	outcome := Outcome{Pages: make([]model.PageResult, 0, c.cfg.MaxPages)}
 	seen := map[string]bool{}
+	// Where we have actually been. The frontier keeps us from queueing the same
+	// address twice, but a redirect lands on an address we may already have queued
+	// under its own name.
+	fetched := map[string]bool{}
 	for len(outcome.Pages) < c.cfg.MaxPages && !f.empty() {
 		target, ok := f.pop()
 		if !ok {
+			break
+		}
+		if fetched[target.URL] {
+			continue
+		}
+		// Sitting out a three-minute pause for a page that is then over budget
+		// anyway costs the authority a request and us the wait.
+		if time.Now().Add(interval).After(deadline) {
 			break
 		}
 		// Der Takt gilt dem Host, nicht dem Lauf: Eine nicht lesbare Adresse wäre
@@ -141,7 +155,31 @@ func (c *Crawler) Crawl(ctx context.Context, startURL string) (Outcome, error) {
 			break
 		}
 
-		scan := c.scanner.Scan(ctx, target.URL)
+		requested := target.URL
+		scan := c.scanner.Scan(ctx, requested)
+		if final := Normalize(scan.FinalURL); final != "" && final != target.URL {
+			// An authority that has moved keeps the old domain alive as a redirect.
+			// The site we are allowed to walk is the one we ended up on; measured
+			// against the address we asked for, every link on it looks foreign and
+			// the crawl stops after the start page.
+			if target.IsEntry && !SameSite(start, final) {
+				start = final
+				// The new host has its own robots.txt, and with it its own
+				// pace and its own claim on our patience. Adopting the site
+				// without adopting its rules would be the rude half of this.
+				if delay := c.robots.CrawlDelay(ctx, start); delay > interval {
+					interval = delay
+					if until := time.Now().Add(budget(c.cfg.Timeout, interval)); until.After(deadline) {
+						deadline = until
+					}
+				}
+			}
+			if SameSite(start, final) {
+				target.URL = final
+			}
+		}
+		fetched[requested] = true
+		fetched[target.URL] = true
 		scan.Result.URL = target.URL
 		scan.Result.Depth = target.Depth
 		scan.Result.IsEntry = target.IsEntry
@@ -172,8 +210,8 @@ func (c *Crawler) Crawl(ctx context.Context, startURL string) (Outcome, error) {
 		}
 	}
 
-	// Our own deadline is a budget, not a failure: what was checked up to then counts.
-	// A cancellation from the outside is different — then the caller is shutting down
+	// Running out of budget is not a failure: what was checked up to then counts. A
+	// cancellation from the outside is different — then the caller is shutting down
 	// and wants to know.
 	if err := parent.Err(); err != nil {
 		return outcome, err

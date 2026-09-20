@@ -257,3 +257,23 @@ func TestWithResolvedHost(t *testing.T) {
 		t.Error("an unresolvable host was accepted")
 	}
 }
+
+// Where the browser ended up, not where we sent it. For a site that has moved, this is
+// what tells the crawler which host it is allowed to walk.
+func TestScanReportsTheAddressItEndedUpOn(t *testing.T) {
+	s := newTestScanner(t)
+
+	ziel := servePage(t, cleanPage)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, ziel+"/angekommen", http.StatusMovedPermanently)
+	}))
+	t.Cleanup(srv.Close)
+
+	got := s.Scan(context.Background(), srv.URL+"/alt")
+	if got.Result.Err != "" {
+		t.Fatalf("scan failed: %s", got.Result.Err)
+	}
+	if got.FinalURL != ziel+"/angekommen" {
+		t.Fatalf("FinalURL = %q, want %q", got.FinalURL, ziel+"/angekommen")
+	}
+}

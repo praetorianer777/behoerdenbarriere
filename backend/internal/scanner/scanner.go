@@ -62,6 +62,7 @@ const pageInfoScript = `(() => {
   // Barrierefreiheit zu prüfen, und nicht gespeichert.
   const text = (document.body && document.body.innerText || '').slice(0, 40000);
   return JSON.stringify({
+    url: location.href,
     title: document.title || '',
     domNodes: nodes,
     lang: document.documentElement.getAttribute('lang') || '',
@@ -195,6 +196,11 @@ type PageScan struct {
 	Result model.PageResult
 	Links  []string
 
+	// FinalURL is where the browser actually ended up. It differs from the requested
+	// address whenever a page redirects, and for the start page of a site that has
+	// moved it differs in the host — which is what decides where the crawl may go.
+	FinalURL string
+
 	// ConsentLabel is the wording on the button that was clicked. It is not stored;
 	// it exists so that a surprising result can be traced back to what was pressed.
 	ConsentLabel string
@@ -242,6 +248,7 @@ func (s *Scanner) Scan(ctx context.Context, url string) PageScan {
 	}
 
 	var info struct {
+		URL      string   `json:"url"`
 		Title    string   `json:"title"`
 		DOMNodes int      `json:"domNodes"`
 		Lang     string   `json:"lang"`
@@ -252,6 +259,7 @@ func (s *Scanner) Scan(ctx context.Context, url string) PageScan {
 		out.Result.Err = fmt.Sprintf("page info: %v", err)
 		return out
 	}
+	out.FinalURL = info.URL
 	out.Result.Title = info.Title
 	out.Result.DOMNodes = info.DOMNodes
 	out.Result.Text = info.Text
