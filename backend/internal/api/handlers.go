@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/praetorianer777/behoerdenbarriere/internal/model"
 	"github.com/praetorianer777/behoerdenbarriere/internal/scoring"
 	"github.com/praetorianer777/behoerdenbarriere/internal/store"
 	"github.com/praetorianer777/behoerdenbarriere/internal/trend"
@@ -27,6 +28,7 @@ type Queries interface {
 	ScanByID(ctx context.Context, id int64) (*store.ScanDetail, error)
 	RulesForScan(ctx context.Context, scanID int64) ([]scoring.RuleSummary, error)
 	PagesForScan(ctx context.Context, scanID int64) ([]store.PageDetail, error)
+	PageResultsForScan(ctx context.Context, scanID int64) ([]model.PageResult, error)
 	Stats(ctx context.Context) (*store.Stats, error)
 	States(ctx context.Context) ([]string, error)
 	EnqueueScan(ctx context.Context, agencyID int64) error
@@ -156,9 +158,21 @@ func (s *Server) scanDetail(ctx context.Context, id int64) (*scanDTO, error) {
 		return nil, err
 	}
 
+	// The explanation is rebuilt from the stored findings rather than stored itself:
+	// the arithmetic belongs in one place, and a score taken apart by an older formula
+	// than the one that produced it would be a second truth.
+	results, err := s.db.PageResultsForScan(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
 	dto := toScanDTO(*detail)
 	dto.Rules = toRuleDTOs(clip(rules, s.limits.ListItems))
 	dto.Pages = toPageDTOs(clip(pages, s.limits.ListItems))
+
+	explanation := scoring.ExplainSite(clip(results, s.limits.ListItems))
+	explanation.Improvements = clip(explanation.Improvements, s.limits.ListItems)
+	dto.Explanation = &explanation
 	return &dto, nil
 }
 

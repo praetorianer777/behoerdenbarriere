@@ -96,6 +96,9 @@ type scanDTO struct {
 	Rules            []ruleDTO         `json:"rules,omitempty"`
 	Pages            []pageDTO         `json:"pages,omitempty"`
 	Changes          *trend.RuleChange `json:"changes,omitempty"`
+	// Explanation says how the score came about: what each finding contributed and
+	// what fixing it would give back.
+	Explanation *scoring.SiteExplanation `json:"explanation,omitempty"`
 }
 
 type groupDTO struct {

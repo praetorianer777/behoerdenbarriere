@@ -245,6 +245,52 @@ func TestLatestScanWithoutAnyScan(t *testing.T) {
 	}
 }
 
+// The number has to be able to say what it is made of; that is the whole point of
+// publishing it.
+func TestLatestScanExplainsTheScore(t *testing.T) {
+	db := &fakeDB{
+		agencies: sampleAgencies(),
+		scanIDs:  []int64{99},
+		scan:     sampleScan(),
+		rules:    map[int64][]scoring.RuleSummary{99: {rule("image-alt", model.ImpactCritical)}},
+		pageResults: []model.PageResult{
+			{URL: "https://www.bmi.bund.de/", IsEntry: true, DOMNodes: 800, Violations: []model.Violation{
+				{RuleID: "image-alt", Impact: model.ImpactCritical, Principle: model.Perceivable, NodeCount: 12},
+				{RuleID: "region", Impact: model.ImpactModerate, Principle: model.Robust, NodeCount: 1},
+			}},
+			{URL: "https://www.bmi.bund.de/kontakt", Priority: true, DOMNodes: 600},
+		},
+	}
+
+	rec := request(t, db, http.MethodGet, "/api/v1/agencies/bmi/scans/latest", nil)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d", rec.Code)
+	}
+
+	got := decode[scanDTO](t, rec)
+	if got.Explanation == nil {
+		t.Fatal("no explanation")
+	}
+	if len(got.Explanation.Pages) != 2 {
+		t.Fatalf("%d pages explained", len(got.Explanation.Pages))
+	}
+
+	entry := got.Explanation.Pages[0]
+	if entry.Weight != 3 {
+		t.Errorf("entry page weight = %v", entry.Weight)
+	}
+	if len(entry.Reasons) != 2 || entry.Reasons[0].RuleID != "image-alt" {
+		t.Errorf("reasons = %+v", entry.Reasons)
+	}
+	if entry.Reasons[0].PointsIfFixed <= 0 {
+		t.Errorf("fixing the worst finding gains nothing: %+v", entry.Reasons[0])
+	}
+	if len(got.Explanation.Improvements) == 0 ||
+		got.Explanation.Improvements[0].RuleID != "image-alt" {
+		t.Errorf("improvements = %+v", got.Explanation.Improvements)
+	}
+}
+
 func TestScanByID(t *testing.T) {
 	db := &fakeDB{scan: sampleScan(), rules: map[int64][]scoring.RuleSummary{}}
 	rec := request(t, db, http.MethodGet, "/api/v1/scans/99", nil)

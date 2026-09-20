@@ -44,7 +44,8 @@ describe('Behördenseite', () => {
     render()
 
     expect(await screen.findByRole('heading', { name: 'Verstöße nach Regel' })).toBeInTheDocument()
-    expect(screen.getByText(/Mindestkontrast/)).toBeInTheDocument()
+    // Derselbe Befund steht auch in der Begründung; hier zählt die Regelliste.
+    expect(screen.getAllByText(/Mindestkontrast/).length).toBeGreaterThan(0)
 
     const fixed = await screen.findByRole('heading', { name: /behoben/ })
     expect(fixed).toBeInTheDocument()
@@ -94,6 +95,17 @@ describe('Behördenseite', () => {
     render()
     await screen.findByRole('heading', { level: 1, name: 'Bundesregierung' })
     expect(screen.queryByRole('heading', { name: /Lighthouse/ })).not.toBeInTheDocument()
+  })
+
+  // Eine Zahl, die nicht sagt, woraus sie besteht, ist eine Behauptung.
+  it('begründet den Wert je Seite', async () => {
+    render()
+
+    await screen.findByRole('heading', { name: 'Begründung je Seite' })
+    expect(screen.getByText('Was am meisten bringt')).toBeInTheDocument()
+    // Was das Beheben zurückgibt, ist die Zahl, mit der jemand etwas anfangen kann.
+    expect(screen.getByText(/\+16,1 Punkte/)).toBeInTheDocument()
+    expect(screen.getByText(/78 %/)).toBeInTheDocument()
   })
 
   it('kommt ohne Prüfung aus', async () => {

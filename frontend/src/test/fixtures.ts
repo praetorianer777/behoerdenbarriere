@@ -95,6 +95,59 @@ export const latestScan: Scan = {
       violations: 0,
     },
   ],
+  explanation: {
+    score: 74.5,
+    grade: 'C',
+    pages: [
+      {
+        url: 'https://www.bundesregierung.de/',
+        title: 'Startseite',
+        score: 72,
+        dom_nodes: 900,
+        density: 4.2,
+        weight: 3,
+        is_entry: true,
+        priority: false,
+        reasons: [
+          {
+            rule_id: 'color-contrast',
+            impact: 'serious',
+            principle: 'perceivable',
+            help: 'Elemente müssen den Mindestkontrast erreichen',
+            help_url: 'https://dequeuniversity.com/rules/axe/4.10/color-contrast',
+            nodes: 12,
+            weight: 6,
+            penalty: 20.9,
+            share: 0.78,
+            points_if_fixed: 21.4,
+          },
+          {
+            rule_id: 'region',
+            impact: 'moderate',
+            principle: 'robust',
+            help: 'Inhalte müssen in Landmarken liegen',
+            nodes: 1,
+            weight: 3,
+            penalty: 3,
+            share: 0.22,
+            points_if_fixed: 3.1,
+          },
+        ],
+      },
+    ],
+    improvements: [
+      {
+        rule_id: 'color-contrast',
+        impact: 'serious',
+        principle: 'perceivable',
+        help: 'Elemente müssen den Mindestkontrast erreichen',
+        help_url: 'https://dequeuniversity.com/rules/axe/4.10/color-contrast',
+        pages: 4,
+        nodes: 12,
+        points_if_fixed: 16.1,
+      },
+    ],
+  },
   changes: {
     fixed: [
       {
