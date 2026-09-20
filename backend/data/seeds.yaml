@@ -13,19 +13,19 @@
 - {slug: bundesverfassungsgericht, name: Bundesverfassungsgericht, url: "https://www.bundesverfassungsgericht.de/", level: bund, category: gericht}
 
 - {slug: bmi, name: Bundesministerium des Innern, url: "https://www.bmi.bund.de/", level: bund, category: ministerium}
-- {slug: bmj, name: Bundesministerium der Justiz, url: "https://www.bmj.de/", level: bund, category: ministerium}
+- {slug: bmj, name: Bundesministerium der Justiz und für Verbraucherschutz, url: "https://www.bmj.de/", level: bund, category: ministerium}
 - {slug: bmf, name: Bundesministerium der Finanzen, url: "https://www.bundesfinanzministerium.de/", level: bund, category: ministerium}
 - {slug: auswaertiges-amt, name: Auswärtiges Amt, url: "https://www.auswaertiges-amt.de/", level: bund, category: ministerium}
 - {slug: bmvg, name: Bundesministerium der Verteidigung, url: "https://www.bmvg.de/", level: bund, category: ministerium}
 - {slug: bmas, name: Bundesministerium für Arbeit und Soziales, url: "https://www.bmas.de/", level: bund, category: ministerium}
 - {slug: bmg, name: Bundesministerium für Gesundheit, url: "https://www.bundesgesundheitsministerium.de/", level: bund, category: ministerium}
-- {slug: bmbf, name: Bundesministerium für Bildung und Forschung, url: "https://www.bmbf.de/", level: bund, category: ministerium}
-- {slug: bmel, name: Bundesministerium für Ernährung und Landwirtschaft, url: "https://www.bmel.de/", level: bund, category: ministerium}
+- {slug: bmbf, name: "Bundesministerium für Forschung, Technologie und Raumfahrt", url: "https://www.bmftr.bund.de/", level: bund, category: ministerium}
+- {slug: bmel, name: "Bundesministerium für Landwirtschaft, Ernährung und Heimat", url: "https://www.bmleh.de/", level: bund, category: ministerium}
 - {slug: bmz, name: Bundesministerium für wirtschaftliche Zusammenarbeit, url: "https://www.bmz.de/", level: bund, category: ministerium}
-- {slug: bmuv, name: Bundesministerium für Umwelt und Verbraucherschutz, url: "https://www.bmuv.de/", level: bund, category: ministerium}
-- {slug: bmdv, name: Bundesministerium für Digitales und Verkehr, url: "https://bmdv.bund.de/", level: bund, category: ministerium}
-- {slug: bmwsb, name: Bundesministerium für Wohnen, Stadtentwicklung und Bauwesen, url: "https://www.bmwsb.bund.de/", level: bund, category: ministerium}
-- {slug: bmwk, name: Bundesministerium für Wirtschaft und Klimaschutz, url: "https://www.bmwk.de/", level: bund, category: ministerium}
+- {slug: bmuv, name: "Bundesministerium für Umwelt, Klimaschutz, Naturschutz und nukleare Sicherheit", url: "https://www.bundesumweltministerium.de/", level: bund, category: ministerium}
+- {slug: bmdv, name: Bundesministerium für Verkehr, url: "https://www.bmv.de/", level: bund, category: ministerium}
+- {slug: bmwsb, name: "Bundesministerium für Wohnen, Stadtentwicklung und Bauwesen", url: "https://www.bmwsb.bund.de/", level: bund, category: ministerium}
+- {slug: bmwk, name: Bundesministerium für Wirtschaft und Energie, url: "https://www.bmwk.de/", level: bund, category: ministerium}
 
 - {slug: bundesagentur-arbeit, name: Bundesagentur für Arbeit, url: "https://www.arbeitsagentur.de/", level: bund, category: behoerde}
 - {slug: deutsche-rentenversicherung, name: Deutsche Rentenversicherung, url: "https://www.deutsche-rentenversicherung.de/", level: bund, category: behoerde}
@@ -41,7 +41,7 @@
 - {slug: umweltbundesamt, name: Umweltbundesamt, url: "https://www.umweltbundesamt.de/", level: bund, category: behoerde}
 - {slug: kba, name: Kraftfahrt-Bundesamt, url: "https://www.kba.de/", level: bund, category: behoerde}
 - {slug: dwd, name: Deutscher Wetterdienst, url: "https://www.dwd.de/", level: bund, category: behoerde}
-- {slug: bzga, name: Bundeszentrale für gesundheitliche Aufklärung, url: "https://www.bzga.de/", level: bund, category: behoerde}
+- {slug: bzga, name: Bundesinstitut für Öffentliche Gesundheit, url: "https://www.bzga.de/", level: bund, category: behoerde}
 - {slug: bpb, name: Bundeszentrale für politische Bildung, url: "https://www.bpb.de/", level: bund, category: behoerde}
 
 - {slug: land-baden-wuerttemberg, name: Baden-Württemberg, url: "https://www.baden-wuerttemberg.de/", level: land, state: Baden-Württemberg, category: landesportal}

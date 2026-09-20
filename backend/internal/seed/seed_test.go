@@ -87,3 +87,39 @@ func TestEmbeddedSeedsAreValid(t *testing.T) {
 		t.Errorf("distribution across levels too thin: %v", levels)
 	}
 }
+
+// An unquoted comma inside a flow mapping ends the value. The name is then silently
+// cut in half and the rest becomes a key nobody wrote — which is how the housing
+// ministry spent weeks in the ranking as "Bundesministerium für Wohnen".
+func TestParseRejectsANameCutOffByAComma(t *testing.T) {
+	raw := []byte(`- {slug: bmwsb, name: Bundesministerium für Wohnen, Stadtentwicklung und Bauwesen, url: "https://www.bmwsb.bund.de/", level: bund}`)
+
+	if _, err := Parse(raw); err == nil {
+		t.Fatal("a truncated name was accepted")
+	}
+}
+
+func TestParseKeepsANameWithCommasWhenItIsQuoted(t *testing.T) {
+	raw := []byte(`- {slug: bmwsb, name: "Bundesministerium für Wohnen, Stadtentwicklung und Bauwesen", url: "https://www.bmwsb.bund.de/", level: bund}`)
+
+	got, err := Parse(raw)
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	if got[0].Name != "Bundesministerium für Wohnen, Stadtentwicklung und Bauwesen" {
+		t.Fatalf("name = %q", got[0].Name)
+	}
+}
+
+// The list we ship has to survive its own rules.
+func TestEmbeddedSeedsCarryWholeNames(t *testing.T) {
+	agencies, err := Load()
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	for _, a := range agencies {
+		if strings.HasSuffix(a.Name, ",") || strings.HasSuffix(a.Name, " und") {
+			t.Errorf("%s: name looks cut off: %q", a.Slug, a.Name)
+		}
+	}
+}
