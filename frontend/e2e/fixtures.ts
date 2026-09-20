@@ -267,6 +267,22 @@ const mailSummary = {
   by_level: [{ name: 'kommune', provider: 'microsoft365', agencies: 20, us_based: true }],
 }
 
+const ungeprueft = {
+  ...agencyDetail,
+  slug: 'ungeprueft',
+  name: 'Noch nicht geprüft',
+  score: null,
+  grade: undefined,
+  pages: 0,
+  scanned_at: undefined,
+  latest_scan_id: undefined,
+  mail: undefined,
+  subscores: { perceivable: null, operable: null, understandable: null, robust: null },
+  trend: { direction: 'unknown', scans: 0 },
+  // Eine ältere API antwortet hier mit null statt mit einer leeren Liste.
+  history: null,
+}
+
 export async function stubApi(page: Page) {
   await page.route('**/api/v1/**', async (route) => {
     const path = new URL(route.request().url()).pathname
@@ -278,6 +294,9 @@ export async function stubApi(page: Page) {
     if (path.endsWith('/mail')) return json(mailSummary)
     if (path.endsWith('/view')) return route.fulfill({ status: 204, body: '' })
     if (path.endsWith('/scans/latest')) return json(latestScan)
+    // Direkt nach der Installation ist keine Behörde geprüft. Genau dieser Fall hat
+    // eine weiße Seite erzeugt, deshalb steht er hier neben dem Normalfall.
+    if (path.endsWith('/agencies/ungeprueft')) return json(ungeprueft)
     if (path.match(/\/agencies\/[^/]+$/)) return json(agencyDetail)
     if (path.endsWith('/agencies')) return json(agencies)
     return json({})

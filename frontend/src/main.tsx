@@ -5,6 +5,7 @@ import { BrowserRouter, Route, Routes } from 'react-router'
 
 import './index.css'
 import { Layout } from './components/Layout'
+import { Fehlergrenze } from './components/Fehlergrenze'
 import { Ranking } from './pages/Ranking'
 import { AgencyPage } from './pages/Agency'
 import { Dashboard } from './pages/Dashboard'
@@ -33,21 +34,23 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <Routes>
-          <Route element={<Layout />}>
-            <Route index element={<Ranking />} />
-            <Route path="behoerde/:slug" element={<AgencyPage />} />
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="methodik" element={<Methodology />} />
-            <Route path="impressum" element={<Impressum />} />
-            <Route path="datenschutz" element={<Datenschutz />} />
-            <Route path="barrierefreiheit" element={<Barrierefreiheit />} />
-            <Route path="statistik" element={<Statistics />} />
-            <Route path="drittanbieter" element={<Drittanbieter />} />
-            <Route path="e-mail" element={<EMail />} />
-            <Route path="*" element={<NotFound />} />
-          </Route>
-        </Routes>
+        <Fehlergrenze>
+          <Routes>
+            <Route element={<Layout />}>
+              <Route index element={<Ranking />} />
+              <Route path="behoerde/:slug" element={<AgencyPage />} />
+              <Route path="dashboard" element={<Dashboard />} />
+              <Route path="methodik" element={<Methodology />} />
+              <Route path="impressum" element={<Impressum />} />
+              <Route path="datenschutz" element={<Datenschutz />} />
+              <Route path="barrierefreiheit" element={<Barrierefreiheit />} />
+              <Route path="statistik" element={<Statistics />} />
+              <Route path="drittanbieter" element={<Drittanbieter />} />
+              <Route path="e-mail" element={<EMail />} />
+              <Route path="*" element={<NotFound />} />
+            </Route>
+          </Routes>
+        </Fehlergrenze>
       </BrowserRouter>
     </QueryClientProvider>
   </StrictMode>,

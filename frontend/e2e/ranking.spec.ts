@@ -164,3 +164,14 @@ test('führt die bundesweite Auswertung der E-Mail-Anbieter', async ({ page }) =
   await expect(page.getByRole('row', { name: /Bayern/ })).toContainText('50 %')
   await expect(page.getByRole('heading', { name: 'Was ein MX-Eintrag nicht sagt' })).toBeVisible()
 })
+
+test('eine noch ungeprüfte Behörde zeigt eine Seite, keine leere', async ({ page }) => {
+  await page.goto('/behoerde/ungeprueft')
+
+  await expect(page.getByRole('heading', { level: 1, name: 'Noch nicht geprüft' })).toBeVisible()
+  await expect(page.getByText('Diese Behörde wurde noch nicht geprüft.')).toBeVisible()
+  await expect(page.getByText(/mindestens zwei Prüfungen/)).toBeVisible()
+  // Weder Absturz noch erfundene Ergebnisse.
+  await expect(page.getByRole('alert')).toHaveCount(0)
+  await expect(page.getByRole('heading', { name: 'Verstöße nach Regel' })).toHaveCount(0)
+})

@@ -426,3 +426,20 @@ func TestDatabaseErrorStaysInside(t *testing.T) {
 		t.Fatalf("internals leaked: %s", body)
 	}
 }
+
+// Eine Behörde, die noch nie geprüft wurde, ist der Normalfall direkt nach der
+// Installation — und sie hat die ganze Seite weiß werden lassen: Die leere Historie kam
+// als null zurück, das Frontend las darauf eine Länge und brach ab.
+func TestUnscannedAgencyAnswersWithEmptyLists(t *testing.T) {
+	db := &fakeDB{agencies: sampleAgencies()}
+	rec := request(t, db, http.MethodGet, "/api/v1/agencies/stadt-kiel", nil)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d", rec.Code)
+	}
+
+	// Am rohen Text geprüft, nicht am entpackten Wert: Beim Entpacken sehen null und
+	// [] gleich aus, und genau dieser Unterschied war der Fehler.
+	if body := rec.Body.String(); !strings.Contains(body, `"history":[]`) {
+		t.Errorf("history is not an empty array: %s", body)
+	}
+}

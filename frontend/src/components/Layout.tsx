@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router'
 
 import { api } from '../api/client'
+import { Fehlergrenze } from './Fehlergrenze'
 
 const navigation = [
   { to: '/', label: 'Ranking', end: true },
@@ -58,7 +59,11 @@ export function Layout() {
       </header>
 
       <main id="inhalt" className="mx-auto max-w-6xl px-4 py-8">
-        <Outlet />
+        {/* Die Grenze steht hier und nicht nur ganz außen: Bricht eine Seite ab,
+            bleiben Navigation und Fuß stehen, und man kommt weiter. */}
+        <Fehlergrenze>
+          <Outlet />
+        </Fehlergrenze>
       </main>
 
       <footer className="border-t border-slate-200 bg-white">
