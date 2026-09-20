@@ -76,3 +76,17 @@ func principleFromTags(tags []string) model.Principle {
 
 // Principle derives the WCAG principle of a violation from its axe tags.
 func Principle(tags []string) model.Principle { return principleFromTags(tags) }
+
+// MinPages is the number of checked pages below which a result is not yet a site score.
+// The score is defined as a weighted mean over entry page, priority pages and the rest;
+// over one page that definition is simply not met — the number then describes that
+// page, and nothing else.
+//
+// It happens: the federal CMS ships robots.txt with a three-minute crawl delay, which
+// we honour, and the ranking ended up with authorities measured over a single page
+// sitting between authorities measured over a hundred.
+const MinPages = 5
+
+// Provisional reports whether a result rests on too few pages to be read as a score for
+// the whole site.
+func Provisional(pages int) bool { return pages > 0 && pages < MinPages }

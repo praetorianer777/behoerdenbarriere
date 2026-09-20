@@ -29,6 +29,9 @@ type agencyDTO struct {
 	// Lighthouse is Google's score for the entry page. It is built the other way
 	// round from ours, and where the two disagree that is worth seeing.
 	Lighthouse *float64 `json:"lighthouse_score,omitempty"`
+	// Provisional says the value rests on too few pages to describe the site. It is
+	// carried with the score rather than left to the reader to work out from Pages.
+	Provisional bool `json:"provisional,omitempty"`
 }
 
 type subscoresDTO struct {
@@ -258,6 +261,9 @@ func toAgencyDTO(a store.AgencyListing) agencyDTO {
 		State: a.State, Category: a.Category,
 		Score: a.Score, Grade: a.Grade, Pages: a.Pages, ScannedAt: a.ScannedAt,
 		Lighthouse: a.LighthouseScore,
+		// Ein Wert über eine Seite ist kein Wert über eine Website. Das gehört an den
+		// Wert selbst, nicht in eine Fußnote in der Detailansicht.
+		Provisional: a.Score != nil && scoring.Provisional(a.Pages),
 	}
 	if a.Score != nil && a.PrevScore != nil {
 		delta := round2(*a.Score - *a.PrevScore)

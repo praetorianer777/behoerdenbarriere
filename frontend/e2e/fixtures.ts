@@ -292,6 +292,16 @@ const gesperrt = {
   failure: { reason: 'Bot-Schutz: Link11 - CAPTCHA', at: '2026-09-20T04:00:00Z' },
 }
 
+// Bundesbehörden verlangen in ihrer robots.txt drei Minuten Pause. Was dabei
+// herauskommt, ist ein Wert über eine Seite.
+const vorlaeufig = {
+  ...agencyDetail,
+  slug: 'vorlaeufig',
+  name: 'Nur eine Seite geprüft',
+  pages: 1,
+  provisional: true,
+}
+
 export async function stubApi(page: Page) {
   await page.route('**/api/v1/**', async (route) => {
     const path = new URL(route.request().url()).pathname
@@ -307,6 +317,7 @@ export async function stubApi(page: Page) {
     // eine weiße Seite erzeugt, deshalb steht er hier neben dem Normalfall.
     if (path.endsWith('/agencies/ungeprueft')) return json(ungeprueft)
     if (path.endsWith('/agencies/gesperrt')) return json(gesperrt)
+    if (path.endsWith('/agencies/vorlaeufig')) return json(vorlaeufig)
     if (path.match(/\/agencies\/[^/]+$/)) return json(agencyDetail)
     if (path.endsWith('/agencies')) return json(agencies)
     return json({})
@@ -325,4 +336,5 @@ export const routes = [
   '/barrierefreiheit',
   '/behoerde/bmwsb',
   '/behoerde/gesperrt',
+  '/behoerde/vorlaeufig',
 ]

@@ -108,6 +108,13 @@ Mittel 26 Punkte über unserem und drängt sich zwischen 84 und 100, während un
 von 28 bis 100 streuen. Für eine Rangfolge taugt er deshalb kaum, als Gegenprobe für
 unsere Gewichte schon.
 
+**Werte aus wenigen Seiten.** Manche `robots.txt` verlangt drei Minuten Pause zwischen
+zwei Anfragen — das Bundes-CMS liefert genau das aus. Wir halten uns daran, und in der
+verfügbaren Zeit bleiben dann ein paar Seiten statt hundert. Ein Wert aus weniger als
+fünf geprüften Seiten wird als **vorläufig** gekennzeichnet, überall dort, wo er steht:
+Er beschreibt diese Seiten, nicht die Website. Umgangen wird die Pause nicht; die
+Behörde bekommt stattdessen ein größeres Zeitbudget, gedeckelt auf eine halbe Stunde.
+
 **Sperrseiten.** Manche Behörden schützen ihre Website gegen automatische Zugriffe —
 Captchas, Bot-Manager, ein 403 an der Tür. Solche Seiten werden nicht bewertet, sondern
 abgelehnt: Eine Note aus einer Sperrseite wäre ein Urteil über unseren Prüfer,

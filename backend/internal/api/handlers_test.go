@@ -443,3 +443,29 @@ func TestUnscannedAgencyAnswersWithEmptyLists(t *testing.T) {
 		t.Errorf("history is not an empty array: %s", body)
 	}
 }
+
+// zoll.de verlangt 180 Sekunden zwischen zwei Anfragen. Was in der verbleibenden Zeit
+// herauskommt, ist ein Wert über eine Seite — und der darf nicht wie ein Wert über eine
+// Website aussehen.
+func TestScoreOverTooFewPagesIsMarked(t *testing.T) {
+	listing := sampleAgencies()
+	listing[0].Pages = 1
+	db := &fakeDB{agencies: listing, total: 1}
+
+	got := decode[listDTO](t, request(t, db, http.MethodGet, "/api/v1/agencies", nil))
+	if !got.Items[0].Provisional {
+		t.Errorf("a score over one page is not marked: %+v", got.Items[0])
+	}
+	// Die ungeprüfte Behörde hat keinen Wert — und damit auch keinen vorläufigen.
+	if got.Items[1].Provisional {
+		t.Errorf("an unscanned authority has no provisional score: %+v", got.Items[1])
+	}
+}
+
+func TestScoreOverEnoughPagesIsNotMarked(t *testing.T) {
+	db := &fakeDB{agencies: sampleAgencies(), total: 2}
+	got := decode[listDTO](t, request(t, db, http.MethodGet, "/api/v1/agencies", nil))
+	if got.Items[0].Provisional {
+		t.Errorf("42 pages are enough: %+v", got.Items[0])
+	}
+}

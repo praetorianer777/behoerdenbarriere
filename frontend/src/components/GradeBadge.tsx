@@ -4,13 +4,15 @@ interface Props {
   score: number | null
   grade?: string
   size?: 'sm' | 'lg'
+  /** Der Wert stützt sich auf zu wenige Seiten, um die Website zu beschreiben. */
+  provisional?: boolean
 }
 
 /**
  * Note und Punktzahl zusammen. Die Farbe wiederholt nur, was der Buchstabe schon
  * sagt — wer sie nicht sieht, verliert nichts.
  */
-export function GradeBadge({ score, grade, size = 'sm' }: Props) {
+export function GradeBadge({ score, grade, size = 'sm', provisional = false }: Props) {
   if (score === null || !grade) {
     return (
       <span className="inline-flex items-center gap-2 text-slate-600">
@@ -35,6 +37,13 @@ export function GradeBadge({ score, grade, size = 'sm' }: Props) {
         <span className="sr-only">Note {grade}, </span>
         {formatScore(score)}
         <span className="sr-only"> von 100 Punkten</span>
+        {/* Der Hinweis hängt am Wert und nicht in einer Fußnote: Wer die Zahl
+            zitiert, soll die Einschränkung mitnehmen müssen. */}
+        {provisional && (
+          <span className="ml-2 rounded-md border border-slate-400 px-1.5 py-0.5 align-middle text-xs font-normal text-slate-700">
+            vorläufig
+          </span>
+        )}
       </span>
     </span>
   )

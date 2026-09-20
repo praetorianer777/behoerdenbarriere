@@ -80,6 +80,26 @@ type Outcome struct {
 	SeenLinks []string
 }
 
+// slowSiteBudget caps what a single authority may take, however patient its robots.txt
+// asks us to be. Half an hour is enough for ten pages at a three-minute delay, and
+// little enough that one slow site does not block the queue for an afternoon.
+const slowSiteBudget = 30 * time.Minute
+
+// budget stretches the time for a site that asks for long pauses. The federal CMS ships
+// robots.txt with Crawl-delay: 180, which we honour — and in the usual ten minutes that
+// leaves three pages, sometimes one. A score over one page is not the score we define.
+//
+// Stretched, not waived: the pause between requests stays exactly as asked.
+func budget(normal, interval time.Duration) time.Duration {
+	const pagesWorthHaving = 10
+
+	wanted := interval * pagesWorthHaving
+	if wanted <= normal {
+		return normal
+	}
+	return min(wanted, slowSiteBudget)
+}
+
 // Crawl walks the site from startURL and returns the result for every page checked.
 // Running into the time or page budget is not an error: a partial result still says
 // something, and every page is checked before it is counted.
@@ -93,8 +113,6 @@ func (c *Crawler) Crawl(ctx context.Context, startURL string) (Outcome, error) {
 	}
 
 	parent := ctx
-	ctx, cancel := context.WithTimeout(ctx, c.cfg.Timeout)
-	defer cancel()
 
 	// robots.txt may ask for a longer pause than our own rate limit; the stricter of
 	// the two wins.
@@ -102,6 +120,9 @@ func (c *Crawler) Crawl(ctx context.Context, startURL string) (Outcome, error) {
 	if delay := c.robots.CrawlDelay(ctx, start); delay > interval {
 		interval = delay
 	}
+
+	ctx, cancel := context.WithTimeout(ctx, budget(c.cfg.Timeout, interval))
+	defer cancel()
 
 	f := newFrontier()
 	f.push(Target{URL: start, Depth: 0, IsEntry: true})

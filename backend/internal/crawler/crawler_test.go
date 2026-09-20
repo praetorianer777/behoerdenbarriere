@@ -418,3 +418,22 @@ func TestConcurrentCrawlsShareTheHostBudget(t *testing.T) {
 		t.Errorf("%d pages checked, want 2", got)
 	}
 }
+
+// zoll.de und die übrigen Bundesbehörden verlangen in ihrer robots.txt 180 Sekunden
+// Pause. Bei zehn Minuten Zeitbudget bleiben davon ein bis drei Seiten — und ein Score
+// über eine Seite ist nicht der Score, den wir definieren.
+func TestBudgetStretchesForSlowSites(t *testing.T) {
+	normal := 10 * time.Minute
+
+	if got := budget(normal, time.Second); got != normal {
+		t.Errorf("schnelle Seite: %v, want %v", got, normal)
+	}
+	if got := budget(normal, 180*time.Second); got <= normal {
+		t.Errorf("langsame Seite: %v, want mehr als %v", got, normal)
+	}
+	// Aber nicht unbegrenzt: Eine Behörde darf die Warteschlange nicht einen
+	// Nachmittag lang blockieren.
+	if got := budget(normal, time.Hour); got != slowSiteBudget {
+		t.Errorf("sehr langsame Seite: %v, want %v", got, slowSiteBudget)
+	}
+}
