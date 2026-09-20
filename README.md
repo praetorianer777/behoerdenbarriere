@@ -31,6 +31,7 @@ Im Aufbau. Der Fortschritt steht in den
 cp .env.example .env
 make dev        # Postgres, Chrome, API, Worker und Oberfläche starten
 make seed       # Behördenliste einspielen
+make import     # Landkreise aus Wikidata ergänzen
 make test       # Tests
 make scan URL=https://www.bund.de   # eine einzelne Seite prüfen
 ```
@@ -79,6 +80,16 @@ is the sampling ratio between 0 and 1, and `OTEL_SERVICE_NAME` overrides the nam
 binaries give themselves (`behoerdenbarriere-api`, `behoerdenbarriere-worker`). The
 collector in [deploy/otel-collector.yaml](deploy/otel-collector.yaml) only prints what
 it receives; a backend that keeps the data is added there.
+
+## Woher die Liste kommt
+
+Zwei Quellen. Von Hand gepflegt sind Bund, Länder und die größeren Städte — geprüft,
+mit richtigem Namen und richtiger Adresse. Aus Wikidata kommen die rund 300 Landkreise,
+weil niemand diese Breite von Hand aktuell hält.
+
+Wo beide dieselbe Stelle kennen, gewinnt der geprüfte Eintrag: Der Import ergänzt, er
+überschreibt nichts. Erkannt wird eine Dopplung am Slug und an der Adresse der Website,
+damit dieselbe Behörde nicht zweimal im Ranking steht.
 
 ## Wie bewertet wird
 
