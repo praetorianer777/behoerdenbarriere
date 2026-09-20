@@ -36,6 +36,7 @@ type fakeDB struct {
 	usageDays   int
 	seen        []thirdparty.Seen
 	mail        *maildns.Record
+	failure     *store.Failure
 	mailSummary *store.MailSummary
 	reach       []store.ContactReach
 	failWith    error
@@ -49,6 +50,14 @@ func (f *fakeDB) ContactsForScan(context.Context, int64) ([]thirdparty.Seen, err
 		return nil, f.failWith
 	}
 	return f.seen, nil
+}
+
+func (f *fakeDB) LastFailure(context.Context, int64) (*store.Failure, error) {
+	f.calls++
+	if f.failure == nil {
+		return nil, store.ErrNotFound
+	}
+	return f.failure, nil
 }
 
 func (f *fakeDB) MailForAgency(context.Context, int64) (*maildns.Record, error) {

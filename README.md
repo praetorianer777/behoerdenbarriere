@@ -108,6 +108,13 @@ Mittel 26 Punkte über unserem und drängt sich zwischen 84 und 100, während un
 von 28 bis 100 streuen. Für eine Rangfolge taugt er deshalb kaum, als Gegenprobe für
 unsere Gewichte schon.
 
+**Sperrseiten.** Manche Behörden schützen ihre Website gegen automatische Zugriffe —
+Captchas, Bot-Manager, ein 403 an der Tür. Solche Seiten werden nicht bewertet, sondern
+abgelehnt: Eine Note aus einer Sperrseite wäre ein Urteil über unseren Prüfer,
+veröffentlicht unter dem Namen der Behörde. Auf der Seite der Behörde steht dann, woran
+es lag. (Beobachtet in beide Richtungen: 0,00 und Note F für eine 403-Seite, 100 und
+Note A für ein Captcha.)
+
 **Grenzen des Verfahrens.** Automatisierte Prüfungen decken je nach Quelle nur etwa
 30 bis 40 Prozent der WCAG-Kriterien ab. Ob eine Alternativbeschreibung das Bild
 tatsächlich beschreibt, kann kein Programm beurteilen. Der Score ist ein Indikator und

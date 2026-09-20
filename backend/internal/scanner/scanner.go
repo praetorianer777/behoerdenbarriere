@@ -257,6 +257,15 @@ func (s *Scanner) Scan(ctx context.Context, url string) PageScan {
 	out.Result.Text = info.Text
 	out.Links = info.Links
 
+	// Eine Sperrseite wird nicht geprüft, sondern abgelehnt. Sonst entsteht eine Note
+	// über unseren eigenen Crawler, veröffentlicht unter dem Namen der Behörde — und
+	// zwar in beide Richtungen: 0,00 für eine 403-Seite, 100 für ein Captcha.
+	if reason := Interstitial(out.Result.HTTPStatus, info.Title, info.Text, info.DOMNodes); reason != "" {
+		out.Result.Err = reason
+		out.Links = nil
+		return out
+	}
+
 	var axeRes axeResult
 	if err := json.Unmarshal([]byte(axeJSON), &axeRes); err != nil {
 		out.Result.Err = fmt.Sprintf("axe result: %v", err)

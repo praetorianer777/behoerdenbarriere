@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -130,5 +131,36 @@ func TestMailOverviewMarksFilters(t *testing.T) {
 	}
 	if got.ByProvider[1].Filter {
 		t.Errorf("self-operated is not a filter: %+v", got.ByProvider[1])
+	}
+}
+
+// Rund zwanzig Behörden verschwinden durch Bot-Schutz aus dem Ranking. Ohne Begründung
+// sieht das aus wie „noch nicht drangekommen" — und der Verdacht fiele auf uns.
+func TestAgencySaysWhyItCouldNotBeChecked(t *testing.T) {
+	db := &fakeDB{
+		agencies: sampleAgencies(),
+		failure: &store.Failure{
+			Reason: "bmi: Bot-Schutz: Link11 - CAPTCHA",
+			At:     time.Date(2026, 9, 20, 4, 0, 0, 0, time.UTC),
+		},
+	}
+
+	got := decode[agencyDetailDTO](t, request(t, db, http.MethodGet, "/api/v1/agencies/bmi", nil))
+	if got.Failure == nil {
+		t.Fatal("no reason given")
+	}
+	if !strings.Contains(got.Failure.Reason, "Link11") {
+		t.Errorf("reason = %q", got.Failure.Reason)
+	}
+	if got.Failure.At.IsZero() {
+		t.Error("without a date nobody knows how old the refusal is")
+	}
+}
+
+func TestAgencyWithoutAFailureSaysNothing(t *testing.T) {
+	got := decode[agencyDetailDTO](t, request(t, &fakeDB{agencies: sampleAgencies()},
+		http.MethodGet, "/api/v1/agencies/bmi", nil))
+	if got.Failure != nil {
+		t.Errorf("failure = %+v, want none", got.Failure)
 	}
 }

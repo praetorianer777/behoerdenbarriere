@@ -34,6 +34,7 @@ type Queries interface {
 	PageResultsForScan(ctx context.Context, scanID int64) ([]model.PageResult, error)
 	ContactsForScan(ctx context.Context, scanID int64) ([]thirdparty.Seen, error)
 	ContactReach(ctx context.Context, limit int) ([]store.ContactReach, error)
+	LastFailure(ctx context.Context, agencyID int64) (*store.Failure, error)
 	MailForAgency(ctx context.Context, agencyID int64) (*maildns.Record, error)
 	MailOverview(ctx context.Context) (*store.MailSummary, error)
 	Stats(ctx context.Context) (*store.Stats, error)
@@ -88,6 +89,15 @@ func (s *Server) handleAgency(w http.ResponseWriter, r *http.Request) {
 		Trend:     trend.Summarize(history, time.Now()),
 		History:   history,
 	}
+	// Warum die letzte Prüfung nichts ergeben hat. Ohne diese Angabe sähe eine
+	// abgewiesene Behörde aus wie eine, die noch niemand angefasst hat.
+	if failure, err := s.db.LastFailure(r.Context(), agency.ID); err == nil {
+		detail.Failure = &failureDTO{Reason: failure.Reason, At: failure.At}
+	} else if !errors.Is(err, store.ErrNotFound) {
+		s.fail(w, r, err)
+		return
+	}
+
 	// What the domain publishes about its email. Not every authority has been looked
 	// up, and a missing record is not a statement about the authority.
 	if mail, err := s.db.MailForAgency(r.Context(), agency.ID); err == nil {

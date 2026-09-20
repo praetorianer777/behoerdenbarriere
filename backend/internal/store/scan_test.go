@@ -3,6 +3,7 @@ package store_test
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/praetorianer777/behoerdenbarriere/internal/model"
@@ -172,5 +173,49 @@ func TestLatestScore(t *testing.T) {
 	}
 	if score != 81 || grade != "B" || at.IsZero() {
 		t.Fatalf("latest score = %v/%s at %v", score, grade, at)
+	}
+}
+
+// Eine abgewiesene Behörde darf nicht aussehen wie eine, die niemand angefasst hat.
+func TestLastFailureExplainsAMissingScore(t *testing.T) {
+	s := storetest.New(t)
+	ctx := context.Background()
+	agencyID := freshAgency(t, s)
+
+	if _, err := s.LastFailure(ctx, agencyID); err != store.ErrNotFound {
+		t.Errorf("without any scan: %v, want ErrNotFound", err)
+	}
+
+	scanID, err := s.StartScan(ctx, agencyID, nil)
+	if err != nil {
+		t.Fatalf("start: %v", err)
+	}
+	if err := s.FailScan(ctx, scanID, errors.New("Bot-Schutz: Link11 - CAPTCHA")); err != nil {
+		t.Fatalf("fail: %v", err)
+	}
+
+	failure, err := s.LastFailure(ctx, agencyID)
+	if err != nil {
+		t.Fatalf("failure: %v", err)
+	}
+	if !strings.Contains(failure.Reason, "Link11") {
+		t.Errorf("reason = %q", failure.Reason)
+	}
+	if failure.At.IsZero() {
+		t.Error("without a date nobody knows how old the refusal is")
+	}
+
+	// Ein erfolgreicher Lauf danach erledigt die Sache: Der alte Fehlschlag gehört
+	// nicht mehr auf die Seite.
+	later, err := s.StartScan(ctx, agencyID, nil)
+	if err != nil {
+		t.Fatalf("start: %v", err)
+	}
+	pages := []model.PageResult{{URL: "https://example.org/", IsEntry: true, DOMNodes: 800}}
+	if err := s.FinishScan(ctx, later, pages, scoring.SiteScore(pages)); err != nil {
+		t.Fatalf("finish: %v", err)
+	}
+	if _, err := s.LastFailure(ctx, agencyID); err != store.ErrNotFound {
+		t.Errorf("after a successful scan: %v, want ErrNotFound", err)
 	}
 }
