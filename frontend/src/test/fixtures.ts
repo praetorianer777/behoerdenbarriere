@@ -33,6 +33,7 @@ export const agencyList: AgencyList = {
     },
   ],
   total: 2,
+  scanned: 1,
   page: 1,
   per_page: 50,
 }

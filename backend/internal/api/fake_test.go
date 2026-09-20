@@ -87,13 +87,19 @@ func (f *fakeDB) ContactReach(context.Context, int) ([]store.ContactReach, error
 	return f.reach, nil
 }
 
-func (f *fakeDB) ListAgencies(_ context.Context, filter store.AgencyFilter) ([]store.AgencyListing, int, error) {
+func (f *fakeDB) ListAgencies(_ context.Context, filter store.AgencyFilter) ([]store.AgencyListing, store.AgencyCounts, error) {
 	f.calls++
 	f.filter = filter
 	if f.failWith != nil {
-		return nil, 0, f.failWith
+		return nil, store.AgencyCounts{}, f.failWith
 	}
-	return f.agencies, f.total, nil
+	scanned := 0
+	for _, a := range f.agencies {
+		if a.Score != nil {
+			scanned++
+		}
+	}
+	return f.agencies, store.AgencyCounts{Total: f.total, Scanned: scanned}, nil
 }
 
 func (f *fakeDB) AgencyBySlug(_ context.Context, slug string) (*store.AgencyListing, error) {

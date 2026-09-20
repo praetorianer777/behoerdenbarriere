@@ -189,8 +189,18 @@ export function Ranking() {
           {/* aria-busy sagt Hilfsmitteln, dass hier gerade nachgeladen wird —
               sichtbar ist es an der blasseren Liste. */}
           <div aria-busy={agencies.isFetching} className={agencies.isFetching ? 'opacity-60' : ''}>
+            {/* Beide Zahlen gehören nebeneinander: Die Liste beginnt mit den besten
+                Noten, und wer nur die erste Zahl liest, hält das Ergebnis von 79
+                Behörden für das Ergebnis von 426. */}
             <p role="status" className="mt-6 text-sm text-slate-700">
-              {agencies.data.total} Behörden gefunden
+              {agencies.data.total} {agencies.data.total === 1 ? 'Behörde' : 'Behörden'} gefunden,
+              davon {agencies.data.scanned} geprüft
+              {agencies.data.scanned < agencies.data.total && (
+                <>
+                  {' — '}
+                  <span>die übrigen stehen am Ende der Liste ohne Wert</span>
+                </>
+              )}
             </p>
 
             {/* Auf dem Telefon wird aus jeder Zeile eine Karte. Eine Rangliste quer

@@ -128,6 +128,8 @@ export interface MailSummary {
 export interface AgencyList {
   items: Agency[]
   total: number
+  /** Wie viele der gefundenen Behörden ein Ergebnis haben. */
+  scanned: number
   page: number
   per_page: number
 }

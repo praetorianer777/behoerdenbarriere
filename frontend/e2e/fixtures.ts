@@ -30,6 +30,7 @@ const agencies = {
     },
   ],
   total: 2,
+  scanned: 1,
   page: 1,
   per_page: 50,
 }
