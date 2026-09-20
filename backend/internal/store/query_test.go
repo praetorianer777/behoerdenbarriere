@@ -355,3 +355,95 @@ func TestPageResultsForScanRebuildTheFindings(t *testing.T) {
 		t.Fatalf("rebuilt score %v, stored %v", rebuilt, scoring.SiteScore(pages).Score)
 	}
 }
+
+// bmi verbessert sich von 60 auf 74,5 (+14,5), bmf hat nur eine Prüfung und damit
+// keine Veränderung, Kiel gar keine.
+func TestListAgenciesSortsByChange(t *testing.T) {
+	s := storetest.New(t)
+	landscape(t, s)
+	ctx := context.Background()
+
+	descending, _, err := s.ListAgencies(ctx, store.AgencyFilter{Sort: "delta"})
+	if err != nil {
+		t.Fatalf("list: %v", err)
+	}
+	if descending[0].Slug != "bmi" {
+		t.Errorf("biggest improvement = %s, want bmi", descending[0].Slug)
+	}
+
+	ascending, _, err := s.ListAgencies(ctx, store.AgencyFilter{Sort: "delta_asc"})
+	if err != nil {
+		t.Fatalf("list: %v", err)
+	}
+	if ascending[0].Slug != "bmi" {
+		t.Errorf("only authority with a change = %s", ascending[0].Slug)
+	}
+
+	// Ohne Veränderung heißt nicht „Veränderung null": In beide Richtungen stehen
+	// diese Behörden hinten, sonst führte eine unveränderte Liste die Rangfolge an.
+	for _, order := range [][]store.AgencyListing{descending, ascending} {
+		if order[0].PrevScore == nil {
+			t.Fatalf("an authority without a change leads the order: %+v", order[0])
+		}
+	}
+}
+
+func TestListAgenciesSortsByLevelAndDate(t *testing.T) {
+	s := storetest.New(t)
+	landscape(t, s)
+	ctx := context.Background()
+
+	byLevel, _, err := s.ListAgencies(ctx, store.AgencyFilter{Sort: "level"})
+	if err != nil {
+		t.Fatalf("list: %v", err)
+	}
+	// Nach Rang, nicht nach Alphabet: Bund vor Kommune, und innerhalb des Bundes nach
+	// Namen.
+	if byLevel[0].Level != model.LevelBund || byLevel[2].Level != model.LevelKommune {
+		t.Errorf("order = %s, %s, %s", byLevel[0].Level, byLevel[1].Level, byLevel[2].Level)
+	}
+	if byLevel[0].Slug != "bmf" {
+		t.Errorf("within the level it should go by name: %s", byLevel[0].Slug)
+	}
+
+	reversed, _, err := s.ListAgencies(ctx, store.AgencyFilter{Sort: "level_desc"})
+	if err != nil {
+		t.Fatalf("list: %v", err)
+	}
+	if reversed[0].Level != model.LevelKommune {
+		t.Errorf("reversed order starts with %s", reversed[0].Level)
+	}
+
+	// Beide zuletzt geprüften Scans liegen in der Landschaft einen Tag zurück und
+	// unterscheiden sich nur um Mikrosekunden. Ein Test, der darauf baut, prüft den
+	// Zufall — also werden die Zeitpunkte hier auseinandergezogen.
+	if _, err := s.Pool.Exec(ctx, `
+		UPDATE scans SET finished_at = now() - interval '30 days'
+		WHERE agency_id = (SELECT id FROM agencies WHERE slug = 'bmi')`); err != nil {
+		t.Fatalf("age the scans: %v", err)
+	}
+
+	oldest, _, err := s.ListAgencies(ctx, store.AgencyFilter{Sort: "scanned_asc"})
+	if err != nil {
+		t.Fatalf("list: %v", err)
+	}
+	if oldest[0].Slug != "bmi" {
+		t.Errorf("oldest check = %s, want bmi", oldest[0].Slug)
+	}
+	if oldest[2].Slug != "stadt-kiel" {
+		t.Errorf("never checked should stay last, got %s", oldest[2].Slug)
+	}
+
+	newest, _, err := s.ListAgencies(ctx, store.AgencyFilter{Sort: "scanned"})
+	if err != nil {
+		t.Fatalf("list: %v", err)
+	}
+	if newest[0].Slug != "bmf" {
+		t.Errorf("most recent check = %s, want bmf", newest[0].Slug)
+	}
+	// Auch bei der jüngsten Prüfung zuerst gehört „nie geprüft" ans Ende und nicht an
+	// den Anfang.
+	if newest[2].Slug != "stadt-kiel" {
+		t.Errorf("never checked should stay last, got %s", newest[2].Slug)
+	}
+}
