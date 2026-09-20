@@ -33,13 +33,16 @@ describe('Suche im Ranking', () => {
   })
 
   it('lässt die bisherige Liste stehen, solange die neue lädt', async () => {
-    let antworten: (() => void) | undefined
+    // Alle offenen Antworten, nicht nur die letzte: Bleibt eine davon hängen, bleibt
+    // die Liste „wird geladen", und der Test schlägt fehl, ohne dass etwas kaputt
+    // wäre. Genau so ist er in der CI einmal umgefallen.
+    const offen: (() => void)[] = []
     vi.spyOn(api, 'agencies').mockImplementation(async (query) => {
       if (!query.q) return agencyList
-      // Die zweite Abfrage bleibt hängen — so sieht der Moment aus, in dem die
+      // Die Abfrage zum Suchtext bleibt hängen — so sieht der Moment aus, in dem die
       // Tabelle bisher verschwand.
       await new Promise<void>((resolve) => {
-        antworten = resolve
+        offen.push(resolve)
       })
       return { ...agencyList, items: [agencyList.items[0]], total: 1 }
     })
@@ -59,7 +62,7 @@ describe('Suche im Ranking', () => {
       expect(within(busy as HTMLElement).getByRole('table')).toBeInTheDocument()
     })
 
-    antworten?.()
+    for (const antworten of offen) antworten()
     await waitFor(() => expect(document.querySelector('[aria-busy="true"]')).toBeNull())
   })
 
