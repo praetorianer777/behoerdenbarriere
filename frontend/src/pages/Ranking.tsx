@@ -28,7 +28,10 @@ export function Ranking() {
     queryKey: ['agencies', query],
     queryFn: ({ signal }) => api.agencies(query, signal),
   })
-  const stats = useQuery({ queryKey: ['stats'], queryFn: ({ signal }) => api.stats(signal) })
+  const stats = useQuery({
+    queryKey: ['stats'],
+    queryFn: ({ signal }) => api.stats(signal),
+  })
 
   function update(changes: Record<string, string>) {
     const next = new URLSearchParams(params)
@@ -45,7 +48,9 @@ export function Ranking() {
 
   return (
     <>
-      <h1 className="text-3xl font-bold">Wie barrierefrei sind deutsche Behörden?</h1>
+      <h1 className="text-2xl font-bold break-words hyphens-auto sm:text-3xl">
+        Wie barrierefrei sind deutsche Behörden?
+      </h1>
       <p className="mt-2 max-w-2xl text-slate-700">
         Jede Website wird automatisiert nach WCAG 2.1 AA geprüft. Je höher der Wert, desto weniger
         Barrieren wurden gefunden.
@@ -64,7 +69,7 @@ export function Ranking() {
             type="search"
             defaultValue={query.q}
             onChange={(event) => update({ q: event.target.value })}
-            className="mt-1 w-full rounded-md border border-slate-400 px-3 py-2"
+            className="mt-1 min-h-11 w-full rounded-md border border-slate-400 px-3 py-2 text-base"
           />
         </div>
 
@@ -76,7 +81,7 @@ export function Ranking() {
             id="ebene"
             value={query.level}
             onChange={(event) => update({ level: event.target.value })}
-            className="mt-1 w-full rounded-md border border-slate-400 px-3 py-2"
+            className="mt-1 min-h-11 w-full rounded-md border border-slate-400 px-3 py-2 text-base"
           >
             <option value="">alle</option>
             {levels.map((level) => (
@@ -95,7 +100,7 @@ export function Ranking() {
             id="bundesland"
             value={query.state}
             onChange={(event) => update({ state: event.target.value })}
-            className="mt-1 w-full rounded-md border border-slate-400 px-3 py-2"
+            className="mt-1 min-h-11 w-full rounded-md border border-slate-400 px-3 py-2 text-base"
           >
             <option value="">alle</option>
             {(stats.data?.states ?? []).map((state) => (
@@ -114,7 +119,7 @@ export function Ranking() {
             id="note"
             value={query.grade}
             onChange={(event) => update({ grade: event.target.value })}
-            className="mt-1 w-full rounded-md border border-slate-400 px-3 py-2"
+            className="mt-1 min-h-11 w-full rounded-md border border-slate-400 px-3 py-2 text-base"
           >
             <option value="">alle</option>
             {grades.map((grade) => (
@@ -136,7 +141,41 @@ export function Ranking() {
             {agencies.data.total} Behörden gefunden
           </p>
 
-          <div className="mt-2 overflow-x-auto">
+          {/* Auf dem Telefon wird aus jeder Zeile eine Karte. Eine Rangliste quer
+              zu scrollen hieße, die Hälfte der Behörden nicht zu sehen; WCAG 1.4.10
+              verlangt außerdem, dass bei 320 px nicht in zwei Richtungen gescrollt
+              werden muss. */}
+          <ul className="mt-2 space-y-3 sm:hidden">
+            {agencies.data.items.map((agency) => (
+              <li key={agency.slug} className="rounded-lg border border-slate-200 bg-white p-4">
+                <h2 className="text-lg font-medium break-words hyphens-auto">
+                  <Link to={`/behoerde/${agency.slug}`} className="block py-1 underline">
+                    {agency.name}
+                  </Link>
+                </h2>
+                <p className="text-sm text-slate-600">
+                  {levelLabel[agency.level]}
+                  {agency.state ? ` · ${agency.state}` : ''}
+                </p>
+                <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+                  <GradeBadge score={agency.score} grade={agency.grade} />
+                  <DeltaBadge delta={agency.delta} />
+                </div>
+                <p className="mt-2 text-sm text-slate-700">
+                  {agency.scanned_at
+                    ? `geprüft am ${formatDate(agency.scanned_at)}`
+                    : 'noch nie geprüft'}
+                </p>
+              </li>
+            ))}
+          </ul>
+
+          <div
+            className="mt-2 hidden overflow-x-auto sm:block"
+            tabIndex={0}
+            role="region"
+            aria-label="Rangliste, waagerecht scrollbar"
+          >
             <table className="w-full border-collapse bg-white text-left">
               <caption className="sr-only">
                 Behörden mit ihrem Barrierefreiheits-Score, sortierbar nach Wert und Name
@@ -147,7 +186,11 @@ export function Ranking() {
                     <SortButton
                       label="Behörde"
                       active={query.sort === 'name' || query.sort === 'name_desc'}
-                      onClick={() => update({ sort: query.sort === 'name' ? 'name_desc' : 'name' })}
+                      onClick={() =>
+                        update({
+                          sort: query.sort === 'name' ? 'name_desc' : 'name',
+                        })
+                      }
                     />
                   </th>
                   <th scope="col" className="px-3 py-2">
@@ -157,7 +200,11 @@ export function Ranking() {
                     <SortButton
                       label="Score"
                       active={query.sort === '' || query.sort === 'score_asc'}
-                      onClick={() => update({ sort: query.sort === 'score_asc' ? '' : 'score_asc' })}
+                      onClick={() =>
+                        update({
+                          sort: query.sort === 'score_asc' ? '' : 'score_asc',
+                        })
+                      }
                     />
                   </th>
                   <th scope="col" className="px-3 py-2">
@@ -198,10 +245,10 @@ export function Ranking() {
           </div>
 
           {pages > 1 && (
-            <nav aria-label="Seiten" className="mt-6 flex items-center gap-4">
+            <nav aria-label="Seiten" className="mt-6 flex flex-wrap items-center gap-4">
               <button
                 type="button"
-                className="rounded-md border border-slate-400 px-3 py-2 disabled:opacity-50"
+                className="min-h-11 rounded-md border border-slate-400 px-4 py-2 disabled:opacity-50"
                 disabled={query.page <= 1}
                 onClick={() => update({ page: String(query.page - 1) })}
               >
@@ -212,7 +259,7 @@ export function Ranking() {
               </span>
               <button
                 type="button"
-                className="rounded-md border border-slate-400 px-3 py-2 disabled:opacity-50"
+                className="min-h-11 rounded-md border border-slate-400 px-4 py-2 disabled:opacity-50"
                 disabled={query.page >= pages}
                 onClick={() => update({ page: String(query.page + 1) })}
               >
@@ -236,7 +283,7 @@ function SortButton({
   onClick: () => void
 }) {
   return (
-    <button type="button" onClick={onClick} className="font-semibold underline">
+    <button type="button" onClick={onClick} className="-mx-2 min-h-11 px-2 font-semibold underline">
       {label}
       {active && <span aria-hidden="true"> ↕</span>}
     </button>

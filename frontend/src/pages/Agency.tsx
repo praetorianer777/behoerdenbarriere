@@ -8,12 +8,21 @@ import { DeltaBadge } from '../components/DeltaBadge'
 import { GradeBadge } from '../components/GradeBadge'
 import { Loading, LoadError } from '../components/Loading'
 import { RuleList } from '../components/RuleList'
-import { directionLabel, formatDate, formatMonths, formatScore, levelLabel, principleLabel } from '../lib'
+import {
+  directionLabel,
+  formatDate,
+  formatMonths,
+  formatScore,
+  levelLabel,
+  principleLabel,
+} from '../lib'
 
 // Die Diagrammbibliothek ist der größte Brocken im Bündel und wird nur auf dieser
 // Seite gebraucht; nachladen spart dem Ranking zwei Drittel der Übertragung.
 const TrendChart = lazy(() =>
-  import('../components/TrendChart').then((module) => ({ default: module.TrendChart })),
+  import('../components/TrendChart').then((module) => ({
+    default: module.TrendChart,
+  })),
 )
 
 export function AgencyPage() {
@@ -46,7 +55,9 @@ export function AgencyPage() {
         <span aria-hidden="true">›</span> {detail.name}
       </p>
 
-      <h1 className="mt-2 text-3xl font-bold">{detail.name}</h1>
+      <h1 className="mt-2 text-2xl font-bold break-words hyphens-auto sm:text-3xl">
+        {detail.name}
+      </h1>
       <p className="mt-1 text-slate-700">
         {levelLabel[detail.level]}
         {detail.state ? ` · ${detail.state}` : ''} ·{' '}
@@ -99,7 +110,8 @@ export function AgencyPage() {
         <>
           <h2 className="mt-10 text-xl font-semibold">Gefundene Barrieren</h2>
           <p className="mt-2 text-slate-700">
-            Prüfung vom {formatDate(scan.data.finished_at)}: {scan.data.pages_scanned} Seiten geprüft
+            Prüfung vom {formatDate(scan.data.finished_at)}: {scan.data.pages_scanned} Seiten
+            geprüft
             {scan.data.pages_failed > 0 && `, ${scan.data.pages_failed} nicht erreichbar`}.
           </p>
 
@@ -138,7 +150,33 @@ export function AgencyPage() {
           </div>
 
           <h2 className="mt-10 text-xl font-semibold">Geprüfte Seiten</h2>
-          <div className="mt-3 overflow-x-auto">
+
+          {/* Auf dem Telefon als Liste: eine Adresse ist lang, und quer zu scrollen
+              verdeckt genau die Spalte mit dem Score. */}
+          <ul className="mt-3 space-y-3 sm:hidden">
+            {(scan.data.pages ?? []).map((page) => (
+              <li key={page.url} className="rounded-lg border border-slate-200 bg-white p-4">
+                <a href={page.url} className="block break-words py-1 underline">
+                  {page.title || page.url}
+                </a>
+                <p className="mt-1 text-sm break-all text-slate-600">{page.url}</p>
+                <p className="mt-2 text-sm">
+                  Score {formatScore(page.score)} · {page.violations}{' '}
+                  {page.violations === 1 ? 'Verstoß' : 'Verstöße'}
+                  {page.is_entry && ' · Startseite'}
+                  {page.error && ' · nicht erreichbar'}
+                  {page.consent === 'blocked' && ' · hinter Einwilligungsabfrage'}
+                </p>
+              </li>
+            ))}
+          </ul>
+
+          <div
+            className="mt-3 hidden overflow-x-auto sm:block"
+            tabIndex={0}
+            role="region"
+            aria-label="Geprüfte Seiten, waagerecht scrollbar"
+          >
             <table className="w-full border-collapse bg-white text-left">
               <caption className="sr-only">Die geprüften Seiten mit ihrem Score</caption>
               <thead>
@@ -161,12 +199,16 @@ export function AgencyPage() {
                       <a href={page.url} className="underline">
                         {page.title || page.url}
                       </a>
-                      {page.is_entry && <span className="ml-2 text-sm text-slate-600">Startseite</span>}
+                      {page.is_entry && (
+                        <span className="ml-2 text-sm text-slate-600">Startseite</span>
+                      )}
                       {page.error && (
                         <span className="ml-2 text-sm text-grade-f">nicht erreichbar</span>
                       )}
                       {page.consent === 'blocked' && (
-                        <span className="ml-2 text-sm text-grade-d">hinter Einwilligungsabfrage</span>
+                        <span className="ml-2 text-sm text-grade-d">
+                          hinter Einwilligungsabfrage
+                        </span>
                       )}
                     </th>
                     <td className="px-3 py-2">{formatScore(page.score)}</td>

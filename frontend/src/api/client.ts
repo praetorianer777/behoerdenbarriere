@@ -3,7 +3,10 @@ import type { AgencyDetail, AgencyList, Scan, Stats, Usage } from './types'
 const base = import.meta.env.VITE_API_URL ?? '/api/v1'
 
 async function get<T>(path: string, signal?: AbortSignal): Promise<T> {
-  const response = await fetch(`${base}${path}`, { signal, headers: { Accept: 'application/json' } })
+  const response = await fetch(`${base}${path}`, {
+    signal,
+    headers: { Accept: 'application/json' },
+  })
   if (!response.ok) {
     // Der Text der Antwort ist für Menschen gedacht, die Statuszeile für uns.
     throw new Error(`${response.status} ${response.statusText}`)

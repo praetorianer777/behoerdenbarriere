@@ -1,7 +1,7 @@
 export function Methodology() {
   return (
     <div className="max-w-3xl">
-      <h1 className="text-3xl font-bold">Wie wir prüfen</h1>
+      <h1 className="text-2xl font-bold sm:text-3xl">Wie wir prüfen</h1>
 
       <h2 className="mt-8 text-xl font-semibold">Was geprüft wird</h2>
       <p className="mt-2">
@@ -60,9 +60,7 @@ export function Methodology() {
       </p>
 
       <h2 className="mt-8 text-xl font-semibold">Noten</h2>
-      <p className="mt-2">
-        A ab 90 Punkten, B ab 80, C ab 70, D ab 60, E ab 50, darunter F.
-      </p>
+      <p className="mt-2">A ab 90 Punkten, B ab 80, C ab 70, D ab 60, E ab 50, darunter F.</p>
 
       <h2 className="mt-8 text-xl font-semibold">Was der Score nicht kann</h2>
       <p className="mt-2">
@@ -97,8 +95,12 @@ export function Methodology() {
         Browser und ohne fremdes Skript. Gespeichert werden nur Tageszähler je Seite, Behörde und
         API-Endpunkt. Ein Besuch entsteht aus einem Hash von IP-Adresse und Browserkennung, dessen
         Schlüssel täglich neu gezogen und nie gespeichert wird — IP-Adressen selbst werden nirgends
-        abgelegt, und über Tage hinweg lässt sich nichts zusammenführen. Die Zahlen stehen offen
-        auf der <a href="/statistik" className="underline">Statistikseite</a>.
+        abgelegt, und über Tage hinweg lässt sich nichts zusammenführen. Die Zahlen stehen offen auf
+        der{' '}
+        <a href="/statistik" className="underline">
+          Statistikseite
+        </a>
+        .
       </p>
 
       <h2 className="mt-8 text-xl font-semibold">Rücksicht beim Prüfen</h2>

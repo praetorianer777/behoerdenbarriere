@@ -101,6 +101,13 @@ func New(ctx context.Context, opts Options) (*Scanner, error) {
 
 func (s *Scanner) Close() { s.cancel() }
 
+// DevToolsWebSocketURL asks a running Chrome for the address to drive it through.
+// Exported so that other tools — the reflow check — reach the same Chrome the same
+// way, including the host-name handling that a container setup needs.
+func DevToolsWebSocketURL(ctx context.Context, chromeURL string) (string, error) {
+	return resolveWebSocketURL(ctx, chromeURL)
+}
+
 // resolveWebSocketURL asks Chrome for its DevTools address. The detour is needed
 // because the WebSocket URL differs on every start.
 func resolveWebSocketURL(ctx context.Context, chromeURL string) (string, error) {

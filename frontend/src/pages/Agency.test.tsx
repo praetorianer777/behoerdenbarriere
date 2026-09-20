@@ -23,10 +23,14 @@ describe('Behördenseite', () => {
   it('zeigt Score, Teilscores und Verlauf', async () => {
     render()
 
-    expect(await screen.findByRole('heading', { level: 1, name: 'Bundesregierung' })).toBeInTheDocument()
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Bundesregierung' }),
+    ).toBeInTheDocument()
     expect(screen.getByText(/Note C/)).toBeInTheDocument()
 
-    const perceivable = screen.getByRole('heading', { name: 'Wahrnehmbar' }).parentElement!
+    const perceivable = screen.getByRole('heading', {
+      name: 'Wahrnehmbar',
+    }).parentElement!
     expect(within(perceivable).getByText('68')).toBeInTheDocument()
   })
 
@@ -60,9 +64,7 @@ describe('Behördenseite', () => {
     vi.spyOn(api, 'latestScan').mockResolvedValue({
       ...latestScan,
       pages_blocked: 2,
-      pages: [
-        { ...latestScan.pages![0], consent: 'blocked' },
-      ],
+      pages: [{ ...latestScan.pages![0], consent: 'blocked' }],
     })
 
     render()

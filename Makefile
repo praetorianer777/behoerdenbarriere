@@ -33,6 +33,9 @@ test-db: ## Run all tests, including database and browser
 test-web: ## Run the frontend tests
 	cd frontend && npm test
 
+e2e: ## Run the end-to-end tests (desktop, phone, 320 px)
+	cd frontend && npm run e2e
+
 web: ## Start the frontend in development mode
 	cd frontend && npm run dev
 

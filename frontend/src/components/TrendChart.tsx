@@ -36,7 +36,7 @@ export function TrendChart({ history }: Props) {
 
   return (
     <figure className="m-0">
-      <div aria-hidden="true" className="h-64 w-full">
+      <div aria-hidden="true" inert className="h-64 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={{ top: 8, right: 8, bottom: 8, left: 0 }}>
             <CartesianGrid stroke="#cbd5e1" strokeDasharray="3 3" />

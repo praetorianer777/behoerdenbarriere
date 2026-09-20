@@ -16,7 +16,11 @@ const queryClient = new QueryClient({
   defaultOptions: {
     // Die Daten ändern sich höchstens einmal pro Woche; häufiger nachzufragen
     // belastet nur die eigene API.
-    queries: { staleTime: 5 * 60 * 1000, retry: 1, refetchOnWindowFocus: false },
+    queries: {
+      staleTime: 5 * 60 * 1000,
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
   },
 })
 

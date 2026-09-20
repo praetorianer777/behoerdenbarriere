@@ -24,7 +24,9 @@ export function RuleList({ rules, heading, emptyText }: Props) {
         {rules.map((rule) => (
           <li key={rule.rule_id} className="rounded-lg border border-slate-200 bg-white p-4">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <h4 className="font-semibold">{rule.help ?? rule.rule_id}</h4>
+              <h4 className="font-semibold break-words hyphens-auto">
+                {rule.help ?? rule.rule_id}
+              </h4>
               <span className="text-sm text-slate-700">
                 {impactLabel[rule.impact]} · {principleLabel[rule.principle] ?? rule.principle}
               </span>
@@ -35,8 +37,13 @@ export function RuleList({ rules, heading, emptyText }: Props) {
             </p>
             {rule.sample_html && (
               <details className="mt-2">
-                <summary className="cursor-pointer text-sm underline">Beispiel im Quelltext</summary>
-                <pre className="mt-2 overflow-x-auto rounded bg-slate-100 p-3 text-xs">
+                <summary className="cursor-pointer text-sm underline">
+                  Beispiel im Quelltext
+                </summary>
+                {/* Auf dem Telefon umbricht das Beispiel, statt seitwärts zu
+                    scrollen: ein Codeblock, der quer läuft, schiebt sonst die ganze
+                    Karte auf. Ab Tablettbreite bleibt die Formatierung erhalten. */}
+                <pre className="mt-2 max-w-full overflow-x-auto rounded bg-slate-100 p-3 text-xs break-all whitespace-pre-wrap sm:break-normal sm:whitespace-pre">
                   <code>{rule.sample_html}</code>
                 </pre>
               </details>

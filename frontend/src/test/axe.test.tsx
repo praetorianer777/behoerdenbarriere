@@ -18,7 +18,10 @@ import { renderPage } from './render'
  */
 async function expectNoViolations(container: HTMLElement) {
   const results = await axe(container, {
-    runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'] },
+    runOnly: {
+      type: 'tag',
+      values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'],
+    },
   })
   // Die Regel-Kennungen als Liste: schlägt der Test fehl, steht im Bericht, welche
   // Regel verletzt ist, und nicht nur, dass etwas verletzt ist.
@@ -58,7 +61,10 @@ describe('Barrierefreiheit der eigenen Seiten', () => {
 
   it('Statistik', async () => {
     const { container } = renderPage(<Statistics />)
-    await screen.findByRole('heading', { level: 1, name: 'Nutzung dieser Seite' })
+    await screen.findByRole('heading', {
+      level: 1,
+      name: 'Nutzung dieser Seite',
+    })
     await expectNoViolations(container)
   })
 

@@ -34,14 +34,14 @@ export function Layout() {
             Behördenbarriere
           </NavLink>
           <nav aria-label="Hauptnavigation">
-            <ul className="flex gap-1">
+            <ul className="flex flex-wrap gap-1">
               {navigation.map((item) => (
                 <li key={item.to}>
                   <NavLink
                     to={item.to}
                     end={item.end}
                     className={({ isActive }) =>
-                      `rounded-md px-3 py-2 text-sm font-medium ${
+                      `flex min-h-11 items-center rounded-md px-3 py-2 text-sm font-medium ${
                         isActive ? 'bg-slate-900 text-white' : 'text-slate-700 hover:bg-slate-100'
                       }`
                     }
