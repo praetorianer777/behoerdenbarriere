@@ -1,0 +1,28 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-grade-a: oklch(0.55 0.13 155);
+  --color-grade-b: oklch(0.54 0.12 135);
+  --color-grade-c: oklch(0.52 0.12 85);
+  --color-grade-d: oklch(0.52 0.14 55);
+  --color-grade-e: oklch(0.5 0.17 35);
+  --color-grade-f: oklch(0.48 0.19 25);
+}
+
+/* Der Fokus muss sichtbar sein, und zwar überall: eine Seite über Barrierefreiheit,
+   die ihn versteckt, widerlegt sich selbst. */
+:focus-visible {
+  outline: 3px solid currentColor;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

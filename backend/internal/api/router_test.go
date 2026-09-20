@@ -1,0 +1,70 @@
+package api
+
+import (
+	"encoding/json"
+	"errors"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+)
+
+func do(t *testing.T, srv *Server, method, path string) *httptest.ResponseRecorder {
+	t.Helper()
+	rec := httptest.NewRecorder()
+	srv.Routes().ServeHTTP(rec, httptest.NewRequest(method, path, nil))
+	return rec
+}
+
+func TestHealthz(t *testing.T) {
+	rec := do(t, NewServer(&fakeDB{}, Options{Limits: DefaultLimits()}), http.MethodGet, "/healthz")
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d", rec.Code)
+	}
+	var body map[string]string
+	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+		t.Fatalf("not JSON: %v", err)
+	}
+	if body["status"] != "ok" {
+		t.Fatalf("body = %v", body)
+	}
+}
+
+// healthz must not depend on the database: otherwise a database restart would restart
+// the container too and drag the outage out.
+func TestHealthzIndependentOfDatabase(t *testing.T) {
+	rec := do(t, NewServer(&fakeDB{pingErr: errors.New("down")}, Options{Limits: DefaultLimits()}), http.MethodGet, "/healthz")
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d", rec.Code)
+	}
+}
+
+func TestReadyzReflectsDatabase(t *testing.T) {
+	ok := do(t, NewServer(&fakeDB{}, Options{Limits: DefaultLimits()}), http.MethodGet, "/readyz")
+	if ok.Code != http.StatusOK {
+		t.Errorf("healthy database: status = %d", ok.Code)
+	}
+	down := do(t, NewServer(&fakeDB{pingErr: errors.New("no connection")}, Options{Limits: DefaultLimits()}), http.MethodGet, "/readyz")
+	if down.Code != http.StatusServiceUnavailable {
+		t.Errorf("broken database: status = %d", down.Code)
+	}
+}
+
+func TestCORSHeaders(t *testing.T) {
+	srv := NewServer(&fakeDB{}, Options{CORSOrigin: "http://localhost:5173", Limits: DefaultLimits()})
+	rec := do(t, srv, http.MethodGet, "/healthz")
+	if got := rec.Header().Get("Access-Control-Allow-Origin"); got != "http://localhost:5173" {
+		t.Fatalf("origin header = %q", got)
+	}
+
+	preflight := do(t, srv, http.MethodOptions, "/healthz")
+	if preflight.Code != http.StatusNoContent {
+		t.Fatalf("preflight status = %d", preflight.Code)
+	}
+}
+
+func TestNoCORSHeaderWithoutConfiguredOrigin(t *testing.T) {
+	rec := do(t, NewServer(&fakeDB{}, Options{Limits: DefaultLimits()}), http.MethodGet, "/healthz")
+	if got := rec.Header().Get("Access-Control-Allow-Origin"); got != "" {
+		t.Fatalf("unexpected origin header: %q", got)
+	}
+}

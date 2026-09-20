@@ -1,0 +1,11 @@
+{
+  "name": "behoerdenbarriere-lighthouse",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs"
+  },
+  "dependencies": {
+    "lighthouse": "^12.8.2"
+  }
+}

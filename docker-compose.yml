@@ -1,0 +1,81 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: behoerdenbarriere
+      POSTGRES_PASSWORD: behoerdenbarriere
+      POSTGRES_DB: behoerdenbarriere
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U behoerdenbarriere"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  chrome:
+    image: chromedp/headless-shell:stable
+    # The image's run.sh already sets the debugging address and port and forwards 9222
+    # to it; only extra flags belong here. Without --disable-dev-shm-usage Chrome dies
+    # on larger pages at the container's 64 MB /dev/shm.
+    command: ["--disable-dev-shm-usage", "--disable-gpu"]
+    shm_size: 1gb
+    init: true
+    ports: ["9222:9222"]
+
+  # Lighthouse bringt seinen eigenen Browser mit: Es setzt Emulation und Netzwerk-
+  # bedingungen selbst und teilt sich den Browser deshalb nicht mit dem Scanner.
+  lighthouse:
+    build:
+      context: ./lighthouse
+    init: true
+    shm_size: 1gb
+    ports: ["3001:3000"]
+
+  api:
+    build:
+      context: ./backend
+      target: api
+    environment:
+      DATABASE_URL: postgres://behoerdenbarriere:behoerdenbarriere@postgres:5432/behoerdenbarriere?sslmode=disable
+      API_ADDR: ":8080"
+      CORS_ORIGIN: http://localhost:5173
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL:-grpc}
+      OTEL_TRACES_SAMPLER_ARG: ${OTEL_TRACES_SAMPLER_ARG:-1}
+    ports: ["8080:8080"]
+    depends_on:
+      postgres: {condition: service_healthy}
+
+  worker:
+    build:
+      context: ./backend
+      target: worker
+    environment:
+      DATABASE_URL: postgres://behoerdenbarriere:behoerdenbarriere@postgres:5432/behoerdenbarriere?sslmode=disable
+      CHROME_URL: http://chrome:9222
+      LIGHTHOUSE_URL: http://lighthouse:3000
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL:-grpc}
+      OTEL_TRACES_SAMPLER_ARG: ${OTEL_TRACES_SAMPLER_ARG:-1}
+    depends_on:
+      postgres: {condition: service_healthy}
+      chrome: {condition: service_started}
+      lighthouse: {condition: service_started}
+
+  # Only started with `--profile telemetry`, so `make dev` stays lean.
+  otel-collector:
+    image: otel/opentelemetry-collector:0.139.0
+    profiles: [telemetry]
+    command: ["--config=/etc/otel-collector.yaml"]
+    volumes: ["./deploy/otel-collector.yaml:/etc/otel-collector.yaml:ro"]
+    ports: ["4317:4317", "4318:4318"]
+
+  frontend:
+    build:
+      context: ./frontend
+    ports: ["5173:80"]
+    depends_on: [api]
+
+volumes:
+  pgdata:

@@ -1,0 +1,179 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: behoerdenbarriere
+          POSTGRES_PASSWORD: behoerdenbarriere
+          POSTGRES_DB: behoerdenbarriere
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U behoerdenbarriere"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+    steps:
+      - uses: actions/checkout@v5
+
+      # Chrome runs on the runner's own network, not as a service container. The
+      # browser tests serve their fixtures from a local httptest server, and a
+      # container on the bridge network cannot reach the runner's loopback — the
+      # scans failed with ERR_CONNECTION_REFUSED.
+      - name: Chrome starten
+        run: |
+          docker run -d --name chrome --network host --shm-size=1g \
+            chromedp/headless-shell:stable
+          for _ in $(seq 1 30); do
+            curl -sf http://localhost:9222/json/version >/dev/null && break
+            sleep 1
+          done
+          curl -sf http://localhost:9222/json/version >/dev/null
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+
+      - name: Formatierung
+        working-directory: backend
+        run: test -z "$(gofmt -l .)" || { gofmt -l .; exit 1; }
+
+      - name: Statische Prüfung
+        working-directory: backend
+        run: go vet ./...
+
+      # Datenbank- und Browsertests laufen mit: ohne sie bliebe genau das ungeprüft,
+      # worauf es ankommt — das SQL und der echte Browser.
+      - name: Tests
+        working-directory: backend
+        env:
+          TEST_DATABASE_URL: postgres://behoerdenbarriere:behoerdenbarriere@localhost:5432/behoerdenbarriere?sslmode=disable
+          CHROME_URL: http://localhost:9222
+        run: go test -race ./...
+
+  # Compiling says nothing about whether the thing starts: the Go version in the
+  # Dockerfile had drifted away from go.mod and no image built at all, which only
+  # showed when someone ran the stack by hand.
+  images:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Images bauen
+        run: docker compose build
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - working-directory: frontend
+        run: npm ci
+
+      - name: Lint
+        working-directory: frontend
+        run: npm run lint
+
+      - name: Tests
+        working-directory: frontend
+        run: npm test
+
+      - name: Build
+        working-directory: frontend
+        run: npm run build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist
+          retention-days: 1
+
+  # Oberfläche, Layout und Barrierefreiheit im echten Browser, auf Desktop, Telefon
+  # und bei 320 px. Der Komponententest im jsdom sieht weder Kontraste noch die
+  # tatsächliche Breite einer Überschrift.
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - working-directory: frontend
+        run: npm ci
+
+      - name: Browser installieren
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: End-to-End-Tests
+        working-directory: frontend
+        run: npm run e2e
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: frontend/playwright-report
+          retention-days: 7
+
+  # Zusätzlich prüft der eigene Scanner die gebaute Seite — dieselbe Prüfung, die die
+  # Behörden bekommen, auf uns selbst angewandt.
+  accessibility:
+    runs-on: ubuntu-latest
+    needs: frontend
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist
+
+      # Derselbe Chrome wie im Backend-Job: im Netz des Runners, damit er den lokalen
+      # Testserver erreicht. Über den Exec-Allocator gestartet ist der Browser einmal
+      # mit "websocket url timeout reached" gar nicht hochgekommen.
+      - name: Chrome starten
+        run: |
+          docker run -d --name chrome --network host --shm-size=1g \
+            chromedp/headless-shell:stable
+          for _ in $(seq 1 30); do
+            curl -sf http://localhost:9222/json/version >/dev/null && break
+            sleep 1
+          done
+          curl -sf http://localhost:9222/json/version >/dev/null
+
+      - name: Seite ausliefern
+        working-directory: frontend/dist
+        run: |
+          python3 -m http.server 4173 &
+          for _ in $(seq 1 30); do
+            curl -sf http://localhost:4173/ >/dev/null && break
+            sleep 1
+          done
+
+      - name: Eigene Seite prüfen
+        working-directory: backend
+        env:
+          CHROME_URL: http://localhost:9222
+        run: go run ./cmd/scan -url http://localhost:4173/ -strict
