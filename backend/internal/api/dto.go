@@ -6,6 +6,7 @@ import (
 	"github.com/praetorianer777/behoerdenbarriere/internal/scoring"
 	"github.com/praetorianer777/behoerdenbarriere/internal/statement"
 	"github.com/praetorianer777/behoerdenbarriere/internal/store"
+	"github.com/praetorianer777/behoerdenbarriere/internal/thirdparty"
 	"github.com/praetorianer777/behoerdenbarriere/internal/trend"
 )
 
@@ -103,6 +104,28 @@ type scanDTO struct {
 	// Statement is the check of the legally required accessibility statement. It
 	// stands beside the score, not in it.
 	Statement *statement.Result `json:"statement,omitempty"`
+	// ThirdParties are the outside hosts the checked pages contacted. Another
+	// question about the same site, and deliberately not part of the score.
+	ThirdParties []thirdparty.Observation `json:"third_parties,omitempty"`
+}
+
+// thirdPartyDTO is one third party across the country: on how many authorities it was
+// seen, in which phase of a visit.
+type thirdPartyDTO struct {
+	Host       string `json:"host"`
+	Domain     string `json:"domain"`
+	Group      string `json:"group"`
+	PublicBody bool   `json:"public_body"`
+	Phase      string `json:"phase"`
+	Agencies   int    `json:"agencies"`
+	Pages      int    `json:"pages"`
+}
+
+type thirdPartyListDTO struct {
+	Items []thirdPartyDTO `json:"items"`
+	// Scanned is what the numbers are out of. Without it a count of twelve says
+	// nothing: twelve out of twenty is a pattern, twelve out of four hundred is not.
+	Scanned int `json:"scanned"`
 }
 
 type groupDTO struct {

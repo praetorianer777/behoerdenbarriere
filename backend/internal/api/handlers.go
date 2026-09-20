@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"net/url"
 	"strconv"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/praetorianer777/behoerdenbarriere/internal/model"
 	"github.com/praetorianer777/behoerdenbarriere/internal/scoring"
 	"github.com/praetorianer777/behoerdenbarriere/internal/store"
+	"github.com/praetorianer777/behoerdenbarriere/internal/thirdparty"
 	"github.com/praetorianer777/behoerdenbarriere/internal/trend"
 )
 
@@ -29,6 +31,8 @@ type Queries interface {
 	RulesForScan(ctx context.Context, scanID int64) ([]scoring.RuleSummary, error)
 	PagesForScan(ctx context.Context, scanID int64) ([]store.PageDetail, error)
 	PageResultsForScan(ctx context.Context, scanID int64) ([]model.PageResult, error)
+	ContactsForScan(ctx context.Context, scanID int64) ([]thirdparty.Seen, error)
+	ContactReach(ctx context.Context, limit int) ([]store.ContactReach, error)
 	Stats(ctx context.Context) (*store.Stats, error)
 	States(ctx context.Context) ([]string, error)
 	EnqueueScan(ctx context.Context, agencyID int64) error
@@ -173,7 +177,55 @@ func (s *Server) scanDetail(ctx context.Context, id int64) (*scanDTO, error) {
 	explanation := scoring.ExplainSite(clip(results, s.limits.ListItems))
 	explanation.Improvements = clip(explanation.Improvements, s.limits.ListItems)
 	dto.Explanation = &explanation
+
+	// A scan without recorded contacts is not a scan without third parties: it may
+	// predate the recording. The list is therefore left out entirely rather than shown
+	// as an empty one, which would read as "contacts none".
+	seen, err := s.db.ContactsForScan(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if len(seen) > 0 {
+		dto.ThirdParties = clip(thirdparty.Describe(seen, hostOf(detail.AgencyURL)), s.limits.ListItems)
+	}
 	return &dto, nil
+}
+
+func hostOf(rawURL string) string {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return ""
+	}
+	return u.Hostname()
+}
+
+// handleThirdParties answers with the nationwide picture: which outside host was seen
+// on how many authorities, kept apart by the phase of the visit it appeared in.
+func (s *Server) handleThirdParties(w http.ResponseWriter, r *http.Request) {
+	reach, err := s.db.ContactReach(r.Context(), s.limits.ListItems)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	stats, err := s.db.Stats(r.Context())
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+
+	out := thirdPartyListDTO{Items: make([]thirdPartyDTO, 0, len(reach)), Scanned: stats.Scanned}
+	for _, c := range reach {
+		out.Items = append(out.Items, thirdPartyDTO{
+			Host:       c.Host,
+			Domain:     thirdparty.Registrable(c.Host),
+			Group:      string(thirdparty.Classify(c.Host)),
+			PublicBody: thirdparty.PublicBody(c.Host),
+			Phase:      string(c.Phase),
+			Agencies:   c.Agencies,
+			Pages:      c.Pages,
+		})
+	}
+	writeJSON(w, http.StatusOK, out)
 }
 
 // clip keeps a response from growing with the database. A scan of a large authority

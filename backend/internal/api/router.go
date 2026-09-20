@@ -143,6 +143,7 @@ func (s *Server) Routes() http.Handler {
 			r.Use(s.rateLimit("expensive", expensive, keyed), cache(s.limits.CacheMaxAge))
 			r.Get("/stats", s.handleStats)
 			r.Get("/rules", s.handleRules)
+			r.Get("/thirdparties", s.handleThirdParties)
 			r.Get("/usage", s.handleUsage)
 		})
 		r.Group(func(r chi.Router) {

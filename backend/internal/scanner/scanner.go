@@ -9,7 +9,9 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/chromedp/cdproto/network"
@@ -17,6 +19,7 @@ import (
 	"github.com/chromedp/chromedp"
 
 	"github.com/praetorianer777/behoerdenbarriere/internal/model"
+	"github.com/praetorianer777/behoerdenbarriere/internal/thirdparty"
 )
 
 //go:embed axe/axe.min.js
@@ -209,7 +212,9 @@ func (s *Scanner) Scan(ctx context.Context, url string) PageScan {
 	defer cancelRun()
 
 	status := newStatusRecorder(url)
+	contacts := newContactRecorder(url)
 	chromedp.ListenTarget(runCtx, status.handle)
+	chromedp.ListenTarget(runCtx, contacts.handle)
 
 	var infoJSON, axeJSON string
 	consent := model.ConsentNone
@@ -219,12 +224,15 @@ func (s *Scanner) Scan(ctx context.Context, url string) PageScan {
 		chromedp.Navigate(url),
 		chromedp.WaitReady("body", chromedp.ByQuery),
 		waitForQuiet(),
+		beginDecision(contacts),
 		dismissConsent(&consent, &out.ConsentLabel),
+		afterConsent(contacts, &consent),
 		evalJSON(pageInfoScript, &infoJSON),
 		chromedp.Evaluate(axeJS, nil),
 		evalPromise(axeRunScript, &axeJSON),
 	)
 	out.Result.Consent = consent
+	out.Result.Contacts = contacts.contacts()
 	out.Result.LoadMS = int(time.Since(started).Milliseconds())
 	out.Result.HTTPStatus = status.code()
 
@@ -304,6 +312,28 @@ func dismissConsent(out *model.Consent, label *string) chromedp.Action {
 	})
 }
 
+func beginDecision(contacts *contactRecorder) chromedp.Action {
+	return chromedp.ActionFunc(func(context.Context) error {
+		contacts.beginDecision()
+		return nil
+	})
+}
+
+// afterConsent switches the recording over and gives the page a moment to act on the
+// decision. Without the pause the requests a banner releases on "accept" would land in
+// the wrong phase or be missed entirely, and that distinction is the whole point.
+func afterConsent(contacts *contactRecorder, state *model.Consent) chromedp.Action {
+	return chromedp.ActionFunc(func(ctx context.Context) error {
+		contacts.afterConsent(*state)
+		if *state == model.ConsentDeclined || *state == model.ConsentAccepted {
+			settle, cancel := context.WithTimeout(ctx, 3*time.Second)
+			defer cancel()
+			_ = chromedp.Run(settle, chromedp.Sleep(1500*time.Millisecond))
+		}
+		return nil
+	})
+}
+
 // stillBlocked waits for the layer to disappear and reports whether it is still there.
 func stillBlocked(ctx context.Context) bool {
 	deadline := time.Now().Add(6 * time.Second)
@@ -372,3 +402,118 @@ func (s *statusRecorder) handle(ev interface{}) {
 }
 
 func (s *statusRecorder) code() int { return s.status }
+
+// maxContactHosts caps what one page can produce. An ad-heavy page can talk to
+// hundreds of hosts; beyond this many the picture does not get clearer, and the
+// database should not grow without a bound.
+const maxContactHosts = 200
+
+// contactRecorder notes which hosts a page reaches out to, and in which phase of the
+// visit. The phase is what makes the record worth anything: the same request means
+// something different before and after a consent decision, and afterwards nobody can
+// tell the two apart from the host name alone.
+//
+// Requests within the site's own registrable domain are not recorded — they say nothing
+// about data leaving.
+type contactRecorder struct {
+	mu     sync.Mutex
+	site   string
+	phase  model.ContactPhase
+	counts map[contactKey]int
+}
+
+type contactKey struct {
+	host  string
+	phase model.ContactPhase
+}
+
+// phasePending holds the requests that go out while the consent layer is being
+// answered. A banner usually fires its trackers in the click handler, so those requests
+// are already on their way before we know which button was pressed — counting them as
+// "before consent" would blame a site for exactly the thing it did right.
+const phasePending model.ContactPhase = "pending"
+
+func newContactRecorder(pageURL string) *contactRecorder {
+	host := ""
+	if u, err := url.Parse(pageURL); err == nil {
+		host = u.Hostname()
+	}
+	return &contactRecorder{
+		site:   host,
+		phase:  model.PhaseBeforeConsent,
+		counts: map[contactKey]int{},
+	}
+}
+
+func (c *contactRecorder) handle(ev interface{}) {
+	e, ok := ev.(*network.EventRequestWillBeSent)
+	if !ok {
+		return
+	}
+	u, err := url.Parse(e.Request.URL)
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https") {
+		return
+	}
+	host := strings.ToLower(u.Hostname())
+	if host == "" || thirdparty.SameSite(host, c.site) {
+		return
+	}
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	key := contactKey{host: host, phase: c.phase}
+	if _, known := c.counts[key]; !known && len(c.counts) >= maxContactHosts {
+		return
+	}
+	c.counts[key]++
+}
+
+// beginDecision is called before the consent layer is answered.
+func (c *contactRecorder) beginDecision() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.phase = phasePending
+}
+
+// afterConsent moves the recording into the phase that follows the consent decision and
+// files what happened during the click under it. A layer that was never there, or that
+// stayed, has nothing that came "after" a decision: nobody decided anything, so those
+// requests belong where the rest do.
+func (c *contactRecorder) afterConsent(state model.Consent) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	switch state {
+	case model.ConsentDeclined:
+		c.phase = model.PhaseAfterDeclined
+	case model.ConsentAccepted:
+		c.phase = model.PhaseAfterAccepted
+	default:
+		c.phase = model.PhaseBeforeConsent
+	}
+
+	for key, count := range c.counts {
+		if key.phase != phasePending {
+			continue
+		}
+		delete(c.counts, key)
+		c.counts[contactKey{host: key.host, phase: c.phase}] += count
+	}
+}
+
+func (c *contactRecorder) contacts() []model.Contact {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	out := make([]model.Contact, 0, len(c.counts))
+	for key, count := range c.counts {
+		out = append(out, model.Contact{Host: key.host, Phase: key.phase, Requests: count})
+	}
+	sort.Slice(out, func(i, j int) bool {
+		if out[i].Host != out[j].Host {
+			return out[i].Host < out[j].Host
+		}
+		return out[i].Phase < out[j].Phase
+	})
+	return out
+}

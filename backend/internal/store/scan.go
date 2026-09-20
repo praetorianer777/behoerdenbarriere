@@ -102,6 +102,20 @@ func (s *Store) FinishScan(ctx context.Context, scanID int64, pages []model.Page
 			return fmt.Errorf("save page %s: %w", page.URL, err)
 		}
 
+		for _, c := range page.Contacts {
+			// The same host can legitimately turn up twice for one page and phase when
+			// a redirect lands on it; the count is then summed rather than lost.
+			if _, err := tx.Exec(ctx, `
+				INSERT INTO page_contacts (page_id, host, phase, requests)
+				VALUES ($1, $2, $3, $4)
+				ON CONFLICT (page_id, host, phase)
+				DO UPDATE SET requests = page_contacts.requests + EXCLUDED.requests`,
+				pageID, c.Host, string(c.Phase), max(c.Requests, 1),
+			); err != nil {
+				return fmt.Errorf("save contact %s: %w", c.Host, err)
+			}
+		}
+
 		for _, v := range page.Violations {
 			// A rule without tags must not write NULL into a NOT NULL column; an empty
 			// list is what "no tags" means here.
