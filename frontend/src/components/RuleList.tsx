@@ -1,5 +1,6 @@
 import type { Rule } from '../api/types'
 import { impactLabel, principleLabel } from '../lib'
+import { regelName, regelWirkung } from '../regeln'
 
 interface Props {
   rules: Rule[]
@@ -24,13 +25,14 @@ export function RuleList({ rules, heading, emptyText }: Props) {
         {rules.map((rule) => (
           <li key={rule.rule_id} className="rounded-lg border border-slate-200 bg-white p-4">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <h4 className="font-semibold break-words hyphens-auto">
-                {rule.help ?? rule.rule_id}
-              </h4>
+              <h4 className="font-semibold break-words hyphens-auto">{regelName(rule)}</h4>
               <span className="text-sm text-slate-700">
                 {impactLabel[rule.impact]} · {principleLabel[rule.principle] ?? rule.principle}
               </span>
             </div>
+            {regelWirkung(rule.rule_id) && (
+              <p className="mt-1 text-slate-700">{regelWirkung(rule.rule_id)}</p>
+            )}
             <p className="mt-1 text-sm text-slate-700">
               Auf {rule.pages} {rule.pages === 1 ? 'Seite' : 'Seiten'}, {rule.nodes}{' '}
               {rule.nodes === 1 ? 'Element' : 'Elemente'} betroffen

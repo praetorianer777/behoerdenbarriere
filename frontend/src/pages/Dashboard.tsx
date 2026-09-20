@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { api } from '../api/client'
 import { Loading, LoadError } from '../components/Loading'
 import { formatDate, formatScore, gradeClass, impactLabel, levelLabel } from '../lib'
+import { regelName } from '../regeln'
 
 const grades = ['A', 'B', 'C', 'D', 'E', 'F']
 
@@ -111,11 +112,13 @@ export function Dashboard() {
         aria-label="Tabelle, waagerecht scrollbar"
       >
         <table className="w-full border-collapse bg-white text-left">
-          <caption className="sr-only">Die häufigsten Regelverstöße</caption>
+          <caption className="sr-only">
+            Die häufigsten Barrieren mit ihrer Schwere und Verbreitung
+          </caption>
           <thead>
             <tr className="border-b border-slate-300">
               <th scope="col" className="px-3 py-2">
-                Regel
+                Barriere
               </th>
               <th scope="col" className="px-3 py-2">
                 Schwere
@@ -131,8 +134,8 @@ export function Dashboard() {
           <tbody>
             {data.top_rules.map((rule) => (
               <tr key={rule.rule_id} className="border-b border-slate-200">
-                <th scope="row" className="px-3 py-2 font-normal">
-                  {rule.rule_id}
+                <th scope="row" className="px-3 py-2 font-normal break-words hyphens-auto">
+                  {regelName(rule)}
                 </th>
                 <td className="px-3 py-2">{impactLabel[rule.impact]}</td>
                 <td className="px-3 py-2">{rule.agencies}</td>

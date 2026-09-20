@@ -1,5 +1,6 @@
 import type { PageExplanation } from '../api/types'
 import { impactLabel } from '../lib'
+import { regelName } from '../regeln'
 
 function points(value: number): string {
   return value.toLocaleString('de-DE', { maximumFractionDigits: 1 })
@@ -72,10 +73,10 @@ export function ScoreReasons({ page }: { page: PageExplanation }) {
                 <th scope="row" className="px-3 py-2 font-normal break-words hyphens-auto">
                   {reason.help_url ? (
                     <a href={reason.help_url} className="underline">
-                      {reason.help ?? reason.rule_id}
+                      {regelName(reason)}
                     </a>
                   ) : (
-                    (reason.help ?? reason.rule_id)
+                    regelName(reason)
                   )}
                 </th>
                 <td className="px-3 py-2">{impactLabel[reason.impact]}</td>

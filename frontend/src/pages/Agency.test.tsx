@@ -45,11 +45,11 @@ describe('Behördenseite', () => {
 
     expect(await screen.findByRole('heading', { name: 'Verstöße nach Regel' })).toBeInTheDocument()
     // Derselbe Befund steht auch in der Begründung; hier zählt die Regelliste.
-    expect(screen.getAllByText(/Mindestkontrast/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/Zu wenig Kontrast/).length).toBeGreaterThan(0)
 
     const fixed = await screen.findByRole('heading', { name: /behoben/ })
     expect(fixed).toBeInTheDocument()
-    expect(screen.getByText('Bilder brauchen eine Alternative')).toBeInTheDocument()
+    expect(screen.getByText('Bild ohne Alternativtext')).toBeInTheDocument()
   })
 
   // Eine Seite, die nicht geladen werden konnte, ist kein Befund über Barrierefreiheit
