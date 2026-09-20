@@ -8,6 +8,7 @@ const navigation = [
   { to: '/dashboard', label: 'Überblick', end: false },
   { to: '/methodik', label: 'Methodik', end: false },
   { to: '/drittanbieter', label: 'Drittanbieter', end: false },
+  { to: '/e-mail', label: 'E-Mail', end: false },
   { to: '/statistik', label: 'Statistik', end: false },
 ]
 

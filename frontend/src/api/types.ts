@@ -45,9 +45,63 @@ export interface TrendSummary {
 
 export interface AgencyDetail extends Agency {
   subscores: Subscores
+  mail?: MailRecord
   trend: TrendSummary
   history: TrendPoint[]
   latest_scan_id?: number
+}
+
+export type MailProvider =
+  | 'microsoft365'
+  | 'google'
+  | 'proofpoint'
+  | 'barracuda'
+  | 'cloudflare'
+  | 'mimecast'
+  | 'telekom'
+  | 'ionos'
+  | 'strato'
+  | 'hetzner'
+  | 'netcup'
+  | 'mailbox-org'
+  | 'retarus'
+  | 'public-it'
+  | 'self'
+  | 'none'
+  | 'unknown'
+
+export interface MailExchanger {
+  host: string
+  preference: number
+  provider: MailProvider
+}
+
+export interface MailRecord {
+  domain: string
+  mx?: MailExchanger[]
+  provider: MailProvider
+  spf?: string
+  spf_includes?: string[]
+  spf_senders?: MailProvider[]
+  dmarc?: string
+  dmarc_policy?: string
+  checked_at: string
+  error?: string
+}
+
+export interface MailCount {
+  name?: string
+  provider: MailProvider
+  agencies: number
+  us_based: boolean
+}
+
+export interface MailSummary {
+  total: number
+  checked_at?: string
+  by_provider: MailCount[]
+  by_state: MailCount[]
+  by_level: MailCount[]
 }
 
 export interface AgencyList {

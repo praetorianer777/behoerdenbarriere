@@ -1,4 +1,12 @@
-import type { AgencyDetail, AgencyList, Scan, Stats, ThirdPartyList, Usage } from './types'
+import type {
+  AgencyDetail,
+  AgencyList,
+  MailSummary,
+  Scan,
+  Stats,
+  ThirdPartyList,
+  Usage,
+} from './types'
 
 const base = import.meta.env.VITE_API_URL ?? '/api/v1'
 
@@ -43,6 +51,7 @@ export const api = {
     get<Scan>(`/agencies/${slug}/scans/latest`, signal),
   stats: (signal?: AbortSignal) => get<Stats>('/stats', signal),
   thirdParties: (signal?: AbortSignal) => get<ThirdPartyList>('/thirdparties', signal),
+  mail: (signal?: AbortSignal) => get<MailSummary>('/mail', signal),
   usage: (days: number, signal?: AbortSignal) => get<Usage>(`/usage?days=${days}`, signal),
 
   /**

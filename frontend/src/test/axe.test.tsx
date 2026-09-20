@@ -8,8 +8,17 @@ import { Methodology } from '../pages/Methodology'
 import { Ranking } from '../pages/Ranking'
 import { Statistics } from '../pages/Statistics'
 import { Drittanbieter } from '../pages/Drittanbieter'
+import { EMail } from '../pages/EMail'
 import { AgencyPage } from '../pages/Agency'
-import { agencyDetail, agencyList, latestScan, stats, thirdParties, usage } from './fixtures'
+import {
+  agencyDetail,
+  agencyList,
+  latestScan,
+  mailSummary,
+  stats,
+  thirdParties,
+  usage,
+} from './fixtures'
 import { renderPage } from './render'
 
 /**
@@ -37,6 +46,7 @@ describe('Barrierefreiheit der eigenen Seiten', () => {
     vi.spyOn(api, 'latestScan').mockResolvedValue(latestScan)
     vi.spyOn(api, 'usage').mockResolvedValue(usage)
     vi.spyOn(api, 'thirdParties').mockResolvedValue(thirdParties)
+    vi.spyOn(api, 'mail').mockResolvedValue(mailSummary)
   })
   afterEach(() => vi.restoreAllMocks())
 
@@ -73,6 +83,12 @@ describe('Barrierefreiheit der eigenen Seiten', () => {
   it('Drittanbieter', async () => {
     const { container } = renderPage(<Drittanbieter />)
     await screen.findByRole('heading', { level: 1, name: 'Drittanbieter auf Behördenseiten' })
+    await expectNoViolations(container)
+  })
+
+  it('E-Mail', async () => {
+    const { container } = renderPage(<EMail />)
+    await screen.findByRole('heading', { level: 1, name: 'Wohin die Post der Behörden geht' })
     await expectNoViolations(container)
   })
 

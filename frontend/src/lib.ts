@@ -1,4 +1,4 @@
-import type { ContactGroup, ContactPhase, Direction, Impact } from './api/types'
+import type { ContactGroup, ContactPhase, Direction, Impact, MailProvider } from './api/types'
 
 // Die Notenfarben sind so gewählt, dass sie auf Weiß mindestens 4.5:1 erreichen —
 // und die Note steht immer als Buchstabe daneben, damit sie nicht allein die Farbe
@@ -85,6 +85,33 @@ export const phaseExplanation: Record<ContactPhase, string> = {
     'Diese Hosts wurden erst kontaktiert, nachdem wir alles Ablehnbare abgelehnt hatten.',
   after_accepted:
     'Auf diesen Seiten ließ sich nichts ablehnen, deshalb haben wir zugestimmt. Was danach geladen wurde, steht hier.',
+}
+
+// Wer die Post annimmt. Die Zuordnung liest Hostnamen — mehr kann sie nicht.
+export const mailProviderLabel: Record<MailProvider, string> = {
+  microsoft365: 'Microsoft 365',
+  google: 'Google Workspace',
+  proofpoint: 'Proofpoint',
+  barracuda: 'Barracuda',
+  cloudflare: 'Cloudflare',
+  mimecast: 'Mimecast',
+  telekom: 'Telekom',
+  ionos: 'IONOS',
+  strato: 'Strato',
+  hetzner: 'Hetzner',
+  netcup: 'netcup',
+  'mailbox-org': 'mailbox.org',
+  retarus: 'Retarus',
+  'public-it': 'Öffentlicher IT-Dienstleister',
+  self: 'Eigener Betrieb',
+  none: 'Keine E-Mail unter dieser Domain',
+  unknown: 'Nicht zugeordnet',
+}
+
+export const dmarcLabel: Record<string, string> = {
+  none: 'nur beobachten',
+  quarantine: 'in den Spam-Ordner',
+  reject: 'abweisen',
 }
 
 export function formatScore(score: number | null | undefined): string {
