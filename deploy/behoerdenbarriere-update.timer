@@ -1,0 +1,13 @@
+[Unit]
+Description=Taeglich nach der zuletzt veroeffentlichten Fassung sehen
+
+[Timer]
+# Nachts, weil ein Neustart der API kurz zu Fehlern fuehrt, und mit Streuung, damit
+# nicht alle Server der Welt zur selben Minute an derselben Registry ziehen.
+OnCalendar=*-*-* 04:30:00
+RandomizedDelaySec=30min
+# Wenn die Maschine zur faelligen Zeit aus war, wird nachgeholt statt uebersprungen.
+Persistent=true
+
+[Install]
+WantedBy=timers.target

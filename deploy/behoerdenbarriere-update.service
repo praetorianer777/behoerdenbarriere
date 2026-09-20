@@ -1,0 +1,13 @@
+[Unit]
+Description=Behoerdenbarriere auf die zuletzt veroeffentlichte Fassung bringen
+Documentation=https://github.com/praetorianer777/behoerdenbarriere/blob/main/deploy/BETRIEB.md
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/behoerdenbarriere
+ExecStart=/opt/behoerdenbarriere/deploy/update.sh
+# Ein fehlgeschlagenes Update ist kein Grund, den laufenden Stand anzutasten: Der Dienst
+# endet mit einem Fehler, die Container laufen weiter, der naechste Lauf versucht es neu.
+TimeoutStartSec=30min

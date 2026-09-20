@@ -71,6 +71,62 @@ jobs:
       - name: Images bauen
         run: docker compose build
 
+      # Die Betriebsfassung wird nie in der CI gestartet, aber ein Tippfehler darin
+      # fällt sonst erst auf dem Server auf — und dort mit einer Seite, die nicht mehr
+      # hochkommt.
+      - name: Betriebsfassung prüfen
+        run: ./deploy/check-compose.sh
+
+  # Veröffentlicht wird erst, wenn alles grün ist: Was unter "latest" liegt, hat die
+  # vollständige Prüfung bestanden — einschließlich der Barrierefreiheit der eigenen
+  # Seite. Der Server zieht sich die Images selbst, deshalb braucht GitHub keinen
+  # Zugang zu ihm.
+  release:
+    needs: [backend, frontend, e2e, images, accessibility]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        include:
+          - name: api
+            context: ./backend
+            target: api
+          - name: worker
+            context: ./backend
+            target: worker
+          - name: frontend
+            context: ./frontend
+            target: ""
+          - name: lighthouse
+            context: ./lighthouse
+            target: ""
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Zwei Marken: "latest" für den Server, der Commit für den Fall, dass man
+      # zurückmuss und genau wissen will, worauf.
+      - uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          target: ${{ matrix.target }}
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/behoerdenbarriere-${{ matrix.name }}:latest
+            ghcr.io/${{ github.repository_owner }}/behoerdenbarriere-${{ matrix.name }}:${{ github.sha }}
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+
   frontend:
     runs-on: ubuntu-latest
     steps:
