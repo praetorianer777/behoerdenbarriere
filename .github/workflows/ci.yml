@@ -77,6 +77,11 @@ jobs:
       - name: Betriebsfassung prüfen
         run: ./deploy/check-compose.sh
 
+      # Was die Anleitung zu starten aufträgt, muss im Image auch liegen. Steht in
+      # verschiedenen Dateien und ist genau deshalb schon einmal auseinandergelaufen.
+      - name: Werkzeuge im Image prüfen
+        run: ./deploy/check-image.sh
+
   # Veröffentlicht wird erst, wenn alles grün ist: Was unter "latest" liegt, hat die
   # vollständige Prüfung bestanden — einschließlich der Barrierefreiheit der eigenen
   # Seite. Der Server zieht sich die Images selbst, deshalb braucht GitHub keinen

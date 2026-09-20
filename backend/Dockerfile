@@ -7,14 +7,22 @@ RUN go mod download
 COPY . .
 RUN CGO_ENABLED=0 go build -trimpath -o /out/api ./cmd/api && \
     CGO_ENABLED=0 go build -trimpath -o /out/worker ./cmd/worker && \
-    CGO_ENABLED=0 go build -trimpath -o /out/seed ./cmd/seed
+    CGO_ENABLED=0 go build -trimpath -o /out/seed ./cmd/seed && \
+    CGO_ENABLED=0 go build -trimpath -o /out/import ./cmd/import && \
+    CGO_ENABLED=0 go build -trimpath -o /out/dns ./cmd/dns
 
 FROM gcr.io/distroless/static-debian12 AS api
-# The seeder travels with the API image so an installation that has nothing but
-# containers can still load the list of authorities:
+# The operational commands travel with the API image. An installation that has nothing
+# but containers has no Go toolchain, so anything the instructions tell someone to run
+# has to be in here — /import was not, and a fresh installation quietly ended up with
+# the hand-kept authorities and none of the districts.
 #   docker compose run --rm --entrypoint /seed api
+#   docker compose run --rm --entrypoint /import api
+#   docker compose run --rm --entrypoint /dns api
 COPY --from=build /out/api /api
 COPY --from=build /out/seed /seed
+COPY --from=build /out/import /import
+COPY --from=build /out/dns /dns
 USER nonroot:nonroot
 ENTRYPOINT ["/api"]
 
