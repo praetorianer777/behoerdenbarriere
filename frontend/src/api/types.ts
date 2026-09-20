@@ -47,7 +47,10 @@ export interface AgencyDetail extends Agency {
   subscores: Subscores
   mail?: MailRecord
   trend: TrendSummary
-  history: TrendPoint[]
+  // Eine ältere API schickt hier null statt einer leeren Liste. Der Typ sagt das,
+  // damit niemand wieder blind eine Länge darauf liest — das hat die ganze Seite
+  // weiß werden lassen.
+  history?: TrendPoint[] | null
   latest_scan_id?: number
 }
 

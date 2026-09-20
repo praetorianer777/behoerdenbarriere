@@ -12,7 +12,7 @@ import type { TrendPoint } from '../api/types'
 import { formatDate, formatScore } from '../lib'
 
 interface Props {
-  history: TrendPoint[]
+  history?: TrendPoint[] | null
 }
 
 /**
@@ -20,16 +20,17 @@ interface Props {
  * und Tastatur kommen an ein SVG nicht heran, an eine Tabelle schon.
  */
 export function TrendChart({ history }: Props) {
-  if (history.length < 2) {
+  const points = history ?? []
+  if (points.length < 2) {
     return (
       <p className="text-slate-700">
         Für einen Verlauf braucht es mindestens zwei Prüfungen. Bisher gibt es{' '}
-        {history.length === 1 ? 'eine' : 'keine'}.
+        {points.length === 1 ? 'eine' : 'keine'}.
       </p>
     )
   }
 
-  const data = history.map((point) => ({
+  const data = points.map((point) => ({
     date: formatDate(point.at),
     score: point.score,
   }))
@@ -56,8 +57,7 @@ export function TrendChart({ history }: Props) {
       </div>
 
       <figcaption className="sr-only">
-        Verlauf des Scores über {history.length} Prüfungen. Die Werte stehen in der Tabelle
-        darunter.
+        Verlauf des Scores über {points.length} Prüfungen. Die Werte stehen in der Tabelle darunter.
       </figcaption>
 
       <details className="mt-2">
@@ -78,7 +78,7 @@ export function TrendChart({ history }: Props) {
             </tr>
           </thead>
           <tbody>
-            {history.map((point) => (
+            {points.map((point) => (
               <tr key={point.at} className="border-b border-slate-200">
                 <th scope="row" className="px-3 py-2 font-normal">
                   {formatDate(point.at)}

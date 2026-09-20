@@ -241,7 +241,14 @@ func (s *Server) handleThirdParties(w http.ResponseWriter, r *http.Request) {
 
 // clip keeps a response from growing with the database. A scan of a large authority
 // can carry thousands of pages, and nobody reads them in one answer.
+//
+// An empty list comes back as an empty list, never as nil: a nil slice marshals to
+// null, and a reader that expects an array gets an exception instead of a page. That
+// happened — an authority without scans blanked the whole site.
 func clip[T any](items []T, limit int) []T {
+	if items == nil {
+		return []T{}
+	}
 	if limit > 0 && len(items) > limit {
 		return items[:limit]
 	}
