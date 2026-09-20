@@ -99,3 +99,36 @@ func TestMailOverviewEmpty(t *testing.T) {
 		t.Errorf("summary = %+v", got)
 	}
 }
+
+// An MX pointing at a spam filter says where mail is screened and nothing about where
+// it is kept. The page has to be able to say so, so the reading travels with the
+// record.
+func TestMailRecordSaysWhenTheHostIsOnlyAFilter(t *testing.T) {
+	db := &fakeDB{agencies: sampleAgencies(), mail: &maildns.Record{
+		Domain: "bmi.bund.de", Provider: maildns.Hornetsecurity,
+		MX: []maildns.MXHost{{Host: "mx1.hornetsecurity.com", Preference: 10}},
+	}}
+
+	got := decode[agencyDetailDTO](t, request(t, db, http.MethodGet, "/api/v1/agencies/bmi", nil))
+	if got.Mail == nil || !got.Mail.Filter {
+		t.Fatalf("mail = %+v, want a filter", got.Mail)
+	}
+	if got.Mail.USBased {
+		t.Error("Hornetsecurity is not a US company")
+	}
+}
+
+func TestMailOverviewMarksFilters(t *testing.T) {
+	db := &fakeDB{mailSummary: &store.MailSummary{Total: 2, ByProvider: []store.MailCount{
+		{Provider: "sophos", Agencies: 1},
+		{Provider: "self", Agencies: 1},
+	}}}
+
+	got := decode[mailSummaryDTO](t, request(t, db, http.MethodGet, "/api/v1/mail", nil))
+	if !got.ByProvider[0].Filter {
+		t.Errorf("sophos should be marked as a filter: %+v", got.ByProvider[0])
+	}
+	if got.ByProvider[1].Filter {
+		t.Errorf("self-operated is not a filter: %+v", got.ByProvider[1])
+	}
+}

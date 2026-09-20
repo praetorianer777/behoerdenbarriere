@@ -27,6 +27,13 @@ export function MailRecord({ mail }: { mail: Record }) {
             {mail.checked_at && <> · abgefragt am {formatDate(mail.checked_at)}</>}
           </p>
 
+          {mail.filter && (
+            <p className="mt-2 rounded-lg border border-slate-400 bg-white p-4">
+              Dieser Host ist ein vorgeschalteter Spamfilter. Er sagt, wo die Post geprüft wird — wo
+              die Postfächer liegen, steht nicht im DNS.
+            </p>
+          )}
+
           {mail.mx && mail.mx.length > 0 && (
             <div className="mt-4 rounded-lg border border-slate-200 bg-white p-4">
               <h3 className="font-semibold">MX-Einträge</h3>

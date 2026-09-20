@@ -91,7 +91,7 @@ func (s *Server) handleAgency(w http.ResponseWriter, r *http.Request) {
 	// What the domain publishes about its email. Not every authority has been looked
 	// up, and a missing record is not a statement about the authority.
 	if mail, err := s.db.MailForAgency(r.Context(), agency.ID); err == nil {
-		detail.Mail = mail
+		detail.Mail = toMailDTO(mail)
 	} else if !errors.Is(err, store.ErrNotFound) {
 		s.fail(w, r, err)
 		return
@@ -355,7 +355,8 @@ func mailCounts(in []store.MailCount) []mailCountDTO {
 	for _, count := range in {
 		out = append(out, mailCountDTO{
 			Name: count.Name, Provider: count.Provider, Agencies: count.Agencies,
-			US: maildns.USBased[maildns.Provider(count.Provider)],
+			US:     maildns.USBased[maildns.Provider(count.Provider)],
+			Filter: maildns.Filters[maildns.Provider(count.Provider)],
 		})
 	}
 	return out
