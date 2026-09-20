@@ -13,6 +13,7 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -23,17 +24,17 @@ import (
 
 func main() {
 	domain := flag.String("domain", "", "look up a single domain and print it, without a database")
-	timeout := flag.Duration("timeout", 30*time.Minute, "budget for the whole run")
-	pause := flag.Duration("pause", 100*time.Millisecond, "pause between lookups")
+	timeout := flag.Duration("timeout", 2*time.Hour, "budget for the whole run")
+	workers := flag.Int("workers", 8, "how many lookups run at the same time")
 	flag.Parse()
 
-	if err := run(*domain, *timeout, *pause); err != nil {
+	if err := run(*domain, *timeout, *workers); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 }
 
-func run(domain string, timeout, pause time.Duration) error {
+func run(domain string, timeout time.Duration, workers int) error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	ctx, cancel := context.WithTimeout(ctx, timeout)
@@ -60,26 +61,57 @@ func run(domain string, timeout, pause time.Duration) error {
 	if err != nil {
 		return err
 	}
-
-	var failed int
-	for i, target := range targets {
-		if i > 0 {
-			select {
-			case <-time.After(pause):
-			case <-ctx.Done():
-				return ctx.Err()
-			}
-		}
-		host := hostOf(target.URL)
-		record := client.Lookup(ctx, host)
-		if record.Err != "" {
-			failed++
-		}
-		if err := db.SaveMail(ctx, target.ID, record); err != nil {
-			return err
-		}
-		fmt.Printf("%-40s %-14s %s\n", target.Slug, record.Provider, record.Err)
+	if workers < 1 {
+		workers = 1
 	}
+
+	// A few lookups at a time. They are almost entirely spent waiting for a resolver,
+	// and done one after another a full run takes the better part of an hour — long
+	// enough that it stops being run.
+	var (
+		wg     sync.WaitGroup
+		mu     sync.Mutex
+		failed int
+		queue  = make(chan store.MailTarget)
+	)
+	for range workers {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for target := range queue {
+				host := hostOf(target.URL)
+				record := client.Lookup(ctx, host)
+
+				mu.Lock()
+				if record.Err != "" {
+					failed++
+				}
+				fmt.Printf("%-40s %-14s %s\n", target.Slug, record.Provider, record.Err)
+				mu.Unlock()
+
+				if err := db.SaveMail(ctx, target.ID, record); err != nil {
+					// A single write that failed is not worth ending the run over; the
+					// count at the end says how complete the picture is.
+					mu.Lock()
+					failed++
+					fmt.Fprintln(os.Stderr, err)
+					mu.Unlock()
+				}
+			}
+		}()
+	}
+
+	for _, target := range targets {
+		select {
+		case queue <- target:
+		case <-ctx.Done():
+			close(queue)
+			wg.Wait()
+			return ctx.Err()
+		}
+	}
+	close(queue)
+	wg.Wait()
 
 	fmt.Printf("\n%d authorities, %d lookups without an answer\n", len(targets), failed)
 	return nil

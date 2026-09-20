@@ -188,7 +188,14 @@ export function EMail() {
                       {mailProviderLabel[count.provider]}
                     </th>
                     <td className="py-2 pr-4">{count.agencies}</td>
-                    <td className="py-2">{count.us_based ? 'USA' : '—'}</td>
+                    <td className="py-2">
+                      {count.us_based ? 'USA' : '—'}
+                      {count.filter && (
+                        <span className="block text-sm text-slate-600">
+                          vorgeschalteter Spamfilter
+                        </span>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>

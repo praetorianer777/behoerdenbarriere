@@ -58,6 +58,9 @@ export type MailProvider =
   | 'barracuda'
   | 'cloudflare'
   | 'mimecast'
+  | 'hornetsecurity'
+  | 'sophos'
+  | 'symantec'
   | 'telekom'
   | 'ionos'
   | 'strato'
@@ -87,6 +90,10 @@ export interface MailRecord {
   dmarc_policy?: string
   checked_at: string
   error?: string
+  us_based?: boolean
+  // filter: Der MX filtert, er verwahrt nicht. Wo das zutrifft, sagt der Eintrag, wo
+  // Post geprüft wird, und nichts darüber, wo sie liegt.
+  filter?: boolean
 }
 
 export interface MailCount {
@@ -94,6 +101,7 @@ export interface MailCount {
   provider: MailProvider
   agencies: number
   us_based: boolean
+  filter?: boolean
 }
 
 export interface MailSummary {

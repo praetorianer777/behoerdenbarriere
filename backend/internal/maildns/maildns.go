@@ -34,6 +34,9 @@ const (
 	Barracuda       Provider = "barracuda"
 	Cloudflare      Provider = "cloudflare"
 	Mimecast        Provider = "mimecast"
+	Hornetsecurity  Provider = "hornetsecurity"
+	Sophos          Provider = "sophos"
+	Symantec        Provider = "symantec"
 	Telekom         Provider = "telekom"
 	IONOS           Provider = "ionos"
 	Strato          Provider = "strato"
@@ -52,7 +55,16 @@ const (
 // finding.
 var USBased = map[Provider]bool{
 	Microsoft365: true, GoogleWorkspace: true, Proofpoint: true,
-	Barracuda: true, Cloudflare: true, Mimecast: true,
+	Barracuda: true, Cloudflare: true, Mimecast: true, Symantec: true,
+}
+
+// Filters are services that sit in front of the mailboxes rather than holding them.
+// The distinction matters: an MX pointing at a spam filter says where mail is screened,
+// and says nothing at all about where it is kept. Reading such a record as "the mail
+// runs there" would be exactly the overreach this data invites.
+var Filters = map[Provider]bool{
+	Proofpoint: true, Barracuda: true, Mimecast: true,
+	Hornetsecurity: true, Sophos: true, Symantec: true,
 }
 
 // rules map a host suffix onto its operator, first match wins.
@@ -66,6 +78,9 @@ var rules = []struct {
 	{[]string{"pphosted.com", "ppe-hosted.com", "proofpoint.com"}, Proofpoint},
 	{[]string{"barracudanetworks.com", "ess.barracuda.com", "barracuda.com"}, Barracuda},
 	{[]string{"mimecast.com", "mimecast.de"}, Mimecast},
+	{[]string{"hornetsecurity.com", "antispameurope.com", "antispameurope.de"}, Hornetsecurity},
+	{[]string{"sophos.com", "sophos.de", "reflexion.net"}, Sophos},
+	{[]string{"messagelabs.com", "symanteccloud.com"}, Symantec},
 	{[]string{"mx.cloudflare.net", "cloudflare.net", "cloudflare.com"}, Cloudflare},
 	{[]string{"t-online.de", "telekom.de", "t-systems.com", "t-ipnet.de"}, Telekom},
 	{[]string{"kundenserver.de", "ionos.de", "ionos.com", "1und1.de", "perfora.net",
@@ -80,7 +95,9 @@ var rules = []struct {
 	{[]string{"dataport.de", "itzbund.de", "komm.one", "krzn.de", "lvn.niedersachsen.de",
 		"citeq.de", "kdo.de", "ekom21.de", "akdb.de", "zit-bb.de", "ozg-cloud.de",
 		"bundesdruckerei.de", "govdata.de", "itk-rheinland.de", "lecos-gmbh.de",
-		"regio-it.de", "krz.de"}, PublicIT},
+		"regio-it.de", "regioit-aachen.de", "krz.de", "kvnbw.de", "landsh.de",
+		"kgrz-ks.de", "civitec.de", "kdvz-frechen.de", "dfn.de", "drv-bund.de",
+		"dbtg.de", "bfinv.de"}, PublicIT},
 }
 
 // Classify names the operator behind a host.

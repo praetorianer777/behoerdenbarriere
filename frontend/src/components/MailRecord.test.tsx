@@ -31,4 +31,16 @@ describe('E-Mail-Einträge einer Behörde', () => {
     expect(screen.getByText(/blieb ohne Antwort/)).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'MX-Einträge' })).not.toBeInTheDocument()
   })
+
+  // Acht der bundesweit abgefragten Behörden empfangen hinter einem Spamfilter. Ohne den
+  // Hinweis läse sich der Eintrag als Aussage darüber, wo die Post liegt.
+  it('sagt es, wenn der Host nur filtert', () => {
+    render(<MailRecord mail={{ ...mailRecord, provider: 'sophos', filter: true }} />)
+    expect(screen.getByText(/vorgeschalteter Spamfilter/)).toBeInTheDocument()
+  })
+
+  it('schweigt über Filter, wo keiner erkannt wurde', () => {
+    render(<MailRecord mail={mailRecord} />)
+    expect(screen.queryByText(/vorgeschalteter Spamfilter/)).not.toBeInTheDocument()
+  })
 })

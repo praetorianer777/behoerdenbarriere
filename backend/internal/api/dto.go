@@ -40,11 +40,11 @@ type subscoresDTO struct {
 
 type agencyDetailDTO struct {
 	agencyDTO
-	Subscores subscoresDTO    `json:"subscores"`
-	Mail      *maildns.Record `json:"mail,omitempty"`
-	Trend     trend.Summary   `json:"trend"`
-	History   []trend.Point   `json:"history"`
-	LatestID  int64           `json:"latest_scan_id,omitempty"`
+	Subscores subscoresDTO  `json:"subscores"`
+	Mail      *mailDTO      `json:"mail,omitempty"`
+	Trend     trend.Summary `json:"trend"`
+	History   []trend.Point `json:"history"`
+	LatestID  int64         `json:"latest_scan_id,omitempty"`
 }
 
 type listDTO struct {
@@ -123,12 +123,35 @@ type thirdPartyDTO struct {
 	Pages      int    `json:"pages"`
 }
 
+// mailDTO is a published mail record together with the two readings that decide how it
+// has to be presented: whether the receiving company is under US jurisdiction, and
+// whether the host is a filter sitting in front of mailboxes that are somewhere else.
+type mailDTO struct {
+	maildns.Record
+	USBased bool `json:"us_based"`
+	Filter  bool `json:"filter"`
+}
+
+func toMailDTO(record *maildns.Record) *mailDTO {
+	if record == nil {
+		return nil
+	}
+	return &mailDTO{
+		Record:  *record,
+		USBased: maildns.USBased[record.Provider],
+		Filter:  maildns.Filters[record.Provider],
+	}
+}
+
 // mailCountDTO is one group of authorities with one mail provider.
 type mailCountDTO struct {
 	// Name is the state or the level; empty when the count is for the whole country.
 	Name     string `json:"name,omitempty"`
 	Provider string `json:"provider"`
 	Agencies int    `json:"agencies"`
+	// Filter says the host screens mail rather than keeping it. Where it is true, the
+	// record says where mail is checked and nothing about where it lands.
+	Filter bool `json:"filter"`
 	// US says the provider is a company under US jurisdiction. A statement about the
 	// company, not about where a server stands — and not a legal finding.
 	US bool `json:"us_based"`
