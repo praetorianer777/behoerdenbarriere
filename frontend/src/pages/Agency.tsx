@@ -76,6 +76,26 @@ export function AgencyPage() {
         </p>
       </div>
 
+      {detail.lighthouse_score !== undefined && (
+        <section className="mt-6 rounded-lg border border-slate-200 bg-white p-6">
+          <h2 className="text-xl font-semibold">Zum Vergleich: Lighthouse</h2>
+          <p className="mt-2 text-2xl font-semibold">
+            {formatScore(detail.lighthouse_score)}
+            <span className="sr-only"> von 100 Punkten</span>
+          </p>
+          {/* Zwei Zahlen, die absichtlich verschieden rechnen: Lighthouse lässt ein
+              Audit ganz durchfallen, sobald ein Element es verletzt, und gewichtet
+              danach. Wir gewichten nach Schwere und dämpfen die Menge. Wo beide weit
+              auseinanderliegen, lohnt der Blick in die Befunde. */}
+          <p className="mt-2 text-slate-700">
+            Googles Score für die Startseite. Er bewertet jede Regel ganz oder gar nicht: ein
+            fehlender Alternativtext unter hundert Bildern lässt die ganze Regel durchfallen. Unser
+            Wert gewichtet nach Schwere und dämpft die Menge, betrachtet dafür mehrere Seiten. Zwei
+            Blickwinkel auf dieselbe Website.
+          </p>
+        </section>
+      )}
+
       {detail.score !== null && (
         <>
           <h2 className="mt-10 text-xl font-semibold">Nach WCAG-Prinzip</h2>

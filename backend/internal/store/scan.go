@@ -41,6 +41,26 @@ func (s *Store) StartScan(ctx context.Context, agencyID int64, cfg map[string]an
 	return id, nil
 }
 
+// LighthouseResult is the second opinion on the entry page.
+type LighthouseResult struct {
+	Score  float64
+	Failed []string
+}
+
+// SaveLighthouse stores the outside score for a scan. It is written separately from
+// the scan itself: the measurement may fail or arrive late, and neither is a reason
+// to hold back our own result.
+func (s *Store) SaveLighthouse(ctx context.Context, scanID int64, result LighthouseResult) error {
+	failed := result.Failed
+	if failed == nil {
+		failed = []string{}
+	}
+	_, err := s.Pool.Exec(ctx, `
+		UPDATE scans SET lighthouse_score = $2, lighthouse_failed = $3 WHERE id = $1`,
+		scanID, result.Score, failed)
+	return err
+}
+
 // FinishScan writes the pages, their violations and the computed score in one
 // transaction. Half a scan in the database would look like a complete one in the
 // ranking, so either all of it lands or none of it.

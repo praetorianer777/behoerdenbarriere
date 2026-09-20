@@ -14,6 +14,7 @@ import (
 
 	"github.com/praetorianer777/behoerdenbarriere/internal/config"
 	"github.com/praetorianer777/behoerdenbarriere/internal/crawler"
+	"github.com/praetorianer777/behoerdenbarriere/internal/lighthouse"
 	"github.com/praetorianer777/behoerdenbarriere/internal/pipeline"
 	"github.com/praetorianer777/behoerdenbarriere/internal/scanner"
 	"github.com/praetorianer777/behoerdenbarriere/internal/store"
@@ -96,7 +97,8 @@ func run() error {
 		RatePerSec: cfg.Crawl.RatePerSec,
 		Timeout:    cfg.Crawl.Timeout,
 	}
-	pipe := pipeline.New(db, crawler.New(telemetry.TracePageScanner(sc), crawlCfg), crawlCfg, slog.Default())
+	pipe := pipeline.New(db, crawler.New(telemetry.TracePageScanner(sc), crawlCfg), crawlCfg, slog.Default()).
+		WithAuditor(lighthouse.New(cfg.LighthouseURL, cfg.LighthouseTimeout))
 
 	name, _ := os.Hostname()
 	slog.Info("worker ready", "name", name, "chrome", cfg.ChromeURL)

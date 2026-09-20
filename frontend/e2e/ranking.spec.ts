@@ -54,6 +54,13 @@ test('weist auf nicht schließbare Einwilligungsabfragen hin', async ({ page }) 
   await expect(page.getByText(/nicht schließen/)).toBeVisible()
 })
 
+test('zeigt beide Bewertungen nebeneinander', async ({ page }) => {
+  await page.goto('/behoerde/bmwsb')
+
+  await expect(page.getByRole('heading', { name: /Lighthouse/ })).toBeVisible()
+  await expect(page.getByText(/ganz oder gar nicht/)).toBeVisible()
+})
+
 test('Verlauf steht auch als Tabelle bereit', async ({ page }) => {
   await page.goto('/behoerde/bmwsb')
 

@@ -12,6 +12,7 @@ export interface Agency {
   delta?: number
   pages: number
   scanned_at?: string
+  lighthouse_score?: number
 }
 
 export interface Subscores {
@@ -105,6 +106,8 @@ export interface Scan {
   pages_scanned: number
   pages_failed: number
   pages_blocked: number
+  lighthouse_score?: number
+  lighthouse_failed?: string[]
   rules?: Rule[]
   pages?: Page[]
   changes?: RuleChange

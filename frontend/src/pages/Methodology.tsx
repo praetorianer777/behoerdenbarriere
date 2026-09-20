@@ -103,6 +103,22 @@ export function Methodology() {
         .
       </p>
 
+      <h2 className="mt-8 text-xl font-semibold">Warum überhaupt eine Zahl?</h2>
+      <p className="mt-2">
+        Der BITV-Test, das offizielle deutsche Prüfverfahren, hat seine eigene 100-Punkte-Skala 2019
+        abgeschafft — mit der Begründung, eine Punktbewertung sei unter den Konformitätsbedingungen
+        der WCAG nicht angemessen. Konform ist dort nur, wer jeden einzelnen Prüfschritt besteht.
+        Diese Kritik trifft auch uns, und wir halten sie für berechtigt: Unser Wert sagt nicht, ob
+        eine Seite konform ist. Er sagt, wo das Nachsehen am meisten lohnt — und macht vergleichbar,
+        was sonst in hundert einzelnen Berichten steht.
+      </p>
+      <p className="mt-4">
+        Deshalb steht auf jeder Behördenseite zusätzlich Googles Lighthouse-Score. Er ist der
+        einzige etablierte, offen dokumentierte Wert und rechnet bewusst anders: Jede Regel besteht
+        ganz oder gar nicht. Wo beide Zahlen weit auseinanderliegen, ist das ein Hinweis — auf die
+        Seite oder auf unsere Formel.
+      </p>
+
       <h2 className="mt-8 text-xl font-semibold">Rücksicht beim Prüfen</h2>
       <p className="mt-2">
         Wir befolgen <code>robots.txt</code> samt Crawl-Delay und fragen jede Domain mit höchstens

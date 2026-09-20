@@ -14,8 +14,10 @@ import (
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/praetorianer777/behoerdenbarriere/internal/crawler"
+	"github.com/praetorianer777/behoerdenbarriere/internal/lighthouse"
 	"github.com/praetorianer777/behoerdenbarriere/internal/model"
 	"github.com/praetorianer777/behoerdenbarriere/internal/scoring"
+	"github.com/praetorianer777/behoerdenbarriere/internal/store"
 	"github.com/praetorianer777/behoerdenbarriere/internal/telemetry"
 )
 
@@ -24,6 +26,13 @@ type Store interface {
 	StartScan(ctx context.Context, agencyID int64, cfg map[string]any) (int64, error)
 	FinishScan(ctx context.Context, scanID int64, pages []model.PageResult, result scoring.Result) error
 	FailScan(ctx context.Context, scanID int64, cause error) error
+	SaveLighthouse(ctx context.Context, scanID int64, result store.LighthouseResult) error
+}
+
+// Auditor is the second opinion on the entry page — Google's Lighthouse score, which
+// is built the other way round from ours.
+type Auditor interface {
+	Audit(ctx context.Context, pageURL string) (*lighthouse.Result, error)
 }
 
 // Crawler walks a site and returns a result per page.
@@ -34,6 +43,7 @@ type Crawler interface {
 type Pipeline struct {
 	store   Store
 	crawler Crawler
+	auditor Auditor
 	cfg     crawler.Config
 	log     *slog.Logger
 }
@@ -43,6 +53,13 @@ func New(store Store, c Crawler, cfg crawler.Config, log *slog.Logger) *Pipeline
 		log = slog.Default()
 	}
 	return &Pipeline{store: store, crawler: c, cfg: cfg, log: log}
+}
+
+// WithAuditor adds the outside score. Without one the pipeline runs exactly as
+// before — the second number is an addition, never a condition.
+func (p *Pipeline) WithAuditor(auditor Auditor) *Pipeline {
+	p.auditor = auditor
+	return p
 }
 
 // Result is what one run produced.
@@ -98,6 +115,8 @@ func (p *Pipeline) Run(ctx context.Context, agency model.Agency) (*Result, error
 	)
 	telemetry.RecordScan(ctx, telemetry.StatusDone, result.Pages, time.Since(started))
 
+	p.audit(ctx, scanID, agency)
+
 	p.log.InfoContext(ctx, "scan finished",
 		"agency", agency.Slug, "score", result.Score, "grade", result.Grade,
 		"pages", result.Pages, "duration", time.Since(started).Round(time.Second))
@@ -131,6 +150,32 @@ func (p *Pipeline) failed(ctx context.Context, span trace.Span, started time.Tim
 	span.SetStatus(codes.Error, err.Error())
 	telemetry.RecordScan(ctx, telemetry.StatusFailed, pages, time.Since(started))
 	return err
+}
+
+// audit asks Lighthouse about the entry page. Only the entry page: a second full
+// pass over every crawled page would double the load on the authority for a number
+// that is meant as a cross-check, not as a second opinion on every subpage.
+//
+// A failure here is logged and otherwise ignored. Our own result is already stored,
+// and losing it over a missing cross-check would be absurd.
+func (p *Pipeline) audit(ctx context.Context, scanID int64, agency model.Agency) {
+	if p.auditor == nil {
+		return
+	}
+	result, err := p.auditor.Audit(ctx, agency.URL)
+	if err != nil {
+		p.log.Warn("lighthouse did not answer", "agency", agency.Slug, "error", err)
+		return
+	}
+	if result == nil {
+		return
+	}
+	if err := p.store.SaveLighthouse(ctx, scanID, store.LighthouseResult{
+		Score:  result.Score,
+		Failed: result.FailedAudits,
+	}); err != nil {
+		p.log.Error("could not store the lighthouse score", "agency", agency.Slug, "error", err)
+	}
 }
 
 func (p *Pipeline) fail(ctx context.Context, scanID int64, cause error) {

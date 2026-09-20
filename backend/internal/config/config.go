@@ -12,10 +12,14 @@ import (
 type Config struct {
 	DatabaseURL string
 	ChromeURL   string
-	APIAddr     string
-	APIKey      string
-	CORSOrigin  string
-	LogLevel    string
+	// LighthouseURL points at the service that measures Google's score. Empty means
+	// the cross-check is simply not taken.
+	LighthouseURL     string
+	LighthouseTimeout time.Duration
+	APIAddr           string
+	APIKey            string
+	CORSOrigin        string
+	LogLevel          string
 
 	API    APIConfig
 	Usage  UsageConfig
@@ -98,15 +102,19 @@ type WorkerConfig struct {
 
 func Load() (*Config, error) {
 	c := &Config{
-		DatabaseURL: env("DATABASE_URL", "postgres://behoerdenbarriere:behoerdenbarriere@localhost:5432/behoerdenbarriere?sslmode=disable"),
-		ChromeURL:   env("CHROME_URL", "http://localhost:9222"),
-		APIAddr:     env("API_ADDR", ":8080"),
-		APIKey:      env("API_KEY", ""),
-		CORSOrigin:  env("CORS_ORIGIN", "http://localhost:5173"),
-		LogLevel:    env("LOG_LEVEL", "info"),
+		DatabaseURL:   env("DATABASE_URL", "postgres://behoerdenbarriere:behoerdenbarriere@localhost:5432/behoerdenbarriere?sslmode=disable"),
+		ChromeURL:     env("CHROME_URL", "http://localhost:9222"),
+		LighthouseURL: env("LIGHTHOUSE_URL", ""),
+		APIAddr:       env("API_ADDR", ":8080"),
+		APIKey:        env("API_KEY", ""),
+		CORSOrigin:    env("CORS_ORIGIN", "http://localhost:5173"),
+		LogLevel:      env("LOG_LEVEL", "info"),
 	}
 
 	var err error
+	if c.LighthouseTimeout, err = envDuration("LIGHTHOUSE_TIMEOUT", 3*time.Minute); err != nil {
+		return nil, err
+	}
 	if c.API, err = loadAPI(); err != nil {
 		return nil, err
 	}

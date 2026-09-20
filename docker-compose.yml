@@ -23,6 +23,15 @@ services:
     init: true
     ports: ["9222:9222"]
 
+  # Lighthouse bringt seinen eigenen Browser mit: Es setzt Emulation und Netzwerk-
+  # bedingungen selbst und teilt sich den Browser deshalb nicht mit dem Scanner.
+  lighthouse:
+    build:
+      context: ./lighthouse
+    init: true
+    shm_size: 1gb
+    ports: ["3001:3000"]
+
   api:
     build:
       context: ./backend
@@ -45,12 +54,14 @@ services:
     environment:
       DATABASE_URL: postgres://behoerdenbarriere:behoerdenbarriere@postgres:5432/behoerdenbarriere?sslmode=disable
       CHROME_URL: http://chrome:9222
+      LIGHTHOUSE_URL: http://lighthouse:3000
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
       OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL:-grpc}
       OTEL_TRACES_SAMPLER_ARG: ${OTEL_TRACES_SAMPLER_ARG:-1}
     depends_on:
       postgres: {condition: service_healthy}
       chrome: {condition: service_started}
+      lighthouse: {condition: service_started}
 
   # Only started with `--profile telemetry`, so `make dev` stays lean.
   otel-collector:

@@ -12,6 +12,7 @@ export const agencyList: AgencyList = {
       delta: 4.9,
       pages: 4,
       scanned_at: '2026-09-18T09:00:00Z',
+      lighthouse_score: 97,
     },
     {
       slug: 'stadt-kiel',
@@ -59,6 +60,7 @@ export const latestScan: Scan = {
   pages_scanned: 4,
   pages_failed: 1,
   pages_blocked: 0,
+  lighthouse_score: 97,
   rules: [
     {
       rule_id: 'color-contrast',

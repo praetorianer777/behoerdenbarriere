@@ -78,6 +78,24 @@ describe('Behördenseite', () => {
     expect(screen.queryByText(/nicht schließen/)).not.toBeInTheDocument()
   })
 
+  // Zwei Zahlen nebeneinander helfen nur, wenn dabeisteht, dass sie verschieden
+  // rechnen — sonst liest man den Unterschied als Fehler.
+  it('zeigt den Lighthouse-Wert mit Einordnung', async () => {
+    render()
+
+    expect(await screen.findByRole('heading', { name: /Lighthouse/ })).toBeInTheDocument()
+    expect(screen.getByText('97')).toBeInTheDocument()
+    expect(screen.getByText(/ganz oder gar nicht/)).toBeInTheDocument()
+  })
+
+  it('schweigt über Lighthouse, wenn nichts gemessen wurde', async () => {
+    vi.spyOn(api, 'agency').mockResolvedValue({ ...agencyDetail, lighthouse_score: undefined })
+
+    render()
+    await screen.findByRole('heading', { level: 1, name: 'Bundesregierung' })
+    expect(screen.queryByRole('heading', { name: /Lighthouse/ })).not.toBeInTheDocument()
+  })
+
   it('kommt ohne Prüfung aus', async () => {
     vi.spyOn(api, 'agency').mockResolvedValue({
       ...agencyDetail,

@@ -21,6 +21,7 @@ Im Aufbau. Der Fortschritt steht in den
 | `backend/cmd/worker` | Go | Crawl, Prüfung, Bewertung, Zeitplan |
 | `backend/internal/scanner` | chromedp, axe-core | Seite laden, prüfen, Links auslesen |
 | `backend/internal/scoring` | Go | Befunde in Score und Note umrechnen |
+| `lighthouse` | Node, Lighthouse | Googles Score als Vergleichswert |
 | `frontend` | React, Tailwind | Ranking, Detail, Dashboard, Methodik, Statistik |
 | Postgres | | Behörden, Scans, Seiten, Verstöße, Job-Queue, Nutzungszähler |
 
@@ -88,6 +89,13 @@ Die Summe wird auf die Seitengröße normiert und über eine Exponentialkurve au
 abgebildet. Der Wert einer Behörde ist das gewichtete Mittel ihrer Seiten: die Startseite
 zählt dreifach, die rechtlich besonders relevanten Seiten — Erklärung zur
 Barrierefreiheit, Kontakt, Formulare — doppelt.
+
+**Zweite Meinung.** Zu jeder Startseite wird zusätzlich Googles Lighthouse-Score
+erhoben — der einzige etablierte, offen dokumentierte Wert. Er rechnet bewusst anders:
+Jede Regel besteht ganz oder gar nicht. Über die bisher geprüften Behörden liegt er im
+Mittel 26 Punkte über unserem und drängt sich zwischen 84 und 100, während unsere Werte
+von 28 bis 100 streuen. Für eine Rangfolge taugt er deshalb kaum, als Gegenprobe für
+unsere Gewichte schon.
 
 **Grenzen des Verfahrens.** Automatisierte Prüfungen decken je nach Quelle nur etwa
 30 bis 40 Prozent der WCAG-Kriterien ab. Ob eine Alternativbeschreibung das Bild

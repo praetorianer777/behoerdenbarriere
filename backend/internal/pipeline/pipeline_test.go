@@ -11,8 +11,10 @@ import (
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 
 	"github.com/praetorianer777/behoerdenbarriere/internal/crawler"
+	"github.com/praetorianer777/behoerdenbarriere/internal/lighthouse"
 	"github.com/praetorianer777/behoerdenbarriere/internal/model"
 	"github.com/praetorianer777/behoerdenbarriere/internal/scoring"
+	"github.com/praetorianer777/behoerdenbarriere/internal/store"
 )
 
 type fakeStore struct {
@@ -20,10 +22,12 @@ type fakeStore struct {
 	startErr  error
 	finishErr error
 
-	finished []model.PageResult
-	result   scoring.Result
-	failed   error
-	closed   bool
+	finished      []model.PageResult
+	result        scoring.Result
+	failed        error
+	closed        bool
+	lighthouse    *store.LighthouseResult
+	lighthouseErr error
 }
 
 func (f *fakeStore) StartScan(context.Context, int64, map[string]any) (int64, error) {
@@ -41,6 +45,11 @@ func (f *fakeStore) FailScan(_ context.Context, _ int64, cause error) error {
 	f.failed = cause
 	f.closed = true
 	return nil
+}
+
+func (f *fakeStore) SaveLighthouse(_ context.Context, _ int64, result store.LighthouseResult) error {
+	f.lighthouse = &result
+	return f.lighthouseErr
 }
 
 type fakeCrawler struct {
@@ -200,4 +209,69 @@ func recordSpans(t *testing.T) *tracetest.SpanRecorder {
 	otel.SetTracerProvider(sdktrace.NewTracerProvider(sdktrace.WithSpanProcessor(spans)))
 	t.Cleanup(func() { otel.SetTracerProvider(previous) })
 	return spans
+}
+
+type fakeAuditor struct {
+	result *lighthouse.Result
+	err    error
+	asked  []string
+}
+
+func (f *fakeAuditor) Audit(_ context.Context, pageURL string) (*lighthouse.Result, error) {
+	f.asked = append(f.asked, pageURL)
+	return f.result, f.err
+}
+
+func TestRunStoresTheOutsideScore(t *testing.T) {
+	st := &fakeStore{scanID: 42}
+	auditor := &fakeAuditor{result: &lighthouse.Result{Score: 97, FailedAudits: []string{"color-contrast"}}}
+	pages := []model.PageResult{{URL: "https://www.bmi.bund.de/", DOMNodes: 800, IsEntry: true}}
+
+	_, err := New(st, &fakeCrawler{pages: pages}, crawler.Config{}, nil).
+		WithAuditor(auditor).
+		Run(context.Background(), agency())
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if st.lighthouse == nil || st.lighthouse.Score != 97 {
+		t.Fatalf("outside score = %+v", st.lighthouse)
+	}
+	// Only the entry page is audited: a second full pass would double the load on the
+	// authority for a number that is a cross-check, not a verdict on every subpage.
+	if len(auditor.asked) != 1 || auditor.asked[0] != agency().URL {
+		t.Fatalf("audited = %v", auditor.asked)
+	}
+}
+
+// The outside score is an addition. A service that is down, slow or broken must not
+// cost us the scan we already have.
+func TestRunKeepsTheScanWhenTheAuditFails(t *testing.T) {
+	st := &fakeStore{scanID: 42}
+	pages := []model.PageResult{{URL: "https://www.bmi.bund.de/", DOMNodes: 800, IsEntry: true}}
+
+	got, err := New(st, &fakeCrawler{pages: pages}, crawler.Config{}, nil).
+		WithAuditor(&fakeAuditor{err: errors.New("lighthouse ist abgestürzt")}).
+		Run(context.Background(), agency())
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if !st.closed || got.Score.Grade == "" {
+		t.Fatalf("our own result was lost: closed=%v result=%+v", st.closed, got)
+	}
+	if st.lighthouse != nil {
+		t.Fatalf("a score was stored anyway: %+v", st.lighthouse)
+	}
+}
+
+func TestRunWithoutAnAuditor(t *testing.T) {
+	st := &fakeStore{scanID: 42}
+	pages := []model.PageResult{{URL: "https://www.bmi.bund.de/", DOMNodes: 800, IsEntry: true}}
+
+	if _, err := New(st, &fakeCrawler{pages: pages}, crawler.Config{}, nil).
+		Run(context.Background(), agency()); err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if st.lighthouse != nil {
+		t.Fatalf("score without an auditor: %+v", st.lighthouse)
+	}
 }

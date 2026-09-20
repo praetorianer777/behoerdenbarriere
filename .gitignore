@@ -37,3 +37,4 @@ go.work.sum
 /frontend/node_modules/
 /frontend/dist/
 .claude/worktrees/
+/lighthouse/node_modules/

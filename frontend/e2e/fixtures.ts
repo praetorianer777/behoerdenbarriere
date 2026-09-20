@@ -17,6 +17,7 @@ const agencies = {
       delta: 4.9,
       pages: 4,
       scanned_at: '2026-09-18T09:00:00Z',
+      lighthouse_score: 97,
     },
     {
       slug: 'stadt-kiel',
@@ -64,6 +65,8 @@ const latestScan = {
   pages_scanned: 4,
   pages_failed: 1,
   pages_blocked: 1,
+  lighthouse_score: 97,
+  lighthouse_failed: ['color-contrast'],
   rules: [
     {
       rule_id: 'color-contrast',

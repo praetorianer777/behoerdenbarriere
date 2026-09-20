@@ -21,6 +21,7 @@ type AgencyListing struct {
 	Pages                                         int
 	PrevScore                                     *float64
 	Perceivable, Operable, Understandable, Robust *float64
+	LighthouseScore                               *float64
 }
 
 // AgencyFilter narrows the ranking.
@@ -74,13 +75,15 @@ const agencyColumns = `
 	a.active, a.created_at,
 	s.score, coalesce(s.grade, ''), s.finished_at, coalesce(s.pages_scanned, 0),
 	p.score,
-	s.score_perceivable, s.score_operable, s.score_understandable, s.score_robust`
+	s.score_perceivable, s.score_operable, s.score_understandable, s.score_robust,
+	s.lighthouse_score`
 
 // latestScans attaches the newest finished scan and the one before it.
 const latestScans = `
 	LEFT JOIN LATERAL (
 		SELECT score, grade, finished_at, pages_scanned,
-		       score_perceivable, score_operable, score_understandable, score_robust
+		       score_perceivable, score_operable, score_understandable, score_robust,
+		       lighthouse_score
 		FROM scans WHERE agency_id = a.id AND status = 'done'
 		ORDER BY finished_at DESC LIMIT 1
 	) s ON true
@@ -150,6 +153,7 @@ func scanListings(rows pgx.Rows) ([]AgencyListing, error) {
 			&a.Active, &a.CreatedAt,
 			&a.Score, &a.Grade, &a.ScannedAt, &a.Pages, &a.PrevScore,
 			&a.Perceivable, &a.Operable, &a.Understandable, &a.Robust,
+			&a.LighthouseScore,
 		); err != nil {
 			return nil, err
 		}
@@ -174,6 +178,8 @@ type ScanDetail struct {
 	PagesScanned                                  int
 	PagesFailed                                   int
 	PagesBlocked                                  int
+	LighthouseScore                               *float64
+	LighthouseFailed                              []string
 }
 
 func (s *Store) ScanByID(ctx context.Context, id int64) (*ScanDetail, error) {
@@ -182,12 +188,14 @@ func (s *Store) ScanByID(ctx context.Context, id int64) (*ScanDetail, error) {
 		SELECT sc.id, sc.agency_id, a.slug, a.name, sc.status, sc.started_at, sc.finished_at,
 		       coalesce(sc.error, ''), sc.score, coalesce(sc.grade, ''),
 		       sc.score_perceivable, sc.score_operable, sc.score_understandable, sc.score_robust,
-		       sc.pages_scanned, sc.pages_failed, sc.pages_blocked
+		       sc.pages_scanned, sc.pages_failed, sc.pages_blocked,
+		       sc.lighthouse_score, coalesce(sc.lighthouse_failed, '{}')
 		FROM scans sc JOIN agencies a ON a.id = sc.agency_id
 		WHERE sc.id = $1`, id,
 	).Scan(&d.ID, &d.AgencyID, &d.AgencySlug, &d.AgencyName, &d.Status, &d.StartedAt, &d.FinishedAt,
 		&d.Error, &d.Score, &d.Grade, &d.Perceivable, &d.Operable, &d.Understandable, &d.Robust,
-		&d.PagesScanned, &d.PagesFailed, &d.PagesBlocked)
+		&d.PagesScanned, &d.PagesFailed, &d.PagesBlocked,
+		&d.LighthouseScore, &d.LighthouseFailed)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrNotFound
 	}

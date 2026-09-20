@@ -23,6 +23,9 @@ type agencyDTO struct {
 	Delta     *float64   `json:"delta,omitempty"`
 	Pages     int        `json:"pages"`
 	ScannedAt *time.Time `json:"scanned_at,omitempty"`
+	// Lighthouse is Google's score for the entry page. It is built the other way
+	// round from ours, and where the two disagree that is worth seeing.
+	Lighthouse *float64 `json:"lighthouse_score,omitempty"`
 }
 
 type subscoresDTO struct {
@@ -75,22 +78,24 @@ type pageDTO struct {
 }
 
 type scanDTO struct {
-	ID           int64             `json:"id"`
-	AgencySlug   string            `json:"agency_slug"`
-	AgencyName   string            `json:"agency_name"`
-	Status       string            `json:"status"`
-	StartedAt    time.Time         `json:"started_at"`
-	FinishedAt   *time.Time        `json:"finished_at,omitempty"`
-	Error        string            `json:"error,omitempty"`
-	Score        *float64          `json:"score"`
-	Grade        string            `json:"grade,omitempty"`
-	Subscores    subscoresDTO      `json:"subscores"`
-	PagesScanned int               `json:"pages_scanned"`
-	PagesFailed  int               `json:"pages_failed"`
-	PagesBlocked int               `json:"pages_blocked"`
-	Rules        []ruleDTO         `json:"rules,omitempty"`
-	Pages        []pageDTO         `json:"pages,omitempty"`
-	Changes      *trend.RuleChange `json:"changes,omitempty"`
+	ID               int64             `json:"id"`
+	AgencySlug       string            `json:"agency_slug"`
+	AgencyName       string            `json:"agency_name"`
+	Status           string            `json:"status"`
+	StartedAt        time.Time         `json:"started_at"`
+	FinishedAt       *time.Time        `json:"finished_at,omitempty"`
+	Error            string            `json:"error,omitempty"`
+	Score            *float64          `json:"score"`
+	Grade            string            `json:"grade,omitempty"`
+	Subscores        subscoresDTO      `json:"subscores"`
+	PagesScanned     int               `json:"pages_scanned"`
+	PagesFailed      int               `json:"pages_failed"`
+	PagesBlocked     int               `json:"pages_blocked"`
+	Lighthouse       *float64          `json:"lighthouse_score,omitempty"`
+	LighthouseFailed []string          `json:"lighthouse_failed,omitempty"`
+	Rules            []ruleDTO         `json:"rules,omitempty"`
+	Pages            []pageDTO         `json:"pages,omitempty"`
+	Changes          *trend.RuleChange `json:"changes,omitempty"`
 }
 
 type groupDTO struct {
@@ -170,6 +175,7 @@ func toAgencyDTO(a store.AgencyListing) agencyDTO {
 		Slug: a.Slug, Name: a.Name, URL: a.URL, Level: string(a.Level),
 		State: a.State, Category: a.Category,
 		Score: a.Score, Grade: a.Grade, Pages: a.Pages, ScannedAt: a.ScannedAt,
+		Lighthouse: a.LighthouseScore,
 	}
 	if a.Score != nil && a.PrevScore != nil {
 		delta := round2(*a.Score - *a.PrevScore)
@@ -214,6 +220,7 @@ func toScanDTO(d store.ScanDetail) scanDTO {
 		Score: d.Score, Grade: d.Grade,
 		Subscores:    subscoresDTO{d.Perceivable, d.Operable, d.Understandable, d.Robust},
 		PagesScanned: d.PagesScanned, PagesFailed: d.PagesFailed, PagesBlocked: d.PagesBlocked,
+		Lighthouse: d.LighthouseScore, LighthouseFailed: d.LighthouseFailed,
 	}
 }
 
