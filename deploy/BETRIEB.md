@@ -32,6 +32,19 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml run --rm --entry
 docker compose -f docker-compose.yml -f docker-compose.prod.yml run --rm --entrypoint /import api
 ```
 
+Beim allerersten Mal muss die Registry einmal von Hand freigegeben werden: GitHub legt
+neue Pakete **privat** an. Unter `github.com/users/praetorianer777/packages` bei jedem
+der vier Pakete unter *Package settings* die Sichtbarkeit auf *public* stellen — danach
+zieht der Server ohne Anmeldung. Ob es klappt, sagt:
+
+```sh
+docker pull ghcr.io/praetorianer777/behoerdenbarriere-api:latest
+```
+
+Wer die Pakete privat lassen will, meldet den Server stattdessen einmalig mit einem
+Token an (`docker login ghcr.io`); dann liegt allerdings ein Token auf der Maschine, das
+irgendwann abläuft.
+
 Gebaut wird dabei nichts: Die vier eigenen Images (`api`, `worker`, `frontend`,
 `lighthouse`) kommen fertig aus der CI und liegen öffentlich in der GitHub Container
 Registry. Veröffentlicht wird nur, was die vollständige Prüfung bestanden hat — `latest`
