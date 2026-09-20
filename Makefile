@@ -45,8 +45,11 @@ vet: ## Static analysis
 fmt: ## Check formatting
 	@cd backend && test -z "$$(gofmt -l .)" || { gofmt -l .; exit 1; }
 
-seed: ## Load the agency list
+seed: ## Load the hand-kept agency list
 	cd backend && go run ./cmd/seed
+
+import: ## Add the districts from Wikidata
+	cd backend && go run ./cmd/import
 
 scan: ## Check a single URL: make scan URL=https://www.bund.de
 	cd backend && go run ./cmd/scan -url "$(URL)"

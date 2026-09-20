@@ -101,3 +101,48 @@
 - {slug: stadt-saarbruecken, name: Saarbrücken, url: "https://www.saarbruecken.de/", level: kommune, state: Saarland, category: stadt}
 - {slug: stadt-oldenburg, name: Oldenburg, url: "https://www.oldenburg.de/", level: kommune, state: Niedersachsen, category: stadt}
 - {slug: stadt-osnabrueck, name: Osnabrück, url: "https://www.osnabrueck.de/", level: kommune, state: Niedersachsen, category: stadt}
+
+# Weitere Bundesbehörden mit großem Publikumsverkehr
+- {slug: bundesverwaltungsamt, name: Bundesverwaltungsamt, url: "https://www.bva.bund.de/", level: bund, category: behoerde}
+- {slug: bundeszentralamt-steuern, name: Bundeszentralamt für Steuern, url: "https://www.bzst.de/", level: bund, category: behoerde}
+- {slug: bundesamt-justiz, name: Bundesamt für Justiz, url: "https://www.bundesjustizamt.de/", level: bund, category: behoerde}
+- {slug: bbk, name: Bundesamt für Bevölkerungsschutz und Katastrophenhilfe, url: "https://www.bbk.bund.de/", level: bund, category: behoerde}
+- {slug: thw, name: Technisches Hilfswerk, url: "https://www.thw.de/", level: bund, category: behoerde}
+- {slug: bfs, name: Bundesamt für Strahlenschutz, url: "https://www.bfs.de/", level: bund, category: behoerde}
+- {slug: bibb, name: Bundesinstitut für Berufsbildung, url: "https://www.bibb.de/", level: bund, category: behoerde}
+- {slug: bafa, name: Bundesamt für Wirtschaft und Ausfuhrkontrolle, url: "https://www.bafa.de/", level: bund, category: behoerde}
+- {slug: bafin, name: Bundesanstalt für Finanzdienstleistungsaufsicht, url: "https://www.bafin.de/", level: bund, category: behoerde}
+- {slug: bundesbank, name: Deutsche Bundesbank, url: "https://www.bundesbank.de/", level: bund, category: behoerde}
+- {slug: bundesarchiv, name: Bundesarchiv, url: "https://www.bundesarchiv.de/", level: bund, category: behoerde}
+- {slug: bundesgerichtshof, name: Bundesgerichtshof, url: "https://www.bundesgerichtshof.de/", level: bund, category: gericht}
+- {slug: bundessozialgericht, name: Bundessozialgericht, url: "https://www.bsg.bund.de/", level: bund, category: gericht}
+- {slug: bundesarbeitsgericht, name: Bundesarbeitsgericht, url: "https://www.bundesarbeitsgericht.de/", level: bund, category: gericht}
+- {slug: bundesfinanzhof, name: Bundesfinanzhof, url: "https://www.bundesfinanzhof.de/", level: bund, category: gericht}
+- {slug: bundesverwaltungsgericht, name: Bundesverwaltungsgericht, url: "https://www.bverwg.de/", level: bund, category: gericht}
+
+# Weitere Großstädte
+- {slug: stadt-ludwigshafen, name: Ludwigshafen am Rhein, url: "https://www.ludwigshafen.de/", level: kommune, state: Rheinland-Pfalz, category: stadt}
+- {slug: stadt-leverkusen, name: Leverkusen, url: "https://www.leverkusen.de/", level: kommune, state: Nordrhein-Westfalen, category: stadt}
+- {slug: stadt-neuss, name: Neuss, url: "https://www.neuss.de/", level: kommune, state: Nordrhein-Westfalen, category: stadt}
+- {slug: stadt-solingen, name: Solingen, url: "https://www.solingen.de/", level: kommune, state: Nordrhein-Westfalen, category: stadt}
+- {slug: stadt-paderborn, name: Paderborn, url: "https://www.paderborn.de/", level: kommune, state: Nordrhein-Westfalen, category: stadt}
+- {slug: stadt-heidelberg, name: Heidelberg, url: "https://www.heidelberg.de/", level: kommune, state: Baden-Württemberg, category: stadt}
+- {slug: stadt-darmstadt, name: Darmstadt, url: "https://www.darmstadt.de/", level: kommune, state: Hessen, category: stadt}
+- {slug: stadt-regensburg, name: Regensburg, url: "https://www.regensburg.de/", level: kommune, state: Bayern, category: stadt}
+- {slug: stadt-wuerzburg, name: Würzburg, url: "https://www.wuerzburg.de/", level: kommune, state: Bayern, category: stadt}
+- {slug: stadt-ingolstadt, name: Ingolstadt, url: "https://www.ingolstadt.de/", level: kommune, state: Bayern, category: stadt}
+- {slug: stadt-wolfsburg, name: Wolfsburg, url: "https://www.wolfsburg.de/", level: kommune, state: Niedersachsen, category: stadt}
+- {slug: stadt-offenbach, name: Offenbach am Main, url: "https://www.offenbach.de/", level: kommune, state: Hessen, category: stadt}
+- {slug: stadt-ulm, name: Ulm, url: "https://www.ulm.de/", level: kommune, state: Baden-Württemberg, category: stadt}
+- {slug: stadt-heilbronn, name: Heilbronn, url: "https://www.heilbronn.de/", level: kommune, state: Baden-Württemberg, category: stadt}
+- {slug: stadt-pforzheim, name: Pforzheim, url: "https://www.pforzheim.de/", level: kommune, state: Baden-Württemberg, category: stadt}
+- {slug: stadt-goettingen, name: Göttingen, url: "https://www.goettingen.de/", level: kommune, state: Niedersachsen, category: stadt}
+- {slug: stadt-reutlingen, name: Reutlingen, url: "https://www.reutlingen.de/", level: kommune, state: Baden-Württemberg, category: stadt}
+- {slug: stadt-koblenz, name: Koblenz, url: "https://www.koblenz.de/", level: kommune, state: Rheinland-Pfalz, category: stadt}
+- {slug: stadt-bremerhaven, name: Bremerhaven, url: "https://www.bremerhaven.de/", level: kommune, state: Bremen, category: stadt}
+- {slug: stadt-jena, name: Jena, url: "https://www.jena.de/", level: kommune, state: Thüringen, category: stadt}
+- {slug: stadt-trier, name: Trier, url: "https://www.trier.de/", level: kommune, state: Rheinland-Pfalz, category: stadt}
+- {slug: stadt-siegen, name: Siegen, url: "https://www.siegen.de/", level: kommune, state: Nordrhein-Westfalen, category: stadt}
+- {slug: stadt-hildesheim, name: Hildesheim, url: "https://www.hildesheim.de/", level: kommune, state: Niedersachsen, category: stadt}
+- {slug: stadt-kaiserslautern, name: Kaiserslautern, url: "https://www.kaiserslautern.de/", level: kommune, state: Rheinland-Pfalz, category: stadt}
+- {slug: stadt-erlangen, name: Erlangen, url: "https://www.erlangen.de/", level: kommune, state: Bayern, category: stadt}

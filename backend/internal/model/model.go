@@ -32,16 +32,27 @@ const (
 	LevelKommune Level = "kommune"
 )
 
+// Source says where an entry came from. It decides who may overwrite it: the
+// hand-kept list has been checked, an import has not.
+type Source string
+
+const (
+	SourceSeed     Source = "seed"
+	SourceWikidata Source = "wikidata"
+)
+
 type Agency struct {
-	ID        int64     `json:"id"`
-	Slug      string    `json:"slug"`
-	Name      string    `json:"name"`
-	URL       string    `json:"url"`
-	Level     Level     `json:"level"`
-	State     string    `json:"state,omitempty"`
-	Category  string    `json:"category,omitempty"`
-	Active    bool      `json:"active"`
-	CreatedAt time.Time `json:"created_at"`
+	ID         int64     `json:"id"`
+	Slug       string    `json:"slug"`
+	Name       string    `json:"name"`
+	URL        string    `json:"url"`
+	Level      Level     `json:"level"`
+	State      string    `json:"state,omitempty"`
+	Category   string    `json:"category,omitempty"`
+	Active     bool      `json:"active"`
+	Source     Source    `json:"source,omitempty"`
+	ExternalID string    `json:"external_id,omitempty"`
+	CreatedAt  time.Time `json:"created_at"`
 }
 
 type Violation struct {
