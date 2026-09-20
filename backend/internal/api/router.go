@@ -14,6 +14,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 
 	"github.com/praetorianer777/behoerdenbarriere/internal/store"
+	"github.com/praetorianer777/behoerdenbarriere/internal/version"
 )
 
 // Limits are the guard rails of the public API. The data is public and meant to be
@@ -143,6 +144,7 @@ func (s *Server) Routes() http.Handler {
 			r.Use(s.rateLimit("expensive", expensive, keyed), cache(s.limits.CacheMaxAge))
 			r.Get("/stats", s.handleStats)
 			r.Get("/rules", s.handleRules)
+			r.Get("/version", s.handleVersion)
 			r.Get("/thirdparties", s.handleThirdParties)
 			r.Get("/mail", s.handleMail)
 			r.Get("/usage", s.handleUsage)
@@ -181,8 +183,25 @@ func writeError(w http.ResponseWriter, status int, message string) {
 
 // healthz only reports that the process is up; readyz asks the database. They are
 // separate so that a database restart does not take the container down with it.
+// handleHealth also says which build is answering. A tag like "latest" moves, so an
+// installation that kept an older copy is indistinguishable from a current one until
+// something asks.
 func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+	writeJSON(w, http.StatusOK, map[string]string{
+		"status":   "ok",
+		"version":  version.Short(),
+		"revision": version.Current(),
+	})
+}
+
+// handleVersion answers the same as /healthz, but on the path the proxy passes
+// through: /healthz is reachable inside the network, and the question "which build is
+// actually running out there" is asked from outside.
+func (s *Server) handleVersion(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, http.StatusOK, map[string]string{
+		"version":  version.Short(),
+		"revision": version.Current(),
+	})
 }
 
 func (s *Server) handleReady(w http.ResponseWriter, r *http.Request) {

@@ -5,11 +5,16 @@ WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-RUN CGO_ENABLED=0 go build -trimpath -o /out/api ./cmd/api && \
-    CGO_ENABLED=0 go build -trimpath -o /out/worker ./cmd/worker && \
-    CGO_ENABLED=0 go build -trimpath -o /out/seed ./cmd/seed && \
-    CGO_ENABLED=0 go build -trimpath -o /out/import ./cmd/import && \
-    CGO_ENABLED=0 go build -trimpath -o /out/dns ./cmd/dns
+# Welcher Stand hier gebaut wird, steht sonst nirgends: Der Quelltext kommt ohne seine
+# Geschichte ins Image, und ein Tag wie "latest" sagt nichts darüber, was darin liegt.
+# Die CI reicht den Commit herein, /healthz gibt ihn wieder aus.
+ARG VERSION=""
+RUN ldflags="-X github.com/praetorianer777/behoerdenbarriere/internal/version.Revision=$VERSION" && \
+    CGO_ENABLED=0 go build -trimpath -ldflags "$ldflags" -o /out/api ./cmd/api && \
+    CGO_ENABLED=0 go build -trimpath -ldflags "$ldflags" -o /out/worker ./cmd/worker && \
+    CGO_ENABLED=0 go build -trimpath -ldflags "$ldflags" -o /out/seed ./cmd/seed && \
+    CGO_ENABLED=0 go build -trimpath -ldflags "$ldflags" -o /out/import ./cmd/import && \
+    CGO_ENABLED=0 go build -trimpath -ldflags "$ldflags" -o /out/dns ./cmd/dns
 
 FROM gcr.io/distroless/static-debian12 AS api
 # The operational commands travel with the API image. An installation that has nothing

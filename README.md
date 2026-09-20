@@ -158,6 +158,12 @@ DNS-Einträge holen — liegen im API-Image, weil auf einem Server kein Go steht
 docker compose -f docker-compose.yml -f docker-compose.prod.yml run --rm --entrypoint /seed api
 ```
 
+Welcher Stand dort läuft, sagt die Installation selbst:
+
+```sh
+curl -s http://127.0.0.1:8081/api/v1/version
+```
+
 Der Server zieht, GitHub schiebt nicht — damit braucht niemand von außen Zugang zu der
 Maschine. Einrichtung, Rückfall auf eine ältere Fassung und was dabei mit Migrationen
 zu beachten ist, steht in [deploy/BETRIEB.md](deploy/BETRIEB.md).

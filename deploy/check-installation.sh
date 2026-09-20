@@ -34,7 +34,11 @@ cleanup
 echo "== Images aus diesem Stand bauen"
 # Gebaut wird aus der Entwicklungsfassung, gestartet wird die Betriebsfassung: Geprüft
 # werden soll die Datei, die auf dem Server läuft, mit dem Code von hier.
-docker build --target api -t "ghcr.io/praetorianer777/behoerdenbarriere-api:$tag" ./backend >/dev/null
+# Mit Version gebaut, wie die CI es tut: Sonst bliebe ungeprüft, ob die Angabe
+# überhaupt im Binary ankommt — sie fiele lautlos auf "unknown" zurück.
+revision=$(git rev-parse HEAD)
+docker build --target api --build-arg "VERSION=$revision" \
+    -t "ghcr.io/praetorianer777/behoerdenbarriere-api:$tag" ./backend >/dev/null
 docker build -t "ghcr.io/praetorianer777/behoerdenbarriere-frontend:$tag" ./frontend >/dev/null
 
 echo "== Betriebsfassung starten"
@@ -69,6 +73,20 @@ if [ "${total:-0}" -lt 100 ]; then
     exit 1
 fi
 echo "  Die API antwortet durch die Oberfläche, mit $total Behörden."
+
+echo "== Nach dem laufenden Stand fragen"
+# Ohne diese Auskunft lässt sich von außen nicht unterscheiden, ob eine Installation
+# aktuell ist oder seit Wochen auf einer alten Kopie von "latest" steht.
+running=$(ask /api/v1/version)
+case "$running" in
+    *"$revision"*) echo "  Die Installation nennt ihren Stand: $running" ;;
+    *)
+        echo "Die Installation nennt nicht den Stand, aus dem sie gebaut wurde." >&2
+        echo "  gebaut aus: $revision" >&2
+        echo "  sie sagt:   $running" >&2
+        exit 1
+        ;;
+esac
 
 echo "== Die übrigen Werkzeuge starten wenigstens"
 # /import holt seine Daten von Wikidata, /dns aus dem DNS. Beides darf in der CI an
