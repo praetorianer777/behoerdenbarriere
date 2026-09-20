@@ -4,7 +4,10 @@
 package seed
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
+	"io"
 	"net/url"
 	"strings"
 
@@ -37,7 +40,15 @@ func Load() ([]model.Agency, error) { return Parse(seeddata.SeedsYAML) }
 // a half-loaded list would look like a complete one in the ranking.
 func Parse(raw []byte) ([]model.Agency, error) {
 	var entries []entry
-	if err := yaml.Unmarshal(raw, &entries); err != nil {
+	// Strict: an unexpected key is not a harmless extra, it is a truncated name. In a
+	// flow mapping an unquoted comma ends the value, so
+	//   {slug: bmwsb, name: Bundesministerium für Wohnen, Stadtentwicklung und Bauwesen}
+	// parses as the name "Bundesministerium für Wohnen" plus a key nobody wrote, and
+	// the authority went into the ranking under half its name without a word of
+	// complaint.
+	dec := yaml.NewDecoder(bytes.NewReader(raw))
+	dec.KnownFields(true)
+	if err := dec.Decode(&entries); err != nil && !errors.Is(err, io.EOF) {
 		return nil, fmt.Errorf("seeds: %w", err)
 	}
 	if len(entries) == 0 {
