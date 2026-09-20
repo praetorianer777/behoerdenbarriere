@@ -211,3 +211,12 @@ test('sagt bei einer gesperrten Behörde, woran es lag', async ({ page }) => {
   // Keine erfundene Note aus einer Sperrseite.
   await expect(page.getByText(/Note [A-F]/)).toHaveCount(0)
 })
+
+test('kennzeichnet einen Wert aus einer einzigen Seite als vorläufig', async ({ page }) => {
+  await page.goto('/behoerde/vorlaeufig')
+
+  await expect(page.getByRole('heading', { name: 'Dieser Wert ist vorläufig' })).toBeVisible()
+  // Der Hinweis hängt am Wert selbst, nicht nur im Kasten darunter.
+  await expect(page.getByText('vorläufig').first()).toBeVisible()
+  await expect(page.getByText(/robots\.txt/)).toBeVisible()
+})

@@ -72,7 +72,12 @@ export function AgencyPage() {
       </p>
 
       <div className="mt-6 flex flex-wrap items-center gap-6 rounded-lg border border-slate-200 bg-white p-6">
-        <GradeBadge score={detail.score} grade={detail.grade} size="lg" />
+        <GradeBadge
+          score={detail.score}
+          grade={detail.grade}
+          size="lg"
+          provisional={detail.provisional}
+        />
         <DeltaBadge delta={trend.delta_last} />
         <p className="text-sm text-slate-700">
           {detail.scanned_at
@@ -80,6 +85,25 @@ export function AgencyPage() {
             : 'noch nicht geprüft'}
         </p>
       </div>
+
+      {detail.provisional && (
+        /* Der Grund steht dazu: Sonst liest sich „vorläufig" wie ein Versäumnis der
+           Behörde, dabei ist es ihre robots.txt, die wir befolgen. */
+        <section className="mt-6 rounded-lg border border-slate-400 bg-white p-4">
+          <h2 className="font-semibold">Dieser Wert ist vorläufig</h2>
+          <p className="mt-2 text-slate-700">
+            Er stützt sich auf {detail.pages}{' '}
+            {detail.pages === 1 ? 'geprüfte Seite' : 'geprüfte Seiten'} und beschreibt damit diese
+            Seite, nicht die Website. Unser Wert ist als gewichtetes Mittel über Startseite,
+            rechtlich wichtige Seiten und den Rest definiert — dafür braucht es mehr.
+          </p>
+          <p className="mt-2 text-sm text-slate-600">
+            Meist liegt es an der <code>robots.txt</code>: Verlangt sie drei Minuten Pause zwischen
+            zwei Anfragen, halten wir uns daran, und in der verfügbaren Zeit bleiben wenige Seiten.
+            Wir umgehen das nicht.
+          </p>
+        </section>
+      )}
 
       {detail.failure && (
         /* Eine abgewiesene Behörde sieht sonst aus wie eine, an die noch niemand

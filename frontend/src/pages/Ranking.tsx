@@ -257,7 +257,11 @@ export function Ranking() {
                       </th>
                       <td className="px-3 py-3">{levelLabel[agency.level]}</td>
                       <td className="px-3 py-3">
-                        <GradeBadge score={agency.score} grade={agency.grade} />
+                        <GradeBadge
+                          score={agency.score}
+                          grade={agency.grade}
+                          provisional={agency.provisional}
+                        />
                       </td>
                       <td className="px-3 py-3">
                         <DeltaBadge delta={agency.delta} />

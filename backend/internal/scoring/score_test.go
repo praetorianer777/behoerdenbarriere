@@ -161,3 +161,15 @@ func TestSummarizeRulesOrdersBySeverityAndCounts(t *testing.T) {
 		t.Error("sample missing")
 	}
 }
+
+func TestProvisional(t *testing.T) {
+	if Provisional(0) {
+		t.Error("ohne geprüfte Seite gibt es keinen vorläufigen Wert, sondern keinen")
+	}
+	if !Provisional(1) {
+		t.Error("eine Seite ist kein Score für eine Website")
+	}
+	if Provisional(MinPages) {
+		t.Errorf("ab %d Seiten gilt der Wert", MinPages)
+	}
+}

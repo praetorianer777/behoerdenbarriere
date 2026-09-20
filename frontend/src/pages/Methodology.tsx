@@ -76,6 +76,20 @@ export function Methodology() {
         heute.
       </p>
 
+      <h2 className="mt-8 text-xl font-semibold">Wenn wir nicht hineinkommen</h2>
+      <p className="mt-2">
+        Manche Behörden schützen ihre Website gegen automatische Zugriffe — ein Captcha, ein
+        Bot-Manager, ein 403 an der Tür. Solche Seiten bewerten wir nicht, sondern lehnen sie ab:
+        Eine Note aus einer Sperrseite wäre ein Urteil über unseren Prüfer, veröffentlicht unter dem
+        Namen der Behörde. Auf der Seite der Behörde steht dann, woran es lag.
+      </p>
+      <p className="mt-4">
+        Und manche <code>robots.txt</code> verlangt drei Minuten Pause zwischen zwei Anfragen. Wir
+        halten uns daran, auch wenn dann nur wenige Seiten geprüft werden. Ein Wert aus weniger als
+        fünf Seiten heißt deshalb <strong>vorläufig</strong> und steht so auch im Ranking — er
+        beschreibt diese Seiten, nicht die Website.
+      </p>
+
       <h2 className="mt-8 text-xl font-semibold">Einwilligungsabfragen</h2>
       <p className="mt-2">
         Ein Cookie-Banner verdeckt die Seite — auch für die Prüfung. Deshalb schließen wir es

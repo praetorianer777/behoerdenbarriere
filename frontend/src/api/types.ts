@@ -13,6 +13,9 @@ export interface Agency {
   pages: number
   scanned_at?: string
   lighthouse_score?: number
+  // Der Wert stützt sich auf zu wenige Seiten, um die Website zu beschreiben — etwa
+  // weil die robots.txt drei Minuten Pause zwischen zwei Anfragen verlangt.
+  provisional?: boolean
 }
 
 export interface Subscores {
