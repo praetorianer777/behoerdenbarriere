@@ -175,3 +175,16 @@ test('eine noch ungeprüfte Behörde zeigt eine Seite, keine leere', async ({ pa
   await expect(page.getByRole('alert')).toHaveCount(0)
   await expect(page.getByRole('heading', { name: 'Verstöße nach Regel' })).toHaveCount(0)
 })
+
+test('sortiert nach Veränderung und sagt es auch ohne Pfeil', async ({ page }) => {
+  await page.goto('/')
+
+  const spalte = page.getByRole('columnheader', { name: /Veränderung/ })
+  await expect(spalte).toHaveAttribute('aria-sort', 'none')
+
+  await page.getByRole('button', { name: /Veränderung/ }).click()
+
+  await expect(spalte).toHaveAttribute('aria-sort', 'descending')
+  // Die Sortierung steht in der Adresse, damit sich eine sortierte Liste teilen lässt.
+  await expect(page).toHaveURL(/sort=delta/)
+})

@@ -68,6 +68,10 @@ export function Ranking() {
     setParams(next)
   }
 
+  function sortieren(wert: string) {
+    update({ sort: wert })
+  }
+
   const pages = agencies.data ? Math.ceil(agencies.data.total / agencies.data.per_page) : 0
 
   return (
@@ -130,6 +134,27 @@ export function Ranking() {
             {(stats.data?.states ?? []).map((state) => (
               <option key={state} value={state}>
                 {state}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          {/* Auf dem Telefon wird die Tabelle zu Karten, und Spaltenköpfe zum Klicken
+              gibt es dort nicht. Ohne diese Auswahl ließe sich am Telefon gar nicht
+              sortieren. */}
+          <label htmlFor="sortierung" className="block text-sm font-medium">
+            Sortierung
+          </label>
+          <select
+            id="sortierung"
+            value={query.sort}
+            onChange={(event) => sortieren(event.target.value)}
+            className="mt-1 min-h-11 w-full rounded-md border border-slate-400 px-3 py-2 text-base"
+          >
+            {sortierungen.map((option) => (
+              <option key={option.wert} value={option.wert}>
+                {option.label}
               </option>
             ))}
           </select>
@@ -205,41 +230,16 @@ export function Ranking() {
             >
               <table className="w-full border-collapse bg-white text-left">
                 <caption className="sr-only">
-                  Behörden mit ihrem Barrierefreiheits-Score, sortierbar nach Wert und Name
+                  Behörden mit ihrem Barrierefreiheits-Score, sortierbar nach Name, Ebene, Wert,
+                  Veränderung und Prüfdatum
                 </caption>
                 <thead>
                   <tr className="border-b border-slate-300">
-                    <th scope="col" className="px-3 py-2">
-                      <SortButton
-                        label="Behörde"
-                        active={query.sort === 'name' || query.sort === 'name_desc'}
-                        onClick={() =>
-                          update({
-                            sort: query.sort === 'name' ? 'name_desc' : 'name',
-                          })
-                        }
-                      />
-                    </th>
-                    <th scope="col" className="px-3 py-2">
-                      Ebene
-                    </th>
-                    <th scope="col" className="px-3 py-2">
-                      <SortButton
-                        label="Score"
-                        active={query.sort === '' || query.sort === 'score_asc'}
-                        onClick={() =>
-                          update({
-                            sort: query.sort === 'score_asc' ? '' : 'score_asc',
-                          })
-                        }
-                      />
-                    </th>
-                    <th scope="col" className="px-3 py-2">
-                      Veränderung
-                    </th>
-                    <th scope="col" className="px-3 py-2">
-                      Geprüft am
-                    </th>
+                    <SortHeader spalte={spalten.name} sort={query.sort} onSort={sortieren} />
+                    <SortHeader spalte={spalten.level} sort={query.sort} onSort={sortieren} />
+                    <SortHeader spalte={spalten.score} sort={query.sort} onSort={sortieren} />
+                    <SortHeader spalte={spalten.delta} sort={query.sort} onSort={sortieren} />
+                    <SortHeader spalte={spalten.scanned} sort={query.sort} onSort={sortieren} />
                   </tr>
                 </thead>
                 <tbody>
@@ -301,19 +301,74 @@ export function Ranking() {
   )
 }
 
-function SortButton({
-  label,
-  active,
-  onClick,
-}: {
+// Jede sortierbare Spalte kennt ihre beiden Richtungen und die, mit der sie anfängt.
+// Beim Score ist das absteigend — die Frage lautet „wer ist am besten", nicht „wer
+// steht alphabetisch vorn".
+interface Spalte {
   label: string
-  active: boolean
-  onClick: () => void
+  auf: string
+  ab: string
+  zuerst: 'auf' | 'ab'
+}
+
+const spalten: Record<string, Spalte> = {
+  name: { label: 'Behörde', auf: 'name', ab: 'name_desc', zuerst: 'auf' },
+  level: { label: 'Ebene', auf: 'level', ab: 'level_desc', zuerst: 'auf' },
+  score: { label: 'Score', auf: 'score_asc', ab: '', zuerst: 'ab' },
+  delta: { label: 'Veränderung', auf: 'delta_asc', ab: 'delta', zuerst: 'ab' },
+  scanned: { label: 'Geprüft am', auf: 'scanned_asc', ab: 'scanned', zuerst: 'ab' },
+}
+
+// Die Reihenfolge, in der die Auswahl auf dem Telefon steht. Dort gibt es keine
+// Spaltenköpfe zum Klicken, und ohne sie ließe sich gar nicht sortieren.
+const sortierungen: { wert: string; label: string }[] = [
+  { wert: '', label: 'Score, beste zuerst' },
+  { wert: 'score_asc', label: 'Score, schlechteste zuerst' },
+  { wert: 'delta', label: 'Veränderung, größte Verbesserung zuerst' },
+  { wert: 'delta_asc', label: 'Veränderung, größte Verschlechterung zuerst' },
+  { wert: 'scanned', label: 'Geprüft am, zuletzt geprüfte zuerst' },
+  { wert: 'scanned_asc', label: 'Geprüft am, am längsten nicht geprüfte zuerst' },
+  { wert: 'level', label: 'Ebene, Bund zuerst' },
+  { wert: 'level_desc', label: 'Ebene, Kommunen zuerst' },
+  { wert: 'name', label: 'Name, A bis Z' },
+  { wert: 'name_desc', label: 'Name, Z bis A' },
+]
+
+function richtung(spalte: Spalte, sort: string): 'ascending' | 'descending' | 'none' {
+  if (sort === spalte.auf) return 'ascending'
+  if (sort === spalte.ab) return 'descending'
+  return 'none'
+}
+
+/**
+ * Ein sortierbarer Spaltenkopf. `aria-sort` sagt Hilfsmitteln, wonach und in welche
+ * Richtung gerade sortiert ist — der Pfeil allein sagt das nur denen, die ihn sehen.
+ */
+function SortHeader({
+  spalte,
+  sort,
+  onSort,
+}: {
+  spalte: Spalte
+  sort: string
+  onSort: (wert: string) => void
 }) {
+  const aktuell = richtung(spalte, sort)
+  const naechste =
+    aktuell === 'none' ? spalte[spalte.zuerst] : aktuell === 'ascending' ? spalte.ab : spalte.auf
+
   return (
-    <button type="button" onClick={onClick} className="-mx-2 min-h-11 px-2 font-semibold underline">
-      {label}
-      {active && <span aria-hidden="true"> ↕</span>}
-    </button>
+    <th scope="col" className="px-3 py-2" aria-sort={aktuell}>
+      <button
+        type="button"
+        onClick={() => onSort(naechste)}
+        className="-mx-2 flex min-h-11 items-center gap-1 px-2 font-semibold underline"
+      >
+        {spalte.label}
+        <span aria-hidden="true">
+          {aktuell === 'ascending' ? '▲' : aktuell === 'descending' ? '▼' : '↕'}
+        </span>
+      </button>
+    </th>
   )
 }

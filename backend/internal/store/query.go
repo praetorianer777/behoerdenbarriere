@@ -56,6 +56,14 @@ func (f AgencyFilter) normalize() AgencyFilter {
 //
 // Authorities without a scan sort last in either direction: "not yet checked" is not
 // the same as "checked and bad", and it should not head the table either way.
+// orderBy maps the requested sort onto SQL. Everything that can be missing is sorted
+// with NULLS LAST in both directions: an authority that was never checked has no date
+// and no change, and putting it first because "nothing" sorts below every number would
+// answer a question nobody asked. Never checked is not "checked long ago", and no
+// change is not a change of zero.
+//
+// The level is not sorted alphabetically but from the federal government downwards,
+// which is the order the levels are actually thought of in.
 func orderBy(sort string) string {
 	switch sort {
 	case "score_asc":
@@ -64,12 +72,30 @@ func orderBy(sort string) string {
 		return "a.name ASC"
 	case "name_desc":
 		return "a.name DESC"
+	case "level":
+		return levelOrder + " ASC, a.name ASC"
+	case "level_desc":
+		return levelOrder + " DESC, a.name ASC"
 	case "scanned":
 		return "s.finished_at DESC NULLS LAST, a.name ASC"
+	case "scanned_asc":
+		return "s.finished_at ASC NULLS LAST, a.name ASC"
+	case "delta":
+		return deltaOrder + " DESC NULLS LAST, a.name ASC"
+	case "delta_asc":
+		return deltaOrder + " ASC NULLS LAST, a.name ASC"
 	default:
 		return "s.score DESC NULLS LAST, a.name ASC"
 	}
 }
+
+// levelOrder sorts by rank, not by name: bund, land, kreis, kommune.
+const levelOrder = `CASE a.level
+	WHEN 'bund' THEN 1 WHEN 'land' THEN 2 WHEN 'kreis' THEN 3 ELSE 4 END`
+
+// deltaOrder is the change against the previous scan. It exists only where both scans
+// do; where one is missing the row has no change, not a change of zero.
+const deltaOrder = `(s.score - p.score)`
 
 const agencyColumns = `
 	a.id, a.slug, a.name, a.url, a.level, coalesce(a.state, ''), coalesce(a.category, ''),
