@@ -4,9 +4,11 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
@@ -103,44 +105,82 @@ func run() error {
 		WithMail(maildns.New(nil, 15*time.Second))
 
 	name, _ := os.Hostname()
-	slog.Info("worker ready", "name", name, "chrome", cfg.ChromeURL)
 
-	ticker := time.NewTicker(cfg.Worker.PollInterval)
+	slog.Info("worker ready", "name", name, "at once", cfg.Worker.Concurrency)
+
+	// Several authorities at a time. A scan is almost entirely waiting — for the rate
+	// limit towards the authority, for pages to settle — so the machine is idle while
+	// one runs. The queue hands out jobs with SKIP LOCKED, so two hands never take the
+	// same one, and the rate limit per host is shared between them.
+	var wg sync.WaitGroup
+	for i := range max(cfg.Worker.Concurrency, 1) {
+		wg.Add(1)
+		go func(hand int) {
+			defer wg.Done()
+			work(ctx, db, pipe, fmt.Sprintf("%s-%d", name, hand), cfg.Worker.PollInterval)
+		}(i)
+	}
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		keepQueue(ctx, db, cfg.Worker.RescanInterval, cfg.Worker.PollInterval)
+	}()
+
+	wg.Wait()
+	slog.Info("worker stopped")
+	return nil
+}
+
+// work takes one job after another until there is none, then waits.
+func work(ctx context.Context, db *store.Store, pipe *pipeline.Pipeline, hand string, poll time.Duration) {
+	ticker := time.NewTicker(poll)
 	defer ticker.Stop()
 
 	for {
-		// Work until the queue is empty, and only then wait — otherwise a hundred
-		// authorities would be scanned at one per poll interval.
-		for {
-			done, err := step(ctx, db, pipe, name, cfg.Worker.RescanInterval)
-			if err != nil {
-				slog.Error("job failed", "error", err)
-			}
-			if !done || ctx.Err() != nil {
-				break
-			}
+		done, err := step(ctx, db, pipe, hand)
+		if err != nil {
+			slog.Error("job failed", "worker", hand, "error", err)
+		}
+		if done && ctx.Err() == nil {
+			continue
 		}
 
 		select {
 		case <-ctx.Done():
-			slog.Info("worker stopped")
-			return nil
+			return
+		case <-ticker.C:
+		}
+	}
+}
+
+// keepQueue does the housekeeping: releasing jobs of a worker that died, and putting
+// authorities back in whose last check has aged out. It runs once and not per hand —
+// several workers doing the same bookkeeping would only write over each other.
+func keepQueue(ctx context.Context, db *store.Store, rescan, poll time.Duration) {
+	ticker := time.NewTicker(poll)
+	defer ticker.Stop()
+
+	for {
+		if _, err := db.ReleaseStaleJobs(ctx, staleAfter); err != nil {
+			slog.Error("could not release stale jobs", "error", err)
+		}
+		if n, err := db.EnqueueDue(ctx, rescan); err != nil {
+			slog.Error("could not queue due authorities", "error", err)
+		} else if n > 0 {
+			slog.Info("authorities queued", "count", n)
+		}
+
+		select {
+		case <-ctx.Done():
+			return
 		case <-ticker.C:
 		}
 	}
 }
 
 // step does one job and reports whether there was one.
-func step(ctx context.Context, db *store.Store, pipe *pipeline.Pipeline, worker string, rescan time.Duration) (bool, error) {
-	if _, err := db.ReleaseStaleJobs(ctx, staleAfter); err != nil {
-		return false, err
-	}
-	if n, err := db.EnqueueDue(ctx, rescan); err != nil {
-		return false, err
-	} else if n > 0 {
-		slog.Info("authorities queued", "count", n)
-	}
-
+func step(ctx context.Context, db *store.Store, pipe *pipeline.Pipeline, worker string) (bool, error) {
 	job, err := db.ClaimJob(ctx, worker)
 	if err != nil || job == nil {
 		return false, err

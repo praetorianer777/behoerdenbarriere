@@ -92,10 +92,11 @@ type CrawlConfig struct {
 
 type ScanConfig struct {
 	PageTimeout time.Duration
-	Concurrency int
 }
 
 type WorkerConfig struct {
+	// Concurrency is how many authorities are checked at the same time.
+	Concurrency    int
 	PollInterval   time.Duration
 	RescanInterval time.Duration
 }
@@ -142,8 +143,11 @@ func Load() (*Config, error) {
 	if c.Scan.PageTimeout, err = envDuration("SCAN_PAGE_TIMEOUT", 30*time.Second); err != nil {
 		return nil, err
 	}
-	if c.Scan.Concurrency, err = envInt("SCAN_CONCURRENCY", 4); err != nil {
-		return nil, err
+	// Eine Prüfung wartet fast die ganze Zeit — auf den Takt gegenüber der Behörde,
+	// auf das Nachladen der Seite. Mehrere gleichzeitig kosten deshalb kaum Rechenzeit,
+	// aber jede hält einen Browser-Tab offen; darüber wächst der Bedarf.
+	if c.Worker.Concurrency, err = envInt("WORKER_CONCURRENCY", 4); err != nil {
+		return c, err
 	}
 	if c.Worker.PollInterval, err = envDuration("WORKER_POLL_INTERVAL", 5*time.Second); err != nil {
 		return nil, err

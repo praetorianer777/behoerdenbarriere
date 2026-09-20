@@ -7,8 +7,6 @@ import (
 	"net/http"
 	"time"
 
-	"golang.org/x/time/rate"
-
 	"github.com/praetorianer777/behoerdenbarriere/internal/model"
 	"github.com/praetorianer777/behoerdenbarriere/internal/scanner"
 	"github.com/praetorianer777/behoerdenbarriere/internal/statement"
@@ -47,6 +45,7 @@ type Crawler struct {
 	scanner PageScanner
 	cfg     Config
 	robots  *robotsCache
+	hosts   *HostLimiter
 }
 
 func New(s PageScanner, cfg Config) *Crawler {
@@ -54,7 +53,17 @@ func New(s PageScanner, cfg Config) *Crawler {
 		scanner: s,
 		cfg:     cfg.withDefaults(),
 		robots:  newRobotsCache(&http.Client{Timeout: 20 * time.Second}),
+		hosts:   NewHostLimiter(),
 	}
+}
+
+// WithHostLimiter shares one limiter between crawlers. Several scans running at once
+// must not each get their own budget for the same server — see HostLimiter.
+func (c *Crawler) WithHostLimiter(hosts *HostLimiter) *Crawler {
+	if hosts != nil {
+		c.hosts = hosts
+	}
+	return c
 }
 
 // ErrDisallowed means robots.txt forbids the start page. Then nothing is checked at
@@ -93,7 +102,6 @@ func (c *Crawler) Crawl(ctx context.Context, startURL string) (Outcome, error) {
 	if delay := c.robots.CrawlDelay(ctx, start); delay > interval {
 		interval = delay
 	}
-	limiter := rate.NewLimiter(rate.Every(interval), 1)
 
 	f := newFrontier()
 	f.push(Target{URL: start, Depth: 0, IsEntry: true})
@@ -105,7 +113,10 @@ func (c *Crawler) Crawl(ctx context.Context, startURL string) (Outcome, error) {
 		if !ok {
 			break
 		}
-		if err := limiter.Wait(ctx); err != nil {
+		// Der Takt gilt dem Host, nicht dem Lauf: Eine nicht lesbare Adresse wäre
+		// hier schon vorher aussortiert worden.
+		host, _ := hostOf(target.URL)
+		if err := c.hosts.Wait(ctx, host, interval); err != nil {
 			break
 		}
 

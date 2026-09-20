@@ -3,6 +3,8 @@ package store_test
 import (
 	"context"
 	"errors"
+	"fmt"
+	"sync"
 	"testing"
 	"time"
 
@@ -305,4 +307,50 @@ func claimOurs(t *testing.T, s *store.Store, agencyID int64) *store.Job {
 	}
 	t.Fatal("too many foreign jobs in the queue")
 	return nil
+}
+
+// Mehrere Prüfungen gleichzeitig holen sich Aufträge aus derselben Warteschlange.
+// Zwei Hände dürfen nie denselben Auftrag greifen — sonst belasten zwei Läufe
+// gleichzeitig dieselbe Behörde.
+func TestClaimJobHandsOutEachJobOnce(t *testing.T) {
+	s := storetest.New(t)
+	ctx := context.Background()
+
+	const jobs = 12
+	for range jobs {
+		if err := s.EnqueueScan(ctx, freshAgency(t, s)); err != nil {
+			t.Fatalf("enqueue: %v", err)
+		}
+	}
+
+	var mu sync.Mutex
+	seen := map[int64]string{}
+	var wg sync.WaitGroup
+	for hand := range 4 {
+		wg.Add(1)
+		go func(hand int) {
+			defer wg.Done()
+			for {
+				job, err := s.ClaimJob(ctx, fmt.Sprintf("hand-%d", hand))
+				if err != nil {
+					t.Error(err)
+					return
+				}
+				if job == nil {
+					return
+				}
+				mu.Lock()
+				if other, taken := seen[job.ID]; taken {
+					t.Errorf("job %d taken twice: by %s and by hand-%d", job.ID, other, hand)
+				}
+				seen[job.ID] = fmt.Sprintf("hand-%d", hand)
+				mu.Unlock()
+			}
+		}(hand)
+	}
+	wg.Wait()
+
+	if len(seen) != jobs {
+		t.Errorf("%d of %d jobs handed out", len(seen), jobs)
+	}
 }

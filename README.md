@@ -202,11 +202,35 @@ Alle Grenzen sind konfigurierbar, siehe `.env.example`; eine Null schaltet eine 
 
 ## Rücksicht beim Crawlen
 
-`robots.txt` und Crawl-Delay werden befolgt, jede Domain wird mit höchstens einer
-Anfrage pro Sekunde abgefragt, der User-Agent nennt das Projekt. Geprüft wird nur, was
+`robots.txt` und Crawl-Delay werden befolgt, jeder **Host** wird mit höchstens einer
+Anfrage pro Sekunde abgefragt, der User-Agent nennt das Projekt.
+
+Dieser Takt gilt über alle gleichzeitig laufenden Prüfungen hinweg, nicht je Prüfung.
+Das ist kein Detail: Jedes Bundesministerium liegt unter `bund.de`, für uns sind das
+verschiedene Behörden, für den Betreiber ist es eine Maschine. Ein Zähler je Lauf würde
+bei vier gleichzeitigen Prüfungen unbemerkt den vierfachen Takt erzeugen — und dieses
+Versprechen zur Lüge machen.
+ Geprüft wird nur, was
 öffentlich erreichbar ist: keine Anmeldungen, keine abgeschickten Formulare, keine
 personenbezogenen Daten. Wer seine Seiten nicht im Ranking sehen möchte, kann sie
 abschalten lassen.
+
+## Was ein Scan kostet
+
+Gemessen an einer laufenden Installation, vier Prüfungen gleichzeitig:
+
+| | |
+| --- | --- |
+| Worker | wenige Prozent einer CPU, ~35 MB |
+| Chrome | ~220 MB, plus grob 50–100 MB je gleichzeitiger Prüfung |
+| Postgres | ~50 MB |
+| Eine Behörde | rund 5 Minuten für 100 Seiten |
+
+Eine Prüfung wartet fast die ganze Zeit: auf den Takt gegenüber der Behörde, auf das
+Nachladen der Seite. Rechenzeit kostet das kaum, weshalb `WORKER_CONCURRENCY` (Vorgabe
+4) mehrere Behörden gleichzeitig prüft. Der Engpass ist der Arbeitsspeicher von Chrome,
+nicht die CPU. Für alle 426 Stellen bedeutet das rund neun Stunden statt anderthalb
+Tagen.
 
 ## Zahlen über die eigene Seite
 

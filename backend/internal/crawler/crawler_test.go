@@ -380,3 +380,41 @@ func urlsOf(pages []model.PageResult) []string {
 	}
 	return out
 }
+
+// Zwei Prüfungen laufen gleichzeitig durch denselben Crawler. Für Behörden unter
+// demselben Host — jedes Bundesministerium liegt unter bund.de — muss der Takt dann
+// trotzdem gelten, sonst wird aus einer Anfrage pro Sekunde eine je laufender Prüfung.
+func TestConcurrentCrawlsShareTheHostBudget(t *testing.T) {
+	scanner := &fakeScanner{links: map[string][]string{}}
+	interval := 80 * time.Millisecond
+	c := New(scanner, Config{
+		MaxPages:   2,
+		MaxDepth:   1,
+		RatePerSec: float64(time.Second) / float64(interval),
+		Timeout:    10 * time.Second,
+	})
+
+	srv := robotsServer(t, "User-agent: *\nAllow: /")
+
+	started := time.Now()
+	var wg sync.WaitGroup
+	for _, path := range []string{"/amt-a", "/amt-b"} {
+		wg.Add(1)
+		go func(path string) {
+			defer wg.Done()
+			if _, err := c.Crawl(context.Background(), srv+path); err != nil {
+				t.Error(err)
+			}
+		}(path)
+	}
+	wg.Wait()
+
+	// Zwei Einstiegsseiten auf demselben Host: eine sofort, die zweite erst nach dem
+	// Intervall.
+	if elapsed := time.Since(started); elapsed < interval {
+		t.Errorf("two scans of one host took %v, want at least %v", elapsed, interval)
+	}
+	if got := len(scanner.seen()); got != 2 {
+		t.Errorf("%d pages checked, want 2", got)
+	}
+}
