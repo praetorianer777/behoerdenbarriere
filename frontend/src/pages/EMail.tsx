@@ -234,7 +234,7 @@ export function EMail() {
             — und für sich genommen keine rechtliche Bewertung.
           </li>
           <li>
-            Mit Barrierefreiheit hat all das nichts zu tun. In den Score fließt nichts davon ein.
+            Mit Barrierefreiheit hat all das nichts zu tun. In den Wert fließt nichts davon ein.
           </li>
         </ul>
       </section>

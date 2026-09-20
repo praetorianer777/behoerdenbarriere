@@ -3,7 +3,7 @@ import { dmarcLabel, formatDate, mailProviderLabel } from '../lib'
 
 /**
  * Was die Domain einer Behörde über ihre E-Mail veröffentlicht. Öffentliches DNS,
- * nichts wird abgeklopft — und nichts davon zählt in den Score.
+ * nichts wird abgeklopft — und nichts davon zählt in den Wert.
  *
  * Neben jeder Einordnung steht der Roheintrag. Ein MX-Eintrag sagt, welcher Host die
  * Post annimmt, nicht wer sie liest; ein SPF-Eintrag sagt, wer im Namen der Domain

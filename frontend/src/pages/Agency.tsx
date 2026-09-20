@@ -206,7 +206,7 @@ export function AgencyPage() {
               danach. Wir gewichten nach Schwere und dämpfen die Menge. Wo beide weit
               auseinanderliegen, lohnt der Blick in die Befunde. */}
           <p className="mt-2 text-slate-700">
-            Googles Score für die Startseite. Er bewertet jede Regel ganz oder gar nicht: ein
+            Googles Wert für die Startseite. Er bewertet jede Regel ganz oder gar nicht: ein
             fehlender Alternativtext unter hundert Bildern lässt die ganze Regel durchfallen. Unser
             Wert gewichtet nach Schwere und dämpft die Menge, betrachtet dafür mehrere Seiten. Zwei
             Blickwinkel auf dieselbe Website.
@@ -256,12 +256,11 @@ export function AgencyPage() {
 
           {scan.data.pages_blocked > 0 && (
             /* Ein Banner, das sich nicht wegklicken lässt, macht den Befund zu einem
-               Befund über das Banner. Wer den Score liest, muss das wissen. */
+               Befund über das Banner. Wer den Wert liest, muss das wissen. */
             <p className="mt-2 rounded-lg border border-grade-d bg-white p-4">
-              Auf {scan.data.pages_blocked}{' '}
-              {scan.data.pages_blocked === 1 ? 'Seite' : 'Seiten'} ließ sich die
-              Einwilligungsabfrage nicht schließen. Dort beschreibt das Ergebnis das Banner und
-              nicht die Seite dahinter.
+              Auf {scan.data.pages_blocked} {scan.data.pages_blocked === 1 ? 'Seite' : 'Seiten'}{' '}
+              ließ sich die Einwilligungsabfrage nicht schließen. Dort beschreibt das Ergebnis das
+              Banner und nicht die Seite dahinter.
             </p>
           )}
 
@@ -291,7 +290,7 @@ export function AgencyPage() {
           <h2 className="mt-10 text-xl font-semibold">Geprüfte Seiten</h2>
 
           {/* Auf dem Telefon als Liste: eine Adresse ist lang, und quer zu scrollen
-              verdeckt genau die Spalte mit dem Score. */}
+              verdeckt genau die Spalte mit dem Wert. */}
           <ul className="mt-3 space-y-3 sm:hidden">
             {(scan.data.pages ?? []).map((page) => (
               <li key={page.url} className="rounded-lg border border-slate-200 bg-white p-4">
@@ -300,7 +299,7 @@ export function AgencyPage() {
                 </a>
                 <p className="mt-1 text-sm break-all text-slate-600">{page.url}</p>
                 <p className="mt-2 text-sm">
-                  Score {formatScore(page.score)} · {page.violations}{' '}
+                  Wert {formatScore(page.score)} · {page.violations}{' '}
                   {page.violations === 1 ? 'Verstoß' : 'Verstöße'}
                   {page.is_entry && ' · Startseite'}
                   {page.error && ' · nicht erreichbar'}
@@ -317,14 +316,14 @@ export function AgencyPage() {
             aria-label="Geprüfte Seiten, waagerecht scrollbar"
           >
             <table className="w-full border-collapse bg-white text-left">
-              <caption className="sr-only">Die geprüften Seiten mit ihrem Score</caption>
+              <caption className="sr-only">Die geprüften Seiten mit ihrem Wert</caption>
               <thead>
                 <tr className="border-b border-slate-300">
                   <th scope="col" className="px-3 py-2">
                     Seite
                   </th>
                   <th scope="col" className="px-3 py-2">
-                    Score
+                    Wert
                   </th>
                   <th scope="col" className="px-3 py-2">
                     Verstöße

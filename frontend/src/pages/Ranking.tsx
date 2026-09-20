@@ -80,8 +80,8 @@ export function Ranking() {
         Wie barrierefrei sind deutsche Behörden?
       </h1>
       <p className="mt-2 max-w-2xl text-slate-700">
-        Jede Website wird automatisiert nach WCAG 2.1 AA geprüft. Je höher der Wert, desto weniger
-        Barrieren wurden gefunden.
+        Jede Website wird automatisiert nach WCAG 2.1 AA geprüft. Der Wert geht von 0 bis 100: 100
+        heißt, dass die Prüfung keine Barriere gefunden hat.
       </p>
 
       <form
@@ -240,8 +240,8 @@ export function Ranking() {
             >
               <table className="w-full border-collapse bg-white text-left">
                 <caption className="sr-only">
-                  Behörden mit ihrem Barrierefreiheits-Score, sortierbar nach Name, Ebene, Wert,
-                  Veränderung und Prüfdatum
+                  Behörden mit ihrem Wert, sortierbar nach Name, Ebene, Wert, Veränderung und
+                  Prüfdatum
                 </caption>
                 <thead>
                   <tr className="border-b border-slate-300">
@@ -317,10 +317,12 @@ export function Ranking() {
 }
 
 // Jede sortierbare Spalte kennt ihre beiden Richtungen und die, mit der sie anfängt.
-// Beim Score ist das absteigend — die Frage lautet „wer ist am besten", nicht „wer
+// Beim Wert ist das absteigend — die Frage lautet „wer ist am besten", nicht „wer
 // steht alphabetisch vorn".
 interface Spalte {
   label: string
+  /** Was die Spalte bedeutet, für alle, die den Kopf vorgelesen bekommen. */
+  zusatz?: string
   auf: string
   ab: string
   zuerst: 'auf' | 'ab'
@@ -329,7 +331,13 @@ interface Spalte {
 const spalten: Record<string, Spalte> = {
   name: { label: 'Behörde', auf: 'name', ab: 'name_desc', zuerst: 'auf' },
   level: { label: 'Ebene', auf: 'level', ab: 'level_desc', zuerst: 'auf' },
-  score: { label: 'Score', auf: 'score_asc', ab: '', zuerst: 'ab' },
+  score: {
+    label: 'Wert',
+    zusatz: 'von 0 bis 100, höher ist besser',
+    auf: 'score_asc',
+    ab: '',
+    zuerst: 'ab',
+  },
   delta: { label: 'Veränderung', auf: 'delta_asc', ab: 'delta', zuerst: 'ab' },
   scanned: { label: 'Geprüft am', auf: 'scanned_asc', ab: 'scanned', zuerst: 'ab' },
 }
@@ -337,8 +345,8 @@ const spalten: Record<string, Spalte> = {
 // Die Reihenfolge, in der die Auswahl auf dem Telefon steht. Dort gibt es keine
 // Spaltenköpfe zum Klicken, und ohne sie ließe sich gar nicht sortieren.
 const sortierungen: { wert: string; label: string }[] = [
-  { wert: '', label: 'Score, beste zuerst' },
-  { wert: 'score_asc', label: 'Score, schlechteste zuerst' },
+  { wert: '', label: 'Wert, beste zuerst' },
+  { wert: 'score_asc', label: 'Wert, schlechteste zuerst' },
   { wert: 'delta', label: 'Veränderung, größte Verbesserung zuerst' },
   { wert: 'delta_asc', label: 'Veränderung, größte Verschlechterung zuerst' },
   { wert: 'scanned', label: 'Geprüft am, zuletzt geprüfte zuerst' },
@@ -380,6 +388,7 @@ function SortHeader({
         className="-mx-2 flex min-h-11 items-center gap-1 px-2 font-semibold underline"
       >
         {spalte.label}
+        {spalte.zusatz && <span className="sr-only"> {spalte.zusatz}</span>}
         <span aria-hidden="true">
           {aktuell === 'ascending' ? '▲' : aktuell === 'descending' ? '▼' : '↕'}
         </span>

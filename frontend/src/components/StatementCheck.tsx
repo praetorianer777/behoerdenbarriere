@@ -3,7 +3,7 @@ import { requirementLabel } from '../lib'
 
 /**
  * Die Erklärung zur Barrierefreiheit ist keine Kennzahl, sondern eine Pflicht aus
- * § 12b BGG und § 7 BITV 2.0. Sie steht deshalb neben dem Score und nicht darin: Ein
+ * § 12b BGG und § 7 BITV 2.0. Sie steht deshalb neben dem Wert und nicht darin: Ein
  * fehlender Nachweis ist ein Rechtsverstoß, keine Barriere in der Seite.
  *
  * Geprüft wird nur, ob die vorgeschriebenen Angaben da sind — ob die Angaben stimmen,
