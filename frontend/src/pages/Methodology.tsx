@@ -99,8 +99,10 @@ export function Methodology() {
       </p>
       <p className="mt-4">
         Lässt sich die Abfrage gar nicht schließen, steht das im Ergebnis. Der Score beschreibt dann
-        das Banner und nicht die Seite dahinter, und die Detailansicht sagt das ausdrücklich. Ein
-        sauberes Banner ist keine saubere Website.
+        das Banner und nicht die Seite dahinter. Traf das auf die Mehrheit der geprüften Seiten zu,
+        heißt der Wert <strong>verdeckt</strong> und steht so auch im Ranking — die Einschränkung
+        gehört an die Zahl, nicht unter den Rand des Sichtbaren. Er kann dann in beide Richtungen
+        falsch sein: Ein sauberes Banner ist keine saubere Website.
       </p>
 
       <h2 className="mt-8 text-xl font-semibold">Eingebundene Drittanbieter</h2>

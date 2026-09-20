@@ -16,10 +16,14 @@ import (
 // score and the one before, so a change can be shown without a second query.
 type AgencyListing struct {
 	model.Agency
-	Score                                         *float64
-	Grade                                         string
-	ScannedAt                                     *time.Time
-	Pages                                         int
+	Score     *float64
+	Grade     string
+	ScannedAt *time.Time
+	Pages     int
+	// PagesBlocked is how many of Pages stayed behind a consent banner. The ranking
+	// needs it: a score computed mostly over banners belongs marked wherever it is
+	// shown, not only on the detail page.
+	PagesBlocked                                  int
 	PrevScore                                     *float64
 	Perceivable, Operable, Understandable, Robust *float64
 	LighthouseScore                               *float64
@@ -101,6 +105,7 @@ const agencyColumns = `
 	a.id, a.slug, a.name, a.url, a.level, coalesce(a.state, ''), coalesce(a.category, ''),
 	a.active, a.created_at,
 	s.score, coalesce(s.grade, ''), s.finished_at, coalesce(s.pages_scanned, 0),
+	coalesce(s.pages_blocked, 0),
 	p.score,
 	s.score_perceivable, s.score_operable, s.score_understandable, s.score_robust,
 	s.lighthouse_score`
@@ -108,7 +113,7 @@ const agencyColumns = `
 // latestScans attaches the newest finished scan and the one before it.
 const latestScans = `
 	LEFT JOIN LATERAL (
-		SELECT score, grade, finished_at, pages_scanned,
+		SELECT score, grade, finished_at, pages_scanned, pages_blocked,
 		       score_perceivable, score_operable, score_understandable, score_robust,
 		       lighthouse_score
 		FROM scans WHERE agency_id = a.id AND status = 'done'
@@ -186,7 +191,7 @@ func scanListings(rows pgx.Rows) ([]AgencyListing, error) {
 		if err := rows.Scan(
 			&a.ID, &a.Slug, &a.Name, &a.URL, &a.Level, &a.State, &a.Category,
 			&a.Active, &a.CreatedAt,
-			&a.Score, &a.Grade, &a.ScannedAt, &a.Pages, &a.PrevScore,
+			&a.Score, &a.Grade, &a.ScannedAt, &a.Pages, &a.PagesBlocked, &a.PrevScore,
 			&a.Perceivable, &a.Operable, &a.Understandable, &a.Robust,
 			&a.LighthouseScore,
 		); err != nil {

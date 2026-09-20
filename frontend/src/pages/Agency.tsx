@@ -79,6 +79,7 @@ export function AgencyPage() {
           grade={detail.grade}
           size="lg"
           provisional={detail.provisional}
+          obscured={detail.obscured}
         />
         <DeltaBadge delta={trend.delta_last} />
         <p className="text-sm text-slate-700">
@@ -103,6 +104,24 @@ export function AgencyPage() {
             Meist liegt es an der <code>robots.txt</code>: Verlangt sie drei Minuten Pause zwischen
             zwei Anfragen, halten wir uns daran, und in der verfügbaren Zeit bleiben wenige Seiten.
             Wir umgehen das nicht.
+          </p>
+        </section>
+      )}
+
+      {detail.obscured && (
+        /* Ein sauberes Banner vor einer ungeprüften Seite ergibt eine gute Note. Das
+           steht sonst zwei Bildschirme tiefer, und wer nur die Note liest, nimmt das
+           Falsche mit. */
+        <section className="mt-6 rounded-lg border border-slate-400 bg-white p-4">
+          <h2 className="font-semibold">Gemessen wurde überwiegend das Einwilligungsbanner</h2>
+          <p className="mt-2 text-slate-700">
+            Auf den meisten geprüften Seiten ließ sich die Abfrage nach Cookies nicht schließen. Was
+            dahinter liegt, haben wir nicht gesehen — die gefundenen Barrieren sind die des Banners.
+          </p>
+          <p className="mt-2 text-sm text-slate-600">
+            Deshalb sagt dieser Wert wenig über die Website. Er kann in beide Richtungen falsch
+            sein: Ein sauber gebautes Banner ergibt eine gute Note, obwohl niemand weiß, wie es
+            dahinter aussieht.
           </p>
         </section>
       )}

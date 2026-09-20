@@ -220,3 +220,14 @@ test('kennzeichnet einen Wert aus einer einzigen Seite als vorläufig', async ({
   await expect(page.getByText('vorläufig').first()).toBeVisible()
   await expect(page.getByText(/robots\.txt/)).toBeVisible()
 })
+
+test('kennzeichnet einen Wert, der überwiegend ein Banner gemessen hat', async ({ page }) => {
+  await page.goto('/behoerde/verdeckt')
+
+  await expect(
+    page.getByRole('heading', { name: /Gemessen wurde überwiegend das Einwilligungsbanner/ }),
+  ).toBeVisible()
+  // Die Einschränkung hängt am Wert, nicht nur im Kasten darunter.
+  await expect(page.getByText('verdeckt').first()).toBeVisible()
+  await expect(page.getByText(/in beide Richtungen falsch/)).toBeVisible()
+})

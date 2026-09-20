@@ -303,6 +303,15 @@ const vorlaeufig = {
   provisional: true,
 }
 
+// Aachen: 61 von 67 Seiten hinter einer Abfrage, die sich nicht schließen ließ — und
+// trotzdem ein großes A.
+const verdeckt = {
+  ...agencyDetail,
+  slug: 'verdeckt',
+  name: 'Hinter einem Banner',
+  obscured: true,
+}
+
 export async function stubApi(page: Page) {
   await page.route('**/api/v1/**', async (route) => {
     const path = new URL(route.request().url()).pathname
@@ -319,6 +328,7 @@ export async function stubApi(page: Page) {
     if (path.endsWith('/agencies/ungeprueft')) return json(ungeprueft)
     if (path.endsWith('/agencies/gesperrt')) return json(gesperrt)
     if (path.endsWith('/agencies/vorlaeufig')) return json(vorlaeufig)
+    if (path.endsWith('/agencies/verdeckt')) return json(verdeckt)
     if (path.match(/\/agencies\/[^/]+$/)) return json(agencyDetail)
     if (path.endsWith('/agencies')) return json(agencies)
     return json({})
@@ -338,4 +348,5 @@ export const routes = [
   '/behoerde/bmwsb',
   '/behoerde/gesperrt',
   '/behoerde/vorlaeufig',
+  '/behoerde/verdeckt',
 ]

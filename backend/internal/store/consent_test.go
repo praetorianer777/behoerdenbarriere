@@ -119,3 +119,44 @@ func TestSaveLighthouse(t *testing.T) {
 		t.Fatal("the ranking does not carry the outside score")
 	}
 }
+
+// A grade computed mostly over consent banners has to be recognisable as such in the
+// ranking too, not only on the authority's own page.
+func TestRankingCarriesTheBlockedPageCount(t *testing.T) {
+	s := storetest.New(t)
+	ctx := context.Background()
+	agencyID := freshAgency(t, s)
+
+	scanID, err := s.StartScan(ctx, agencyID, nil)
+	if err != nil {
+		t.Fatalf("start: %v", err)
+	}
+	pages := []model.PageResult{
+		{URL: "https://example.org/", IsEntry: true, DOMNodes: 800, Consent: model.ConsentBlocked},
+		{URL: "https://example.org/a", DOMNodes: 800, Consent: model.ConsentBlocked},
+		{URL: "https://example.org/b", DOMNodes: 800, Consent: model.ConsentDeclined},
+	}
+	if err := s.FinishScan(ctx, scanID, pages, scoring.SiteScore(pages)); err != nil {
+		t.Fatalf("finish: %v", err)
+	}
+
+	listing, _, err := s.ListAgencies(ctx, store.AgencyFilter{})
+	if err != nil {
+		t.Fatalf("list: %v", err)
+	}
+	var found *store.AgencyListing
+	for i, a := range listing {
+		if a.ID == agencyID {
+			found = &listing[i]
+		}
+	}
+	if found == nil {
+		t.Fatal("the authority is missing from the ranking")
+	}
+	if found.Pages != 3 || found.PagesBlocked != 2 {
+		t.Fatalf("%d of %d pages blocked, want 2 of 3", found.PagesBlocked, found.Pages)
+	}
+	if !scoring.Obscured(found.PagesBlocked, found.Pages) {
+		t.Error("a score over two banners out of three pages is not marked")
+	}
+}

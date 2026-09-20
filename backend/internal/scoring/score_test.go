@@ -173,3 +173,25 @@ func TestProvisional(t *testing.T) {
 		t.Errorf("ab %d Seiten gilt der Wert", MinPages)
 	}
 }
+
+func TestObscured(t *testing.T) {
+	for _, c := range []struct {
+		name    string
+		blocked int
+		pages   int
+		want    bool
+	}{
+		{"nothing in the way", 0, 60, false},
+		{"a minority still leaves a site score", 17, 100, false},
+		{"exactly half is not more than half", 30, 60, false},
+		{"most pages are the banner", 61, 67, true},
+		{"every page is the banner", 60, 60, true},
+		{"nothing checked at all", 0, 0, false},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			if got := Obscured(c.blocked, c.pages); got != c.want {
+				t.Fatalf("Obscured(%d, %d) = %v, want %v", c.blocked, c.pages, got, c.want)
+			}
+		})
+	}
+}

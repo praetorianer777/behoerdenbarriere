@@ -271,6 +271,7 @@ export function Ranking() {
                           score={agency.score}
                           grade={agency.grade}
                           provisional={agency.provisional}
+                          obscured={agency.obscured}
                         />
                       </td>
                       <td className="px-3 py-3">

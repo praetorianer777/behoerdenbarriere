@@ -16,6 +16,8 @@ export interface Agency {
   // Der Wert stützt sich auf zu wenige Seiten, um die Website zu beschreiben — etwa
   // weil die robots.txt drei Minuten Pause zwischen zwei Anfragen verlangt.
   provisional?: boolean
+  /** Gemessen wurde überwiegend die Einwilligungsabfrage, nicht die Seite dahinter. */
+  obscured?: boolean
 }
 
 export interface Subscores {
