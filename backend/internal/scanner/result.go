@@ -5,6 +5,7 @@ import (
 
 	"github.com/praetorianer777/behoerdenbarriere/internal/model"
 	"github.com/praetorianer777/behoerdenbarriere/internal/scoring"
+	textutil "github.com/praetorianer777/behoerdenbarriere/internal/text"
 )
 
 // axeResult covers the part of the axe.run response we evaluate.
@@ -73,9 +74,8 @@ func normalizeImpact(raw string) model.Impact {
 	}
 }
 
+// truncate shortens by characters, not by bytes: ein Byte-Schnitt trennt einen Umlaut
+// mitten durch, und im Auszug steht danach ein Ersatzzeichen.
 func truncate(s string, max int) string {
-	if len(s) <= max {
-		return s
-	}
-	return s[:max] + "…"
+	return textutil.Truncate(s, max)
 }

@@ -3,6 +3,7 @@ package statement
 import (
 	"strings"
 	"testing"
+	"unicode/utf8"
 )
 
 // Wording close to what authorities actually publish; the model declaration in
@@ -243,5 +244,41 @@ func TestNoStatementLinkAtAll(t *testing.T) {
 	})
 	if result.State != StateMissing {
 		t.Fatalf("state = %s, want missing", result.State)
+	}
+}
+
+// Die Erklärung des Bundespräsidenten zeigte bei uns „…barrierefrei�n": Das Fenster um
+// den Treffer wurde in Bytes bemessen und schnitt einen Umlaut mitten durch. Der
+// Nachweis ist genau das, woran sich unser Urteil prüfen lassen soll — kaputt taugt er
+// dafür nicht.
+//
+// Entscheidend ist, dass der Abstand zwischen den mehrbytigen Zeichen und dem Treffer
+// wächst: Verschiebt man den ganzen Text, wandert die Fenstergrenze mit und trifft nie
+// in ein Zeichen hinein — ein Test in dieser Form bleibt grün, während der Fehler da
+// ist. Das war mein erster Versuch.
+func TestEvidenceIsNeverCutInsideACharacter(t *testing.T) {
+	umlaute := strings.Repeat("ö", 40) + "„Gebärdensprache“ — "
+
+	for abstand := range 60 {
+		text := umlaute + strings.Repeat("a", abstand) +
+			` Diese Website ist mit der BITV 2.0 teilweise vereinbar. Nicht barrierefrei ` +
+			`sind Gebärdensprachvideos und ältere PDF-Dokumente. Erstellt am 14.03.2026, ` +
+			`Barrieren melden Sie an barrierefreiheit@example.de, ` +
+			`Schlichtungsstelle nach § 16 BGG.`
+
+		result := Check(Input{
+			Pages: []Page{{
+				URL: "https://example.de/erklaerung-zur-barrierefreiheit", Text: text,
+			}},
+		})
+
+		for _, finding := range result.Findings {
+			// ValidString, nicht ContainsRune: Ein halbes Zeichen ist ein ungültiges
+			// Byte, kein Ersatzzeichen. Als Ersatzzeichen sieht es erst der Browser.
+			if !utf8.ValidString(finding.Evidence) {
+				t.Fatalf("Abstand %d: %s hat ein zerschnittenes Zeichen: %q",
+					abstand, finding.Requirement, finding.Evidence)
+			}
+		}
 	}
 }

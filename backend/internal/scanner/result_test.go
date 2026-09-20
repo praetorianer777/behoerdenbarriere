@@ -3,6 +3,7 @@ package scanner
 import (
 	"strings"
 	"testing"
+	"unicode/utf8"
 
 	"github.com/praetorianer777/behoerdenbarriere/internal/model"
 )
@@ -68,5 +69,17 @@ func TestToViolationsTruncatesSample(t *testing.T) {
 	}}})
 	if len([]rune(got[0].SampleHTML)) != maxSampleHTML+1 {
 		t.Fatalf("sample not truncated: %d characters", len([]rune(got[0].SampleHTML)))
+	}
+}
+
+// Der HTML-Auszug wird gekürzt, und Behördenseiten sind voller Umlaute. Nach Bytes
+// gekürzt endet der Auszug im halben Zeichen — im Browser steht dann ein Ersatzzeichen
+// mitten im zitierten Quelltext.
+func TestSampleHTMLIsCutAtCharacters(t *testing.T) {
+	lang := `<a href="/datenschutz">Datenschutzerklärung — Öffentliche Stelle</a>`
+	for max := range 80 {
+		if got := truncate(lang, max); !utf8.ValidString(got) {
+			t.Fatalf("max %d: %q", max, got)
+		}
 	}
 }

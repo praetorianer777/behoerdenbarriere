@@ -10,6 +10,8 @@ package statement
 import (
 	"regexp"
 	"strings"
+
+	textutil "github.com/praetorianer777/behoerdenbarriere/internal/text"
 )
 
 // Requirement is one of the contents the law prescribes.
@@ -218,8 +220,10 @@ func excerpt(text string, pattern *regexp.Regexp) string {
 	if location == nil {
 		return ""
 	}
-	start := max(location[0]-evidenceWindow/2, 0)
-	end := min(location[1]+evidenceWindow, len(text))
+	// Auf Zeichengrenzen gerückt: Ein Fenster in Bytes schneidet einen Umlaut mitten
+	// durch, und was dann dasteht, ist Zeichensalat — ausgerechnet in dem Zitat, mit
+	// dem sich unser Urteil überprüfen lassen soll.
+	start, end := textutil.Snap(text, location[0]-evidenceWindow/2, location[1]+evidenceWindow)
 
 	out := strings.TrimSpace(text[start:end])
 	if start > 0 {
