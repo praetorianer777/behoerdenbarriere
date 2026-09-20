@@ -27,6 +27,11 @@ func TestHealthz(t *testing.T) {
 	if body["status"] != "ok" {
 		t.Fatalf("body = %v", body)
 	}
+	// Ohne diese Angabe lässt sich von außen nicht feststellen, welcher Stand gerade
+	// läuft — ein bewegliches „latest" sieht alt wie neu gleich aus.
+	if body["version"] == "" || body["revision"] == "" {
+		t.Errorf("no version in the answer: %v", body)
+	}
 }
 
 // healthz must not depend on the database: otherwise a database restart would restart
@@ -66,5 +71,21 @@ func TestNoCORSHeaderWithoutConfiguredOrigin(t *testing.T) {
 	rec := do(t, NewServer(&fakeDB{}, Options{Limits: DefaultLimits()}), http.MethodGet, "/healthz")
 	if got := rec.Header().Get("Access-Control-Allow-Origin"); got != "" {
 		t.Fatalf("unexpected origin header: %q", got)
+	}
+}
+
+// Der Weg von außen: /healthz liegt hinter dem Proxy, /api/v1/version nicht. Wer wissen
+// will, welcher Stand läuft, kommt nur hier heran.
+func TestVersionEndpoint(t *testing.T) {
+	rec := do(t, NewServer(&fakeDB{}, Options{Limits: DefaultLimits()}), http.MethodGet, "/api/v1/version")
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d", rec.Code)
+	}
+	var body map[string]string
+	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+		t.Fatalf("not JSON: %v", err)
+	}
+	if body["version"] == "" || body["revision"] == "" {
+		t.Errorf("body = %v", body)
 	}
 }

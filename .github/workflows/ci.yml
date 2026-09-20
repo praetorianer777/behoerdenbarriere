@@ -136,6 +136,8 @@ jobs:
         with:
           context: ${{ matrix.context }}
           target: ${{ matrix.target }}
+          build-args: |
+            VERSION=${{ github.sha }}
           push: true
           tags: |
             ghcr.io/${{ github.repository_owner }}/behoerdenbarriere-${{ matrix.name }}:latest

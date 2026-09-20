@@ -58,10 +58,17 @@ sudo iptables -I DOCKER-USER -p tcp --dport 8081 ! -s 192.168.1.10 -j DROP
 ## Starten
 
 ```sh
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+./deploy/update.sh
 docker compose -f docker-compose.yml -f docker-compose.prod.yml run --rm --entrypoint /seed api
 docker compose -f docker-compose.yml -f docker-compose.prod.yml run --rm --entrypoint /import api
 ```
+
+Gestartet wird mit demselben Skript, mit dem später aktualisiert wird — **nicht** mit
+einem blanken `docker compose up -d`. Das holt nämlich kein Image, dessen Tag lokal
+schon vorhanden ist: `latest` wandert mit jeder Veröffentlichung, und ein Start ohne
+vorheriges Holen baut neue Container aus der alten Kopie. Er sieht dabei aus wie ein
+gelungenes Update, mit frischen Containern und allem. Das ist genau einmal passiert und
+hat eine Stunde gekostet.
 
 Beim allerersten Mal muss die Registry einmal von Hand freigegeben werden: GitHub legt
 neue Pakete **privat** an. Unter `github.com/users/praetorianer777/packages` bei jedem
@@ -207,6 +214,22 @@ Behördenliste ein und fragt die Seite und die API durch das nginx der Oberfläc
 Danach räumt sie alles wieder weg.
 
 ## Nachsehen, was los ist
+
+Welcher Stand läuft:
+
+```sh
+curl -s http://127.0.0.1:${WEB_PORT:-8081}/api/v1/version
+```
+
+Die Antwort nennt den Commit, aus dem das Image gebaut wurde. Zum Vergleich, was
+veröffentlicht ist:
+
+```sh
+git ls-remote https://github.com/praetorianer777/behoerdenbarriere.git HEAD
+```
+
+Stimmen die nicht überein, fehlt ein `./deploy/update.sh` — oder die Veröffentlichung
+läuft noch.
 
 ```sh
 docker compose -f docker-compose.yml -f docker-compose.prod.yml logs -f worker

@@ -23,3 +23,13 @@ $compose up -d
 docker image prune --force >/dev/null
 
 $compose ps
+
+# Was jetzt wirklich läuft. Ein Tag wie "latest" sagt darüber nichts: Ein Start ohne
+# vorheriges Holen erzeugt neue Container aus der alten Kopie und sieht dabei genauso
+# aus wie ein erfolgreiches Update.
+running=$(curl --silent --fail --max-time 5 --retry 10 --retry-delay 2 --retry-all-errors \
+    "http://127.0.0.1:${WEB_PORT:-8081}/api/v1/version" 2>/dev/null || true)
+if [ -n "$running" ]; then
+    echo
+    echo "Es läuft: $running"
+fi
