@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/praetorianer777/behoerdenbarriere/internal/maildns"
 	"github.com/praetorianer777/behoerdenbarriere/internal/model"
 	"github.com/praetorianer777/behoerdenbarriere/internal/scoring"
 	"github.com/praetorianer777/behoerdenbarriere/internal/store"
@@ -33,6 +34,8 @@ type Queries interface {
 	PageResultsForScan(ctx context.Context, scanID int64) ([]model.PageResult, error)
 	ContactsForScan(ctx context.Context, scanID int64) ([]thirdparty.Seen, error)
 	ContactReach(ctx context.Context, limit int) ([]store.ContactReach, error)
+	MailForAgency(ctx context.Context, agencyID int64) (*maildns.Record, error)
+	MailOverview(ctx context.Context) (*store.MailSummary, error)
 	Stats(ctx context.Context) (*store.Stats, error)
 	States(ctx context.Context) ([]string, error)
 	EnqueueScan(ctx context.Context, agencyID int64) error
@@ -84,6 +87,14 @@ func (s *Server) handleAgency(w http.ResponseWriter, r *http.Request) {
 		Subscores: subscoresDTO{agency.Perceivable, agency.Operable, agency.Understandable, agency.Robust},
 		Trend:     trend.Summarize(history, time.Now()),
 		History:   history,
+	}
+	// What the domain publishes about its email. Not every authority has been looked
+	// up, and a missing record is not a statement about the authority.
+	if mail, err := s.db.MailForAgency(r.Context(), agency.ID); err == nil {
+		detail.Mail = mail
+	} else if !errors.Is(err, store.ErrNotFound) {
+		s.fail(w, r, err)
+		return
 	}
 	if id, err := s.db.LatestScanID(r.Context(), agency.ID); err == nil {
 		detail.LatestID = id
@@ -317,6 +328,37 @@ func (s *Server) handleRescan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusAccepted, map[string]string{"status": "queued"})
+}
+
+// handleMail answers with the nationwide picture of where authority mail is received.
+// Counts and raw material side by side: the classification is ours, the records are
+// the authorities' own.
+func (s *Server) handleMail(w http.ResponseWriter, r *http.Request) {
+	summary, err := s.db.MailOverview(r.Context())
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+
+	out := mailSummaryDTO{
+		Total:      summary.Total,
+		CheckedAt:  summary.CheckedAt,
+		ByProvider: mailCounts(clip(summary.ByProvider, s.limits.ListItems)),
+		ByState:    mailCounts(clip(summary.ByState, s.limits.ListItems)),
+		ByLevel:    mailCounts(clip(summary.ByLevel, s.limits.ListItems)),
+	}
+	writeJSON(w, http.StatusOK, out)
+}
+
+func mailCounts(in []store.MailCount) []mailCountDTO {
+	out := make([]mailCountDTO, 0, len(in))
+	for _, count := range in {
+		out = append(out, mailCountDTO{
+			Name: count.Name, Provider: count.Provider, Agencies: count.Agencies,
+			US: maildns.USBased[maildns.Provider(count.Provider)],
+		})
+	}
+	return out
 }
 
 func groups(in []store.GroupScore) []groupDTO {

@@ -15,6 +15,7 @@ import (
 	"github.com/praetorianer777/behoerdenbarriere/internal/config"
 	"github.com/praetorianer777/behoerdenbarriere/internal/crawler"
 	"github.com/praetorianer777/behoerdenbarriere/internal/lighthouse"
+	"github.com/praetorianer777/behoerdenbarriere/internal/maildns"
 	"github.com/praetorianer777/behoerdenbarriere/internal/pipeline"
 	"github.com/praetorianer777/behoerdenbarriere/internal/scanner"
 	"github.com/praetorianer777/behoerdenbarriere/internal/store"
@@ -98,7 +99,8 @@ func run() error {
 		Timeout:    cfg.Crawl.Timeout,
 	}
 	pipe := pipeline.New(db, crawler.New(telemetry.TracePageScanner(sc), crawlCfg), crawlCfg, slog.Default()).
-		WithAuditor(lighthouse.New(cfg.LighthouseURL, cfg.LighthouseTimeout))
+		WithAuditor(lighthouse.New(cfg.LighthouseURL, cfg.LighthouseTimeout)).
+		WithMail(maildns.New(nil, 15*time.Second))
 
 	name, _ := os.Hostname()
 	slog.Info("worker ready", "name", name, "chrome", cfg.ChromeURL)

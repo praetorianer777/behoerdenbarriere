@@ -3,6 +3,7 @@ package api
 import (
 	"time"
 
+	"github.com/praetorianer777/behoerdenbarriere/internal/maildns"
 	"github.com/praetorianer777/behoerdenbarriere/internal/scoring"
 	"github.com/praetorianer777/behoerdenbarriere/internal/statement"
 	"github.com/praetorianer777/behoerdenbarriere/internal/store"
@@ -39,10 +40,11 @@ type subscoresDTO struct {
 
 type agencyDetailDTO struct {
 	agencyDTO
-	Subscores subscoresDTO  `json:"subscores"`
-	Trend     trend.Summary `json:"trend"`
-	History   []trend.Point `json:"history"`
-	LatestID  int64         `json:"latest_scan_id,omitempty"`
+	Subscores subscoresDTO    `json:"subscores"`
+	Mail      *maildns.Record `json:"mail,omitempty"`
+	Trend     trend.Summary   `json:"trend"`
+	History   []trend.Point   `json:"history"`
+	LatestID  int64           `json:"latest_scan_id,omitempty"`
 }
 
 type listDTO struct {
@@ -119,6 +121,25 @@ type thirdPartyDTO struct {
 	Phase      string `json:"phase"`
 	Agencies   int    `json:"agencies"`
 	Pages      int    `json:"pages"`
+}
+
+// mailCountDTO is one group of authorities with one mail provider.
+type mailCountDTO struct {
+	// Name is the state or the level; empty when the count is for the whole country.
+	Name     string `json:"name,omitempty"`
+	Provider string `json:"provider"`
+	Agencies int    `json:"agencies"`
+	// US says the provider is a company under US jurisdiction. A statement about the
+	// company, not about where a server stands — and not a legal finding.
+	US bool `json:"us_based"`
+}
+
+type mailSummaryDTO struct {
+	Total      int            `json:"total"`
+	CheckedAt  *time.Time     `json:"checked_at,omitempty"`
+	ByProvider []mailCountDTO `json:"by_provider"`
+	ByState    []mailCountDTO `json:"by_state"`
+	ByLevel    []mailCountDTO `json:"by_level"`
 }
 
 type thirdPartyListDTO struct {
