@@ -79,8 +79,31 @@ describe('Behördenseite', () => {
     })
 
     render()
-    expect(await screen.findByText(/nicht schließen/)).toBeInTheDocument()
+    // Das Subjekt des Satzes ist die Abfrage, nicht die Zahl der Seiten.
+    expect(
+      await screen.findByText(/Auf 2 Seiten ließ sich die Einwilligungsabfrage nicht schließen/),
+    ).toBeInTheDocument()
     expect(screen.getByText('hinter Einwilligungsabfrage')).toBeInTheDocument()
+  })
+
+  it('bleibt bei einer einzigen gesperrten Seite im Singular', async () => {
+    vi.spyOn(api, 'latestScan').mockResolvedValue({
+      ...latestScan,
+      pages_blocked: 1,
+      pages: [{ ...latestScan.pages![0], consent: 'blocked' }],
+    })
+
+    render()
+    expect(
+      await screen.findByText(/Auf 1 Seite ließ sich die Einwilligungsabfrage nicht schließen/),
+    ).toBeInTheDocument()
+  })
+
+  // Die Spalte enthält den Titel der Seite, nicht ihre Adresse.
+  it('nennt die Spalte der geprüften Seiten nach dem, was darin steht', async () => {
+    render()
+    expect(await screen.findByRole('columnheader', { name: 'Seite' })).toBeInTheDocument()
+    expect(screen.queryByRole('columnheader', { name: 'Adresse' })).not.toBeInTheDocument()
   })
 
   it('schweigt über Einwilligung, wenn keine im Weg stand', async () => {

@@ -240,7 +240,7 @@ export function AgencyPage() {
                Befund über das Banner. Wer den Score liest, muss das wissen. */
             <p className="mt-2 rounded-lg border border-grade-d bg-white p-4">
               Auf {scan.data.pages_blocked}{' '}
-              {scan.data.pages_blocked === 1 ? 'Seite ließ sich' : 'Seiten ließen sich'} die
+              {scan.data.pages_blocked === 1 ? 'Seite' : 'Seiten'} ließ sich die
               Einwilligungsabfrage nicht schließen. Dort beschreibt das Ergebnis das Banner und
               nicht die Seite dahinter.
             </p>
@@ -302,7 +302,7 @@ export function AgencyPage() {
               <thead>
                 <tr className="border-b border-slate-300">
                   <th scope="col" className="px-3 py-2">
-                    Adresse
+                    Seite
                   </th>
                   <th scope="col" className="px-3 py-2">
                     Score
