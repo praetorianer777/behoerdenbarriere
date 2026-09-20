@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net/url"
+	"strings"
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
@@ -15,6 +17,7 @@ import (
 
 	"github.com/praetorianer777/behoerdenbarriere/internal/crawler"
 	"github.com/praetorianer777/behoerdenbarriere/internal/lighthouse"
+	"github.com/praetorianer777/behoerdenbarriere/internal/maildns"
 	"github.com/praetorianer777/behoerdenbarriere/internal/model"
 	"github.com/praetorianer777/behoerdenbarriere/internal/scoring"
 	"github.com/praetorianer777/behoerdenbarriere/internal/statement"
@@ -29,12 +32,18 @@ type Store interface {
 	FailScan(ctx context.Context, scanID int64, cause error) error
 	SaveLighthouse(ctx context.Context, scanID int64, result store.LighthouseResult) error
 	SaveStatement(ctx context.Context, scanID int64, result statement.Result) error
+	SaveMail(ctx context.Context, agencyID int64, record maildns.Record) error
 }
 
 // Auditor is the second opinion on the entry page — Google's Lighthouse score, which
 // is built the other way round from ours.
 type Auditor interface {
 	Audit(ctx context.Context, pageURL string) (*lighthouse.Result, error)
+}
+
+// MailResolver reads what a domain publishes about its email. Public DNS only.
+type MailResolver interface {
+	Lookup(ctx context.Context, domain string) maildns.Record
 }
 
 // Crawler walks a site and returns a result per page.
@@ -46,6 +55,7 @@ type Pipeline struct {
 	store   Store
 	crawler Crawler
 	auditor Auditor
+	mail    MailResolver
 	cfg     crawler.Config
 	log     *slog.Logger
 }
@@ -61,6 +71,13 @@ func New(store Store, c Crawler, cfg crawler.Config, log *slog.Logger) *Pipeline
 // before — the second number is an addition, never a condition.
 func (p *Pipeline) WithAuditor(auditor Auditor) *Pipeline {
 	p.auditor = auditor
+	return p
+}
+
+// WithMail refreshes the authority's public mail records with every scan. Without one
+// the pipeline runs exactly as before.
+func (p *Pipeline) WithMail(resolver MailResolver) *Pipeline {
+	p.mail = resolver
 	return p
 }
 
@@ -120,6 +137,7 @@ func (p *Pipeline) Run(ctx context.Context, agency model.Agency) (*Result, error
 
 	p.checkStatement(ctx, scanID, agency, outcome)
 	p.audit(ctx, scanID, agency)
+	p.resolveMail(ctx, agency)
 
 	p.log.InfoContext(ctx, "scan finished",
 		"agency", agency.Slug, "score", result.Score, "grade", result.Grade,
@@ -208,6 +226,39 @@ func (p *Pipeline) audit(ctx context.Context, scanID int64, agency model.Agency)
 	}); err != nil {
 		p.log.Error("could not store the lighthouse score", "agency", agency.Slug, "error", err)
 	}
+}
+
+// resolveMail refreshes what the authority's domain publishes about its email. It has
+// nothing to do with the score and everything to do with the same site, so it rides
+// along with the scan rather than needing a schedule of its own.
+//
+// Only public DNS is read. A failure is logged and otherwise ignored: the scan is
+// stored, and losing it over a DNS timeout would be absurd.
+func (p *Pipeline) resolveMail(ctx context.Context, agency model.Agency) {
+	if p.mail == nil {
+		return
+	}
+	domain := mailDomain(agency.URL)
+	if domain == "" {
+		return
+	}
+	record := p.mail.Lookup(ctx, domain)
+	if err := p.store.SaveMail(ctx, agency.ID, record); err != nil {
+		p.log.ErrorContext(ctx, "could not store the mail record", "agency", agency.Slug, "error", err)
+		return
+	}
+	p.log.InfoContext(ctx, "mail records read",
+		"agency", agency.Slug, "domain", domain, "provider", record.Provider)
+}
+
+// mailDomain takes the domain out of the authority's URL: "www." belongs to the web
+// server, mail is published one level up.
+func mailDomain(rawURL string) string {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return ""
+	}
+	return strings.TrimPrefix(u.Hostname(), "www.")
 }
 
 func (p *Pipeline) fail(ctx context.Context, scanID int64, cause error) {

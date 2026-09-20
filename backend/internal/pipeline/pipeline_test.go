@@ -12,6 +12,7 @@ import (
 
 	"github.com/praetorianer777/behoerdenbarriere/internal/crawler"
 	"github.com/praetorianer777/behoerdenbarriere/internal/lighthouse"
+	"github.com/praetorianer777/behoerdenbarriere/internal/maildns"
 	"github.com/praetorianer777/behoerdenbarriere/internal/model"
 	"github.com/praetorianer777/behoerdenbarriere/internal/scoring"
 	"github.com/praetorianer777/behoerdenbarriere/internal/statement"
@@ -30,6 +31,7 @@ type fakeStore struct {
 	statement     *statement.Result
 	lighthouse    *store.LighthouseResult
 	lighthouseErr error
+	mail          *maildns.Record
 }
 
 func (f *fakeStore) StartScan(context.Context, int64, map[string]any) (int64, error) {
@@ -46,6 +48,11 @@ func (f *fakeStore) FinishScan(_ context.Context, _ int64, pages []model.PageRes
 func (f *fakeStore) FailScan(_ context.Context, _ int64, cause error) error {
 	f.failed = cause
 	f.closed = true
+	return nil
+}
+
+func (f *fakeStore) SaveMail(_ context.Context, _ int64, record maildns.Record) error {
+	f.mail = &record
 	return nil
 }
 
@@ -348,5 +355,57 @@ func TestRunSeparatesUnreadableFromMissing(t *testing.T) {
 	}
 	if st.statement.URL == "" {
 		t.Error("the address we could not read is missing")
+	}
+}
+
+func goodPages() *fakeCrawler {
+	return &fakeCrawler{pages: []model.PageResult{
+		{URL: "https://www.musterstadt.de/", DOMNodes: 800, IsEntry: true},
+	}}
+}
+
+type fakeResolver struct {
+	asked  string
+	record maildns.Record
+}
+
+func (f *fakeResolver) Lookup(_ context.Context, domain string) maildns.Record {
+	f.asked = domain
+	f.record.Domain = domain
+	return f.record
+}
+
+// The mail records belong to the domain, not to the web server: mail for a city is
+// published under musterstadt.de, not under www.musterstadt.de.
+func TestScanRefreshesTheMailRecords(t *testing.T) {
+	st := &fakeStore{scanID: 7}
+	resolver := &fakeResolver{record: maildns.Record{Provider: maildns.Microsoft365}}
+	p := New(st, goodPages(), crawler.Config{}, nil).WithMail(resolver)
+
+	if _, err := p.Run(context.Background(), model.Agency{
+		ID: 3, Slug: "musterstadt", URL: "https://www.musterstadt.de/",
+	}); err != nil {
+		t.Fatalf("run: %v", err)
+	}
+
+	if resolver.asked != "musterstadt.de" {
+		t.Errorf("looked up %q, want musterstadt.de", resolver.asked)
+	}
+	if st.mail == nil || st.mail.Provider != maildns.Microsoft365 {
+		t.Errorf("mail record = %+v", st.mail)
+	}
+}
+
+// Without a resolver nothing changes: the mail records are an addition, never a
+// condition for a scan.
+func TestScanWithoutAResolverStoresNoMail(t *testing.T) {
+	st := &fakeStore{scanID: 7}
+	p := New(st, goodPages(), crawler.Config{}, nil)
+
+	if _, err := p.Run(context.Background(), model.Agency{ID: 3, URL: "https://www.musterstadt.de/"}); err != nil {
+		t.Fatalf("run: %v", err)
+	}
+	if st.mail != nil {
+		t.Errorf("mail record = %+v, want none", st.mail)
 	}
 }

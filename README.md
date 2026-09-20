@@ -127,6 +127,20 @@ Behörde neu gecrawlt werden muss. In den Score fließt davon nichts ein — das
 Frage des Datenschutzes, nicht der Barrierefreiheit, und beides zu vermischen macht
 beide Aussagen unbrauchbar.
 
+## Wohin die E-Mail einer Behörde geht
+
+Jede Domain veröffentlicht im DNS, welcher Host ihre Post entgegennimmt (MX), wer in
+ihrem Namen senden darf (SPF) und was mit gefälschten Absendern geschehen soll (DMARC).
+`cmd/dns` liest das für alle Behörden, der Worker frischt es bei jedem Scan auf.
+Gelesen wird nur, was veröffentlicht ist — kein Portscan, keine Anfrage an einen
+Mailserver.
+
+Ein MX-Eintrag sagt, wer die Post **annimmt**, nicht wer sie liest; ein SPF-Eintrag
+sagt, wer senden darf, und gerade nicht, wo die Postfächer liegen. Beides steht deshalb
+in getrennten Feldern, der vollständige Eintrag wird so gespeichert, wie er
+veröffentlicht ist, und neben jeder Einordnung angezeigt. Auch das zählt nicht in den
+Score.
+
 ## Grenzen der API
 
 Die Daten sind öffentlich und sollen auch in größeren Mengen nutzbar bleiben. Die
@@ -136,7 +150,7 @@ nicht für alle anderen lahmlegen.
 | Was | Grenze | Anmerkung |
 | --- | --- | --- |
 | Lesende Endpunkte (`/agencies`, `/scans/{id}`) | 120 Anfragen pro Minute, Spitze 60 | je Client |
-| Statistik, Regelkatalog, Drittanbieter (`/stats`, `/rules`, `/thirdparties`) | 20 pro Minute, Spitze 10 | sie rechnen über alle Scans |
+| Statistik, Regelkatalog, Drittanbieter, E-Mail (`/stats`, `/rules`, `/thirdparties`, `/mail`) | 20 pro Minute, Spitze 10 | sie rechnen über alle Scans |
 | Mit API-Schlüssel (`X-API-Key`) | 600 pro Minute, Spitze 200 | lieber einen Schlüssel erfragen, als die Grenze zu umgehen |
 | `POST /agencies/{slug}/rescan` | Schlüssel nötig, dazu ein Rescan je Behörde pro Stunde | die Last landet bei der Behörde |
 | Anfragekörper | 64 KiB | |

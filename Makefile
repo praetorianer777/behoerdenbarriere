@@ -51,5 +51,8 @@ seed: ## Load the hand-kept agency list
 import: ## Add the districts from Wikidata
 	cd backend && go run ./cmd/import
 
+dns: ## Read the public mail records of all authorities
+	cd backend && go run ./cmd/dns
+
 scan: ## Check a single URL: make scan URL=https://www.bund.de
 	cd backend && go run ./cmd/scan -url "$(URL)"

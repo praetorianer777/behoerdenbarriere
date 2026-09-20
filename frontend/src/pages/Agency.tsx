@@ -11,6 +11,7 @@ import { RuleList } from '../components/RuleList'
 import { ScoreReasons } from '../components/ScoreReasons'
 import { StatementCheck } from '../components/StatementCheck'
 import { ThirdParties } from '../components/ThirdParties'
+import { MailRecord } from '../components/MailRecord'
 import {
   directionLabel,
   formatDate,
@@ -83,6 +84,8 @@ export function AgencyPage() {
       {scan.data?.statement && <StatementCheck statement={scan.data.statement} />}
 
       {scan.data?.third_parties && <ThirdParties contacts={scan.data.third_parties} />}
+
+      {detail.mail && <MailRecord mail={detail.mail} />}
 
       {scan.data?.explanation && scan.data.explanation.improvements.length > 0 && (
         <section className="mt-8">

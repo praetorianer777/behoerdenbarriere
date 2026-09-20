@@ -34,7 +34,19 @@ const agencies = {
   per_page: 50,
 }
 
+const mailRecord = {
+  domain: 'bmwsb.bund.de',
+  provider: 'public-it',
+  mx: [{ host: 'mx1.bund.de', preference: 10, provider: 'unknown' }],
+  spf: 'v=spf1 include:_spf1.bund.de -all',
+  spf_includes: ['_spf1.bund.de'],
+  dmarc: 'v=DMARC1; p=reject',
+  dmarc_policy: 'reject',
+  checked_at: '2026-09-20T06:00:00Z',
+}
+
 const agencyDetail = {
+  mail: mailRecord,
   ...agencies.items[0],
   subscores: { perceivable: 68, operable: 80, understandable: 90, robust: 85 },
   trend: {
@@ -240,6 +252,21 @@ const thirdParties = {
   ],
 }
 
+const mailSummary = {
+  total: 120,
+  checked_at: '2026-09-20T06:00:00Z',
+  by_provider: [
+    { provider: 'self', agencies: 60, us_based: false },
+    { provider: 'microsoft365', agencies: 36, us_based: true },
+    { provider: 'public-it', agencies: 24, us_based: false },
+  ],
+  by_state: [
+    { name: 'Bayern', provider: 'microsoft365', agencies: 6, us_based: true },
+    { name: 'Bayern', provider: 'self', agencies: 6, us_based: false },
+  ],
+  by_level: [{ name: 'kommune', provider: 'microsoft365', agencies: 20, us_based: true }],
+}
+
 export async function stubApi(page: Page) {
   await page.route('**/api/v1/**', async (route) => {
     const path = new URL(route.request().url()).pathname
@@ -248,6 +275,7 @@ export async function stubApi(page: Page) {
     if (path.endsWith('/stats')) return json(stats)
     if (path.endsWith('/usage')) return json(usage)
     if (path.endsWith('/thirdparties')) return json(thirdParties)
+    if (path.endsWith('/mail')) return json(mailSummary)
     if (path.endsWith('/view')) return route.fulfill({ status: 204, body: '' })
     if (path.endsWith('/scans/latest')) return json(latestScan)
     if (path.match(/\/agencies\/[^/]+$/)) return json(agencyDetail)
@@ -262,6 +290,7 @@ export const routes = [
   '/methodik',
   '/statistik',
   '/drittanbieter',
+  '/e-mail',
   '/impressum',
   '/datenschutz',
   '/barrierefreiheit',

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/praetorianer777/behoerdenbarriere/internal/maildns"
 	"github.com/praetorianer777/behoerdenbarriere/internal/model"
 	"github.com/praetorianer777/behoerdenbarriere/internal/scoring"
 	"github.com/praetorianer777/behoerdenbarriere/internal/store"
@@ -34,6 +35,8 @@ type fakeDB struct {
 	usage       *store.UsageSummary
 	usageDays   int
 	seen        []thirdparty.Seen
+	mail        *maildns.Record
+	mailSummary *store.MailSummary
 	reach       []store.ContactReach
 	failWith    error
 }
@@ -46,6 +49,25 @@ func (f *fakeDB) ContactsForScan(context.Context, int64) ([]thirdparty.Seen, err
 		return nil, f.failWith
 	}
 	return f.seen, nil
+}
+
+func (f *fakeDB) MailForAgency(context.Context, int64) (*maildns.Record, error) {
+	f.calls++
+	if f.mail == nil {
+		return nil, store.ErrNotFound
+	}
+	return f.mail, nil
+}
+
+func (f *fakeDB) MailOverview(context.Context) (*store.MailSummary, error) {
+	f.calls++
+	if f.failWith != nil {
+		return nil, f.failWith
+	}
+	if f.mailSummary == nil {
+		return &store.MailSummary{}, nil
+	}
+	return f.mailSummary, nil
 }
 
 func (f *fakeDB) ContactReach(context.Context, int) ([]store.ContactReach, error) {

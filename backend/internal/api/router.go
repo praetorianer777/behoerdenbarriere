@@ -144,6 +144,7 @@ func (s *Server) Routes() http.Handler {
 			r.Get("/stats", s.handleStats)
 			r.Get("/rules", s.handleRules)
 			r.Get("/thirdparties", s.handleThirdParties)
+			r.Get("/mail", s.handleMail)
 			r.Get("/usage", s.handleUsage)
 		})
 		r.Group(func(r chi.Router) {

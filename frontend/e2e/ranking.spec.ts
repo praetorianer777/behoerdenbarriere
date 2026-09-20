@@ -144,3 +144,23 @@ test('führt die bundesweite Auswertung der Drittanbieter', async ({ page }) => 
   await expect(page.getByRole('row', { name: /Google Fonts/ })).toContainText('40 %')
   await expect(page.getByRole('heading', { name: 'Was diese Zahlen nicht sagen' })).toBeVisible()
 })
+
+test('zeigt die DNS-Einträge einer Behörde mit dem Rohwert', async ({ page }) => {
+  await page.goto('/behoerde/bmwsb')
+
+  await expect(page.getByRole('heading', { name: 'Wohin die E-Mail geht' })).toBeVisible()
+  await expect(page.getByText('mx1.bund.de')).toBeVisible()
+  // Der SPF-Eintrag darf nicht als Mail-Hosting gelesen werden.
+  await expect(page.getByText(/nicht, wo die Postfächer liegen/)).toBeVisible()
+})
+
+test('führt die bundesweite Auswertung der E-Mail-Anbieter', async ({ page }) => {
+  await page.goto('/')
+  await page.getByRole('link', { name: 'E-Mail' }).click()
+
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Wohin die Post der Behörden geht' }),
+  ).toBeVisible()
+  await expect(page.getByRole('row', { name: /Bayern/ })).toContainText('50 %')
+  await expect(page.getByRole('heading', { name: 'Was ein MX-Eintrag nicht sagt' })).toBeVisible()
+})

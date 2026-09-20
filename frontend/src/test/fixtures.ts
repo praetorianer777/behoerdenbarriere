@@ -1,4 +1,12 @@
-import type { AgencyDetail, AgencyList, Scan, Stats, ThirdPartyList, Usage } from '../api/types'
+import type {
+  AgencyDetail,
+  AgencyList,
+  MailSummary,
+  Scan,
+  Stats,
+  ThirdPartyList,
+  Usage,
+} from '../api/types'
 
 export const agencyList: AgencyList = {
   items: [
@@ -29,8 +37,27 @@ export const agencyList: AgencyList = {
   per_page: 50,
 }
 
+export const mailRecord = {
+  domain: 'bundesregierung.de',
+  provider: 'microsoft365' as const,
+  mx: [
+    {
+      host: 'bundesregierung-de.mail.protection.outlook.com',
+      preference: 10,
+      provider: 'microsoft365' as const,
+    },
+  ],
+  spf: 'v=spf1 include:spf.protection.outlook.com include:newsletter.example.net -all',
+  spf_includes: ['spf.protection.outlook.com', 'newsletter.example.net'],
+  spf_senders: ['microsoft365' as const],
+  dmarc: 'v=DMARC1; p=reject',
+  dmarc_policy: 'reject',
+  checked_at: '2026-09-20T06:00:00Z',
+}
+
 export const agencyDetail: AgencyDetail = {
   ...agencyList.items[0],
+  mail: mailRecord,
   subscores: { perceivable: 68, operable: 80, understandable: 90, robust: 85 },
   trend: {
     direction: 'improved',
@@ -278,5 +305,25 @@ export const thirdParties: ThirdPartyList = {
       agencies: 9,
       pages: 20,
     },
+  ],
+}
+
+export const mailSummary: MailSummary = {
+  total: 120,
+  checked_at: '2026-09-20T06:00:00Z',
+  by_provider: [
+    { provider: 'self', agencies: 50, us_based: false },
+    { provider: 'microsoft365', agencies: 36, us_based: true },
+    { provider: 'public-it', agencies: 24, us_based: false },
+    { provider: 'google', agencies: 10, us_based: true },
+  ],
+  by_state: [
+    { name: 'Bayern', provider: 'microsoft365', agencies: 6, us_based: true },
+    { name: 'Bayern', provider: 'self', agencies: 6, us_based: false },
+    { name: 'Berlin', provider: 'self', agencies: 4, us_based: false },
+  ],
+  by_level: [
+    { name: 'kommune', provider: 'microsoft365', agencies: 20, us_based: true },
+    { name: 'bund', provider: 'public-it', agencies: 12, us_based: false },
   ],
 }

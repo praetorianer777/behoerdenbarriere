@@ -104,6 +104,23 @@ export function Methodology() {
         Daten am Ende verarbeitet. Wir veröffentlichen die Beobachtung, nicht die Bewertung.
       </p>
 
+      <h2 className="mt-8 text-xl font-semibold">Öffentliche DNS-Einträge</h2>
+      <p className="mt-2">
+        Jede Domain veröffentlicht im DNS, welcher Host ihre E-Mail entgegennimmt (MX), wer in
+        ihrem Namen senden darf (SPF) und was mit gefälschten Absendern geschehen soll (DMARC). Wir
+        fragen diese Einträge ab und ordnen den Host einem Betreiber zu. Abgefragt wird
+        ausschließlich, was veröffentlicht ist: kein Portscan, keine Anfrage an einen Mailserver,
+        kein Versuch, irgendetwas aufzuzählen.
+      </p>
+      <p className="mt-4">
+        Ein MX-Eintrag sagt, wer die Post <em>annimmt</em> — nicht, wer sie liest. Dahinter kann
+        ein deutscher Dienstleister stehen, der selbst bei einem US-Anbieter liegt, und er kann ein
+        Spamfilter sein, während die Postfächer anderswo stehen. Ein SPF-Eintrag ist erst recht
+        kein Mail-Hosting: Er erlaubt einem Dienst nur, im Namen der Domain zu senden. Beides
+        führen wir getrennt, und neben jeder Einordnung steht der Roheintrag. In den Score fließt
+        nichts davon ein.
+      </p>
+
       <h2 className="mt-8 text-xl font-semibold">Was wir über Besuche zählen</h2>
       <p className="mt-2">
         Wir zählen Seitenaufrufe und Besuche in unserer eigenen API, ohne Cookie, ohne Kennung im

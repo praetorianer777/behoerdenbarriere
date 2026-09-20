@@ -13,6 +13,7 @@ const pageLabel: Record<string, string> = {
   '/methodik': 'Methodik',
   '/statistik': 'Statistik',
   '/drittanbieter': 'Drittanbieter',
+  '/e-mail': 'E-Mail-Auswertung',
   '/behoerde/:slug': 'Behördenseiten',
 }
 
