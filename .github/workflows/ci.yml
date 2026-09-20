@@ -150,6 +150,19 @@ jobs:
           name: frontend-dist
           path: frontend/dist
 
+      # Derselbe Chrome wie im Backend-Job: im Netz des Runners, damit er den lokalen
+      # Testserver erreicht. Über den Exec-Allocator gestartet ist der Browser einmal
+      # mit "websocket url timeout reached" gar nicht hochgekommen.
+      - name: Chrome starten
+        run: |
+          docker run -d --name chrome --network host --shm-size=1g \
+            chromedp/headless-shell:stable
+          for _ in $(seq 1 30); do
+            curl -sf http://localhost:9222/json/version >/dev/null && break
+            sleep 1
+          done
+          curl -sf http://localhost:9222/json/version >/dev/null
+
       - name: Seite ausliefern
         working-directory: frontend/dist
         run: |
@@ -161,4 +174,6 @@ jobs:
 
       - name: Eigene Seite prüfen
         working-directory: backend
+        env:
+          CHROME_URL: http://localhost:9222
         run: go run ./cmd/scan -url http://localhost:4173/ -strict
