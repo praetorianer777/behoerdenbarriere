@@ -59,10 +59,14 @@ type agencyDetailDTO struct {
 }
 
 type listDTO struct {
-	Items   []agencyDTO `json:"items"`
-	Total   int         `json:"total"`
-	Page    int         `json:"page"`
-	PerPage int         `json:"per_page"`
+	Items []agencyDTO `json:"items"`
+	Total int         `json:"total"`
+	// Scanned is how many of Total carry a result. Without it the ranking announces a
+	// number of authorities and shows the checked ones first, which reads as a verdict
+	// on all of them.
+	Scanned int `json:"scanned"`
+	Page    int `json:"page"`
+	PerPage int `json:"per_page"`
 }
 
 type ruleDTO struct {

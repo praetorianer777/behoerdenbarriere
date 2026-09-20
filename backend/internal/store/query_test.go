@@ -48,12 +48,12 @@ func TestListAgenciesSortsByScoreWithUnscannedLast(t *testing.T) {
 	s := storetest.New(t)
 	landscape(t, s)
 
-	got, total, err := s.ListAgencies(context.Background(), store.AgencyFilter{})
+	got, counts, err := s.ListAgencies(context.Background(), store.AgencyFilter{})
 	if err != nil {
 		t.Fatalf("list: %v", err)
 	}
-	if total != 3 || len(got) != 3 {
-		t.Fatalf("%d of %d authorities", len(got), total)
+	if counts.Total != 3 || len(got) != 3 {
+		t.Fatalf("%d of %d authorities", len(got), counts.Total)
 	}
 	if got[0].Slug != "bmf" || got[1].Slug != "bmi" {
 		t.Fatalf("order = %s, %s", got[0].Slug, got[1].Slug)
@@ -113,12 +113,12 @@ func TestListAgenciesFilters(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			got, total, err := s.ListAgencies(ctx, c.filter)
+			got, counts, err := s.ListAgencies(ctx, c.filter)
 			if err != nil {
 				t.Fatalf("list: %v", err)
 			}
-			if len(got) != c.want || total != c.want {
-				t.Fatalf("%d hits (total %d), want %d", len(got), total, c.want)
+			if len(got) != c.want || counts.Total != c.want {
+				t.Fatalf("%d hits (total %d), want %d", len(got), counts.Total, c.want)
 			}
 		})
 	}
@@ -129,12 +129,12 @@ func TestListAgenciesPaginates(t *testing.T) {
 	landscape(t, s)
 	ctx := context.Background()
 
-	first, total, err := s.ListAgencies(ctx, store.AgencyFilter{PerPage: 2, Page: 1})
+	first, counts, err := s.ListAgencies(ctx, store.AgencyFilter{PerPage: 2, Page: 1})
 	if err != nil {
 		t.Fatalf("list: %v", err)
 	}
-	if total != 3 || len(first) != 2 {
-		t.Fatalf("page 1: %d of %d", len(first), total)
+	if counts.Total != 3 || len(first) != 2 {
+		t.Fatalf("page 1: %d of %d", len(first), counts.Total)
 	}
 
 	second, _, err := s.ListAgencies(ctx, store.AgencyFilter{PerPage: 2, Page: 2})
@@ -445,5 +445,30 @@ func TestListAgenciesSortsByLevelAndDate(t *testing.T) {
 	// den Anfang.
 	if newest[2].Slug != "stadt-kiel" {
 		t.Errorf("never checked should stay last, got %s", newest[2].Slug)
+	}
+}
+
+// A ranking that announces 426 authorities and shows the checked ones first reads as a
+// verdict on 426. The second number is what keeps it honest.
+func TestListAgenciesCountsHowManyWereChecked(t *testing.T) {
+	s := storetest.New(t)
+	landscape(t, s)
+	ctx := context.Background()
+
+	_, counts, err := s.ListAgencies(ctx, store.AgencyFilter{})
+	if err != nil {
+		t.Fatalf("list: %v", err)
+	}
+	if counts.Total != 3 || counts.Scanned != 2 {
+		t.Fatalf("%d of %d checked, want 2 of 3", counts.Scanned, counts.Total)
+	}
+
+	// The count follows the filter, not the whole database.
+	_, filtered, err := s.ListAgencies(ctx, store.AgencyFilter{State: "Schleswig-Holstein"})
+	if err != nil {
+		t.Fatalf("list: %v", err)
+	}
+	if filtered.Total != 1 || filtered.Scanned != 0 {
+		t.Fatalf("%d of %d checked, want 0 of 1", filtered.Scanned, filtered.Total)
 	}
 }

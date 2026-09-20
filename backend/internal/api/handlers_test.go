@@ -430,6 +430,21 @@ func TestDatabaseErrorStaysInside(t *testing.T) {
 // Eine Behörde, die noch nie geprüft wurde, ist der Normalfall direkt nach der
 // Installation — und sie hat die ganze Seite weiß werden lassen: Die leere Historie kam
 // als null zurück, das Frontend las darauf eine Länge und brach ab.
+// The ranking shows the checked authorities first, so the number of matches alone
+// reads as a verdict on all of them.
+func TestListSaysHowManyWereChecked(t *testing.T) {
+	db := &fakeDB{agencies: sampleAgencies(), total: 2}
+	rec := request(t, db, "GET", "/api/v1/agencies", nil)
+
+	got := decode[struct {
+		Total   int `json:"total"`
+		Scanned int `json:"scanned"`
+	}](t, rec)
+	if got.Total != 2 || got.Scanned != 1 {
+		t.Fatalf("%d of %d checked, want 1 of 2", got.Scanned, got.Total)
+	}
+}
+
 func TestUnscannedAgencyAnswersWithEmptyLists(t *testing.T) {
 	db := &fakeDB{agencies: sampleAgencies()}
 	rec := request(t, db, http.MethodGet, "/api/v1/agencies/stadt-kiel", nil)

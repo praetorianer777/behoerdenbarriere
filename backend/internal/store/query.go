@@ -119,8 +119,16 @@ const latestScans = `
 		ORDER BY finished_at DESC OFFSET 1 LIMIT 1
 	) p ON true`
 
-// ListAgencies returns one page of the ranking and the total number of matches.
-func (s *Store) ListAgencies(ctx context.Context, f AgencyFilter) ([]AgencyListing, int, error) {
+// AgencyCounts says how many authorities a filter matches and how many of them have
+// been checked. The ranking needs both: a list of 426 of which 79 carry a result reads
+// as a statement about 426 unless the second number stands next to the first.
+type AgencyCounts struct {
+	Total   int
+	Scanned int
+}
+
+// ListAgencies returns one page of the ranking together with the counts behind it.
+func (s *Store) ListAgencies(ctx context.Context, f AgencyFilter) ([]AgencyListing, AgencyCounts, error) {
 	f = f.normalize()
 
 	where := `WHERE a.active
@@ -129,11 +137,11 @@ func (s *Store) ListAgencies(ctx context.Context, f AgencyFilter) ([]AgencyListi
 		AND ($3 = '' OR a.state = $3)
 		AND ($4 = '' OR s.grade = $4)`
 
-	var total int
+	var counts AgencyCounts
 	if err := s.Pool.QueryRow(ctx,
-		`SELECT count(*) FROM agencies a `+latestScans+` `+where,
-		f.Query, f.Level, f.State, f.Grade).Scan(&total); err != nil {
-		return nil, 0, fmt.Errorf("count authorities: %w", err)
+		`SELECT count(*), count(s.score) FROM agencies a `+latestScans+` `+where,
+		f.Query, f.Level, f.State, f.Grade).Scan(&counts.Total, &counts.Scanned); err != nil {
+		return nil, AgencyCounts{}, fmt.Errorf("count authorities: %w", err)
 	}
 
 	rows, err := s.Pool.Query(ctx,
@@ -141,12 +149,12 @@ func (s *Store) ListAgencies(ctx context.Context, f AgencyFilter) ([]AgencyListi
 			` ORDER BY `+orderBy(f.Sort)+` LIMIT $5 OFFSET $6`,
 		f.Query, f.Level, f.State, f.Grade, f.PerPage, (f.Page-1)*f.PerPage)
 	if err != nil {
-		return nil, 0, fmt.Errorf("list authorities: %w", err)
+		return nil, AgencyCounts{}, fmt.Errorf("list authorities: %w", err)
 	}
 	defer rows.Close()
 
 	listings, err := scanListings(rows)
-	return listings, total, err
+	return listings, counts, err
 }
 
 // AgencyBySlug returns one authority with its latest score.

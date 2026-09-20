@@ -22,7 +22,7 @@ import (
 // be tested without one.
 type Queries interface {
 	Ping(ctx context.Context) error
-	ListAgencies(ctx context.Context, f store.AgencyFilter) ([]store.AgencyListing, int, error)
+	ListAgencies(ctx context.Context, f store.AgencyFilter) ([]store.AgencyListing, store.AgencyCounts, error)
 	AgencyBySlug(ctx context.Context, slug string) (*store.AgencyListing, error)
 	AgencyIDBySlug(ctx context.Context, slug string) (int64, error)
 	ScanHistory(ctx context.Context, agencyID int64, limit int) ([]trend.Point, error)
@@ -55,13 +55,14 @@ func (s *Server) handleAgencies(w http.ResponseWriter, r *http.Request) {
 		PerPage: atoi(q.Get("per_page"), 50),
 	}
 
-	items, total, err := s.db.ListAgencies(r.Context(), filter)
+	items, counts, err := s.db.ListAgencies(r.Context(), filter)
 	if err != nil {
 		s.fail(w, r, err)
 		return
 	}
 
-	out := listDTO{Items: make([]agencyDTO, 0, len(items)), Total: total,
+	out := listDTO{Items: make([]agencyDTO, 0, len(items)),
+		Total: counts.Total, Scanned: counts.Scanned,
 		Page: max(filter.Page, 1), PerPage: filter.PerPage}
 	for _, a := range items {
 		out.Items = append(out.Items, toAgencyDTO(a))

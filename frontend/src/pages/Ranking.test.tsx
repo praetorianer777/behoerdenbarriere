@@ -34,9 +34,17 @@ describe('Ranking', () => {
 
   it('meldet die Trefferzahl in einer Live-Region', async () => {
     renderPage(<Ranking />)
-    const status = await screen.findByText('2 Behörden gefunden')
+    const status = await screen.findByText(/2 Behörden gefunden/)
     // Wer die Tabelle nicht sieht, muss hören, dass sie sich geändert hat.
     expect(status).toHaveAttribute('role', 'status')
+  })
+
+  // Die Liste beginnt mit den besten Noten. Wer nur die erste Zahl liest, hält das
+  // Ergebnis der geprüften Behörden für das Ergebnis aller.
+  it('sagt, wie viele der gefundenen Behörden geprüft sind', async () => {
+    renderPage(<Ranking />)
+    expect(await screen.findByText(/davon 1 geprüft/)).toBeInTheDocument()
+    expect(screen.getByText(/am Ende der Liste ohne Wert/)).toBeInTheDocument()
   })
 
   it('übernimmt Filter in die Adresse und in die Abfrage', async () => {
