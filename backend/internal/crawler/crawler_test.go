@@ -82,8 +82,9 @@ func TestCrawlFollowsInternalLinksOnly(t *testing.T) {
 		base + "/kontakt": {base + "/"},
 	}}
 
-	got, err := New(fake, Config{MaxPages: 10, MaxDepth: 2, RatePerSec: 1000}).
+	outcome, err := New(fake, Config{MaxPages: 10, MaxDepth: 2, RatePerSec: 1000}).
 		Crawl(context.Background(), base)
+	got := outcome.Pages
 	if err != nil {
 		t.Fatalf("Crawl: %v", err)
 	}
@@ -122,8 +123,9 @@ func TestCrawlRespectsPageBudget(t *testing.T) {
 	}
 	fake := &fakeScanner{links: map[string][]string{base + "/": links}}
 
-	got, err := New(fake, Config{MaxPages: 5, MaxDepth: 3, RatePerSec: 1000}).
+	outcome, err := New(fake, Config{MaxPages: 5, MaxDepth: 3, RatePerSec: 1000}).
 		Crawl(context.Background(), base)
+	got := outcome.Pages
 	if err != nil {
 		t.Fatalf("Crawl: %v", err)
 	}
@@ -143,8 +145,9 @@ func TestCrawlSpendsBudgetOnPriorityPages(t *testing.T) {
 		},
 	}}
 
-	got, err := New(fake, Config{MaxPages: 3, MaxDepth: 2, RatePerSec: 1000}).
+	outcome, err := New(fake, Config{MaxPages: 3, MaxDepth: 2, RatePerSec: 1000}).
 		Crawl(context.Background(), base)
+	got := outcome.Pages
 	if err != nil {
 		t.Fatalf("Crawl: %v", err)
 	}
@@ -169,8 +172,9 @@ func TestCrawlRespectsDepth(t *testing.T) {
 		base + "/a/b/c": {},
 	}}
 
-	got, err := New(fake, Config{MaxPages: 50, MaxDepth: 1, RatePerSec: 1000}).
+	outcome, err := New(fake, Config{MaxPages: 50, MaxDepth: 1, RatePerSec: 1000}).
 		Crawl(context.Background(), base)
+	got := outcome.Pages
 	if err != nil {
 		t.Fatalf("Crawl: %v", err)
 	}
@@ -185,8 +189,9 @@ func TestCrawlObeysRobotsDisallow(t *testing.T) {
 		base + "/": {base + "/intern/geheim", base + "/kontakt"},
 	}}
 
-	got, err := New(fake, Config{MaxPages: 10, MaxDepth: 2, RatePerSec: 1000}).
+	outcome, err := New(fake, Config{MaxPages: 10, MaxDepth: 2, RatePerSec: 1000}).
 		Crawl(context.Background(), base)
+	got := outcome.Pages
 	if err != nil {
 		t.Fatalf("Crawl: %v", err)
 	}
@@ -221,7 +226,8 @@ func TestCrawlTreatsMissingRobotsAsAllowed(t *testing.T) {
 	base := robotsServer(t, "")
 	fake := &fakeScanner{links: map[string][]string{base + "/": {}}}
 
-	got, err := New(fake, Config{MaxPages: 5, RatePerSec: 1000}).Crawl(context.Background(), base)
+	outcome, err := New(fake, Config{MaxPages: 5, RatePerSec: 1000}).Crawl(context.Background(), base)
+	got := outcome.Pages
 	if err != nil {
 		t.Fatalf("Crawl: %v", err)
 	}
@@ -237,8 +243,9 @@ func TestCrawlKeepsRateLimit(t *testing.T) {
 	}}
 
 	started := time.Now()
-	got, err := New(fake, Config{MaxPages: 3, MaxDepth: 1, RatePerSec: 20}).
+	outcome, err := New(fake, Config{MaxPages: 3, MaxDepth: 1, RatePerSec: 20}).
 		Crawl(context.Background(), base)
+	got := outcome.Pages
 	if err != nil {
 		t.Fatalf("Crawl: %v", err)
 	}
@@ -260,8 +267,9 @@ func TestCrawlKeepsGoingAfterAFailedPage(t *testing.T) {
 		broken: map[string]bool{base + "/kaputt": true},
 	}
 
-	got, err := New(fake, Config{MaxPages: 10, MaxDepth: 1, RatePerSec: 1000}).
+	outcome, err := New(fake, Config{MaxPages: 10, MaxDepth: 1, RatePerSec: 1000}).
 		Crawl(context.Background(), base)
+	got := outcome.Pages
 	if err != nil {
 		t.Fatalf("Crawl: %v", err)
 	}
@@ -288,8 +296,9 @@ func TestCrawlReturnsPartialResultOnTimeout(t *testing.T) {
 		delay: 80 * time.Millisecond,
 	}
 
-	got, err := New(fake, Config{MaxPages: 10, MaxDepth: 1, RatePerSec: 1000, Timeout: 150 * time.Millisecond}).
+	outcome, err := New(fake, Config{MaxPages: 10, MaxDepth: 1, RatePerSec: 1000, Timeout: 150 * time.Millisecond}).
 		Crawl(context.Background(), base)
+	got := outcome.Pages
 	if err != nil {
 		t.Fatalf("Crawl: %v", err)
 	}
@@ -325,6 +334,49 @@ func keysOf(m map[string]model.PageResult) []string {
 	out := make([]string, 0, len(m))
 	for k := range m {
 		out = append(out, k)
+	}
+	return out
+}
+
+// A wrong "this authority has no accessibility statement" is an accusation, and it
+// must not depend on how many pages the budget allowed. Three federal agencies that
+// clearly link their statement from the start page were recorded as having none,
+// because contact and imprint were fetched first.
+func TestCrawlAlwaysReachesTheAccessibilityStatement(t *testing.T) {
+	base := robotsServer(t, "")
+	fake := &fakeScanner{links: map[string][]string{
+		base + "/": {
+			base + "/kontakt",
+			base + "/impressum",
+			base + "/suche",
+			base + "/formulare",
+			base + "/DE/Service/Barrierefreiheit/erklaerung-zur-barrierefreiheit.html",
+		},
+	}}
+
+	// Two pages only: the start page and one more.
+	outcome, err := New(fake, Config{MaxPages: 2, MaxDepth: 1, RatePerSec: 1000}).
+		Crawl(context.Background(), base)
+	got := outcome.Pages
+	if err != nil {
+		t.Fatalf("Crawl: %v", err)
+	}
+
+	var reached bool
+	for _, page := range got {
+		if strings.Contains(page.URL, "erklaerung-zur-barrierefreiheit") {
+			reached = true
+		}
+	}
+	if !reached {
+		t.Fatalf("the statement was not reached: %v", urlsOf(got))
+	}
+}
+
+func urlsOf(pages []model.PageResult) []string {
+	out := make([]string, 0, len(pages))
+	for _, page := range pages {
+		out = append(out, page.URL)
 	}
 	return out
 }

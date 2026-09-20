@@ -24,11 +24,11 @@ Schreiben Sie uns an barrierefreiheit@example.bund.de.
 Schlichtungsverfahren: Wenn auch die Antwort nicht zufriedenstellend ausfällt, können
 Sie die Schlichtungsstelle nach § 16 BGG anrufen.`
 
-func statementPage(text string, depth int) []Page {
-	return []Page{
+func statementPage(text string, depth int) Input {
+	return Input{Pages: []Page{
 		{URL: "https://www.example.bund.de/", Text: "Startseite", Depth: 0},
 		{URL: "https://www.example.bund.de/erklaerung-zur-barrierefreiheit", Text: text, Depth: depth},
-	}
+	}}
 }
 
 func met(t *testing.T, result Result) map[Requirement]bool {
@@ -43,7 +43,7 @@ func met(t *testing.T, result Result) map[Requirement]bool {
 func TestCompleteStatement(t *testing.T) {
 	result := Check(statementPage(complete, 1))
 
-	if !result.Found {
+	if !result.Found() {
 		t.Fatal("the statement was not found")
 	}
 	if !result.Complete() {
@@ -55,12 +55,12 @@ func TestCompleteStatement(t *testing.T) {
 }
 
 func TestMissingStatement(t *testing.T) {
-	result := Check([]Page{
+	result := Check(Input{Pages: []Page{
 		{URL: "https://www.example.bund.de/", Text: "Startseite", Depth: 0},
 		{URL: "https://www.example.bund.de/impressum", Text: "Impressum", Depth: 1},
-	})
+	}})
 
-	if result.Found || result.Complete() || result.Met() != 0 {
+	if result.State != StateMissing || result.Complete() || result.Met() != 0 {
 		t.Fatalf("something was found where there is nothing: %+v", result)
 	}
 	// Every requirement is still listed, so the page can say what is missing rather
@@ -106,7 +106,7 @@ func TestEachRequirementCanFailOnItsOwn(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			result := Check(statementPage(c.text, 1))
-			if !result.Found {
+			if !result.Found() {
 				t.Fatal("the statement was not found")
 			}
 			byRequirement := met(t, result)
@@ -144,13 +144,16 @@ func TestFeedbackNeedsAWayToReach(t *testing.T) {
 	}
 }
 
-// The more specific page wins: many sites have a section about accessibility as well
-// as the statement itself, and only the latter carries the prescribed contents.
-func TestPrefersTheMoreSpecificPage(t *testing.T) {
-	pages := []Page{
-		{URL: "https://www.example.bund.de/barrierefreiheit", Text: "Wir setzen uns für Barrierefreiheit ein.", Depth: 1},
-		{URL: "https://www.example.bund.de/barrierefreiheit/erklaerung-zur-barrierefreiheit", Text: complete, Depth: 1},
-	}
+// The page named as the statement wins over one that merely talks about
+// accessibility — bfarm.de has a page about the accessibility of a code register
+// whose URL is longer than the real statement's, and picking the longest URL read the
+// wrong page.
+func TestPrefersThePageNamedAsTheStatement(t *testing.T) {
+	pages := Input{Pages: []Page{
+		{URL: "https://www.example.bund.de/Kodiersysteme/Services/OID-Register/Barrierefreiheit-OID",
+			Text: "Barrierefreiheit des OID-Registers.", Depth: 2},
+		{URL: "https://www.example.bund.de/erklaerung-zur-barrierefreiheit", Text: complete, Depth: 1},
+	}}
 
 	result := Check(pages)
 	if !strings.HasSuffix(result.URL, "erklaerung-zur-barrierefreiheit") {
@@ -158,6 +161,17 @@ func TestPrefersTheMoreSpecificPage(t *testing.T) {
 	}
 	if !result.Complete() {
 		t.Fatalf("the statement was not read: %+v", met(t, result))
+	}
+}
+
+// Among pages that are equally named, the one closer to the start page wins.
+func TestPrefersTheShallowerPage(t *testing.T) {
+	pages := Input{Pages: []Page{
+		{URL: "https://www.example.bund.de/service/a/b/barrierefreiheit", Text: "Kurzer Hinweis.", Depth: 3},
+		{URL: "https://www.example.bund.de/barrierefreiheit", Text: complete, Depth: 1},
+	}}
+	if result := Check(pages); !strings.HasSuffix(result.URL, "de/barrierefreiheit") {
+		t.Fatalf("chosen page = %s", result.URL)
 	}
 }
 
@@ -192,5 +206,42 @@ func TestIsStatementURL(t *testing.T) {
 		if IsStatementURL(url) {
 			t.Errorf("IsStatementURL(%q) = true", url)
 		}
+	}
+}
+
+// Seen but not readable is not the same as absent. The RKI links its statement and
+// excludes the directory it lives in from crawlers; saying it has none would accuse
+// an authority that has one.
+func TestLinkedButUnreadable(t *testing.T) {
+	result := Check(Input{
+		Pages: []Page{{URL: "https://www.rki.de/", Text: "Startseite", Depth: 0}},
+		SeenLinks: []string{
+			"https://www.rki.de/impressum",
+			"https://www.rki.de/DE/Service/Barrierefreiheit/barrierefreiheit_node.html",
+		},
+	})
+
+	if result.State != StateUnreadable {
+		t.Fatalf("state = %s, want unreadable", result.State)
+	}
+	if result.Found() || result.Complete() {
+		t.Error("an unread statement was counted as read")
+	}
+	if result.URL == "" {
+		t.Error("the address we could not read is missing")
+	}
+	// The requirements are still listed, all unmet — nothing is claimed about them.
+	if len(result.Findings) != len(Requirements) || result.Met() != 0 {
+		t.Errorf("findings = %+v", result.Findings)
+	}
+}
+
+func TestNoStatementLinkAtAll(t *testing.T) {
+	result := Check(Input{
+		Pages:     []Page{{URL: "https://a.de/", Text: "Startseite"}},
+		SeenLinks: []string{"https://a.de/impressum", "https://a.de/kontakt"},
+	})
+	if result.State != StateMissing {
+		t.Fatalf("state = %s, want missing", result.State)
 	}
 }

@@ -123,7 +123,7 @@ describe('Behördenseite', () => {
   it('benennt eine fehlende Erklärung als Rechtsverstoß', async () => {
     vi.spyOn(api, 'latestScan').mockResolvedValue({
       ...latestScan,
-      statement: { found: false, findings: [] },
+      statement: { state: 'missing' as const, findings: [] },
     })
 
     render()
@@ -131,6 +131,24 @@ describe('Behördenseite', () => {
       await screen.findByText(/keine Erklärung zur Barrierefreiheit gefunden/),
     ).toBeInTheDocument()
     expect(screen.getByText(/§ 12b/)).toBeInTheDocument()
+  })
+
+  // Gesehen, aber nicht lesbar: Das darf nicht als "hat keine" erscheinen.
+  it('unterscheidet gesperrt von fehlend', async () => {
+    vi.spyOn(api, 'latestScan').mockResolvedValue({
+      ...latestScan,
+      statement: {
+        state: 'unreadable' as const,
+        url: 'https://www.rki.de/DE/Service/Barrierefreiheit/barrierefreiheit_node.html',
+        findings: [],
+      },
+    })
+
+    render()
+    expect(await screen.findByText(/nicht abrufen/)).toBeInTheDocument()
+    expect(
+      screen.queryByText(/keine Erklärung zur Barrierefreiheit gefunden/),
+    ).not.toBeInTheDocument()
   })
 
   it('kommt ohne Prüfung aus', async () => {

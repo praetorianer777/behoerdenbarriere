@@ -138,9 +138,11 @@ export interface StatementFinding {
   evidence?: string
 }
 
+export type StatementState = 'missing' | 'unreadable' | 'found'
+
 export interface StatementResult {
+  state: StatementState
   url?: string
-  found: boolean
   findings: StatementFinding[]
 }
 

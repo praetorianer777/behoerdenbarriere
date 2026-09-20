@@ -17,11 +17,26 @@ export function StatementCheck({ statement }: { statement: StatementResult }) {
     <section className="mt-10">
       <h2 className="text-xl font-semibold">Erklärung zur Barrierefreiheit</h2>
 
-      {!statement.found ? (
+      {statement.state === 'missing' ? (
         <p className="mt-2 rounded-lg border border-grade-f bg-white p-4">
           Auf den geprüften Seiten wurde keine Erklärung zur Barrierefreiheit gefunden. § 12b des
           Behindertengleichstellungsgesetzes verpflichtet öffentliche Stellen dazu, eine zu
           veröffentlichen und von jeder Seite aus erreichbar zu machen.
+        </p>
+      ) : statement.state === 'unreadable' ? (
+        /* Gesehen, aber nicht gelesen: Das RKI etwa verlinkt seine Erklärung und sperrt
+           das Verzeichnis, in dem sie liegt, per robots.txt für automatische Abrufe.
+           Das ist unsere Grenze, nicht ihr Versäumnis — und darf nicht als Vorwurf
+           erscheinen. */
+        <p className="mt-2 rounded-lg border border-slate-400 bg-white p-4">
+          Es gibt eine verlinkte Erklärung zur Barrierefreiheit, wir durften sie aber nicht abrufen
+          — die <code>robots.txt</code> dieser Website schließt sie für automatische Abrufe aus.
+          Über ihren Inhalt sagen wir deshalb nichts.{' '}
+          {statement.url && (
+            <a href={statement.url} className="break-all underline">
+              Erklärung aufrufen
+            </a>
+          )}
         </p>
       ) : (
         <>

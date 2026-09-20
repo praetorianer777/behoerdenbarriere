@@ -297,7 +297,7 @@ func TestLatestScanExplainsTheScore(t *testing.T) {
 func TestLatestScanCarriesTheStatementCheck(t *testing.T) {
 	scan := sampleScan()
 	scan.Statement = &statement.Result{
-		Found: true,
+		State: statement.StateFound,
 		URL:   "https://www.bmi.bund.de/erklaerung-zur-barrierefreiheit",
 		Findings: []statement.Finding{
 			{Requirement: statement.Reachable, Met: true},
@@ -315,7 +315,7 @@ func TestLatestScanCarriesTheStatementCheck(t *testing.T) {
 	rec := request(t, db, http.MethodGet, "/api/v1/agencies/bmi/scans/latest", nil)
 	got := decode[scanDTO](t, rec)
 
-	if got.Statement == nil || !got.Statement.Found {
+	if got.Statement == nil || !got.Statement.Found() {
 		t.Fatalf("statement = %+v", got.Statement)
 	}
 	if got.Statement.Complete() {

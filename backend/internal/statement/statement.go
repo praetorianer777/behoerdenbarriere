@@ -36,6 +36,20 @@ const (
 // Requirements in the order the law lists them.
 var Requirements = []Requirement{Reachable, Conformance, Shortcomings, Date, Feedback, Enforcement}
 
+// State says what could be established at all.
+type State string
+
+const (
+	// StateMissing: nothing on the site even looks like the statement.
+	StateMissing State = "missing"
+	// StateUnreadable: the statement is linked, but we were not allowed to read it —
+	// the RKI's robots.txt excludes /DE/Service/, which is where theirs lives. Calling
+	// that "no statement" would be an accusation against an authority that has one.
+	StateUnreadable State = "unreadable"
+	// StateFound: the statement was read and checked.
+	StateFound State = "found"
+)
+
 // Finding records one requirement and what was found for it. The evidence matters as
 // much as the verdict: a checklist people can argue with is worth more than a badge
 // they can only accept.
@@ -47,14 +61,17 @@ type Finding struct {
 
 // Result is what a statement check produced.
 type Result struct {
+	State    State     `json:"state"`
 	URL      string    `json:"url,omitempty"`
-	Found    bool      `json:"found"`
 	Findings []Finding `json:"findings"`
 }
 
+// Found reports whether the statement could be read and checked.
+func (r Result) Found() bool { return r.State == StateFound }
+
 // Complete reports whether every prescribed element is there.
 func (r Result) Complete() bool {
-	if !r.Found {
+	if !r.Found() {
 		return false
 	}
 	for _, f := range r.Findings {
@@ -85,6 +102,27 @@ func IsStatementURL(rawURL string) bool {
 	return statementPath.MatchString(rawURL)
 }
 
+// explicitStatement is the statement named as such, as opposed to a page that merely
+// talks about accessibility somewhere.
+var explicitStatement = regexp.MustCompile(`(?i)(erklaerung|erklärung)[-_/]?(zur)?[-_/]?barrierefreiheit|barrierefreiheitserklaerung|barrierefreiheitserklärung|accessibility[-_]?statement`)
+
+// betterCandidate decides between two pages that both look like the statement.
+//
+// Named beats merely topical: bfarm.de carries a page about the accessibility of a
+// code register whose URL is longer than the real statement's, so picking the longest
+// URL — which is what this did first — read the wrong page.
+func betterCandidate(candidate, current Page) bool {
+	candidateNamed := explicitStatement.MatchString(candidate.URL)
+	currentNamed := explicitStatement.MatchString(current.URL)
+	if candidateNamed != currentNamed {
+		return candidateNamed
+	}
+	if candidate.Depth != current.Depth {
+		return candidate.Depth < current.Depth
+	}
+	return len(candidate.URL) < len(current.URL)
+}
+
 // The wordings are not prescribed, so these patterns follow what authorities write.
 // Two of them were deliberately narrowed after they fired on the wrong sentence: a
 // conformance status recognised from "nicht barrierefrei" matched the list of
@@ -107,34 +145,50 @@ type Page struct {
 	Depth int
 }
 
+// Input is what a crawl leaves behind for this check: the pages that were read, and
+// the statement links that were seen whether or not they could be fetched.
+type Input struct {
+	Pages []Page
+	// SeenLinks are addresses the crawl came across. A statement among them that was
+	// never read is the difference between "has none" and "we could not look".
+	SeenLinks []string
+}
+
 // Check looks for the statement among the crawled pages and reads it.
 //
 // Nothing here decides whether a statement is *good* — only whether the prescribed
 // elements are present. Whether the conformance status is honest is a question for a
 // human, and pretending otherwise would be the same overreach we criticise elsewhere.
-func Check(pages []Page) Result {
-	result := Result{Findings: make([]Finding, 0, len(Requirements))}
+func Check(input Input) Result {
+	result := Result{State: StateMissing, Findings: make([]Finding, 0, len(Requirements))}
 
 	var statement *Page
-	for i := range pages {
-		if !IsStatementURL(pages[i].URL) {
+	for i := range input.Pages {
+		if !IsStatementURL(input.Pages[i].URL) {
 			continue
 		}
-		// The most specific page wins: a site often has both a section on
-		// accessibility and the statement itself.
-		if statement == nil || len(pages[i].URL) > len(statement.URL) {
-			statement = &pages[i]
+		if statement == nil || betterCandidate(input.Pages[i], *statement) {
+			statement = &input.Pages[i]
 		}
 	}
 
 	if statement == nil {
+		// Seen but not read: robots.txt may forbid it, or the crawl may not have
+		// reached it. Either way the authority is not the one at fault.
+		for _, link := range input.SeenLinks {
+			if IsStatementURL(link) {
+				result.State = StateUnreadable
+				result.URL = link
+				break
+			}
+		}
 		for _, requirement := range Requirements {
 			result.Findings = append(result.Findings, Finding{Requirement: requirement})
 		}
 		return result
 	}
 
-	result.Found = true
+	result.State = StateFound
 	result.URL = statement.URL
 	text := strings.Join(strings.Fields(statement.Text), " ")
 

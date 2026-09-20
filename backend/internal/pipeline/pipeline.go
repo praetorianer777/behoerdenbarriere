@@ -39,7 +39,7 @@ type Auditor interface {
 
 // Crawler walks a site and returns a result per page.
 type Crawler interface {
-	Crawl(ctx context.Context, startURL string) ([]model.PageResult, error)
+	Crawl(ctx context.Context, startURL string) (crawler.Outcome, error)
 }
 
 type Pipeline struct {
@@ -93,7 +93,8 @@ func (p *Pipeline) Run(ctx context.Context, agency model.Agency) (*Result, error
 	}
 	span.SetAttributes(attribute.Int64("scan.id", scanID))
 
-	pages, err := p.crawl(ctx, agency.URL)
+	outcome, err := p.crawl(ctx, agency.URL)
+	pages := outcome.Pages
 	if err != nil {
 		p.fail(ctx, scanID, err)
 		return nil, p.failed(ctx, span, started, 0, fmt.Errorf("crawl %s: %w", agency.Slug, err))
@@ -117,7 +118,7 @@ func (p *Pipeline) Run(ctx context.Context, agency model.Agency) (*Result, error
 	)
 	telemetry.RecordScan(ctx, telemetry.StatusDone, result.Pages, time.Since(started))
 
-	p.checkStatement(ctx, scanID, agency, pages)
+	p.checkStatement(ctx, scanID, agency, outcome)
 	p.audit(ctx, scanID, agency)
 
 	p.log.InfoContext(ctx, "scan finished",
@@ -127,16 +128,19 @@ func (p *Pipeline) Run(ctx context.Context, agency model.Agency) (*Result, error
 	return &Result{ScanID: scanID, Score: result, Pages: result.Pages}, nil
 }
 
-func (p *Pipeline) crawl(ctx context.Context, startURL string) ([]model.PageResult, error) {
+func (p *Pipeline) crawl(ctx context.Context, startURL string) (crawler.Outcome, error) {
 	ctx, span := telemetry.Tracer().Start(ctx, "crawl")
 	defer span.End()
 
-	pages, err := p.crawler.Crawl(ctx, startURL)
-	span.SetAttributes(attribute.Int("crawl.pages", len(pages)))
+	outcome, err := p.crawler.Crawl(ctx, startURL)
+	span.SetAttributes(
+		attribute.Int("crawl.pages", len(outcome.Pages)),
+		attribute.Int("crawl.links_seen", len(outcome.SeenLinks)),
+	)
 	if err != nil {
 		span.SetStatus(codes.Error, err.Error())
 	}
-	return pages, err
+	return outcome, err
 }
 
 func (p *Pipeline) score(ctx context.Context, pages []model.PageResult) scoring.Result {
@@ -159,9 +163,9 @@ func (p *Pipeline) failed(ctx context.Context, span trace.Span, started time.Tim
 // No extra request: the crawler pulls those pages forward anyway, and asking the
 // authority's server twice for the same page to answer a legal question would be
 // discourteous for no gain.
-func (p *Pipeline) checkStatement(ctx context.Context, scanID int64, agency model.Agency, pages []model.PageResult) {
-	candidates := make([]statement.Page, 0, len(pages))
-	for _, page := range pages {
+func (p *Pipeline) checkStatement(ctx context.Context, scanID int64, agency model.Agency, outcome crawler.Outcome) {
+	candidates := make([]statement.Page, 0, len(outcome.Pages))
+	for _, page := range outcome.Pages {
 		if page.Failed() {
 			continue
 		}
@@ -170,13 +174,13 @@ func (p *Pipeline) checkStatement(ctx context.Context, scanID int64, agency mode
 		})
 	}
 
-	result := statement.Check(candidates)
+	result := statement.Check(statement.Input{Pages: candidates, SeenLinks: outcome.SeenLinks})
 	if err := p.store.SaveStatement(ctx, scanID, result); err != nil {
 		p.log.ErrorContext(ctx, "could not store the statement check", "agency", agency.Slug, "error", err)
 		return
 	}
 	p.log.InfoContext(ctx, "accessibility statement checked",
-		"agency", agency.Slug, "found", result.Found,
+		"agency", agency.Slug, "state", result.State,
 		"met", result.Met(), "of", len(statement.Requirements))
 }
 

@@ -60,12 +60,13 @@ func (f *fakeStore) SaveLighthouse(_ context.Context, _ int64, result store.Ligh
 }
 
 type fakeCrawler struct {
-	pages []model.PageResult
-	err   error
+	pages     []model.PageResult
+	seenLinks []string
+	err       error
 }
 
-func (f *fakeCrawler) Crawl(context.Context, string) ([]model.PageResult, error) {
-	return f.pages, f.err
+func (f *fakeCrawler) Crawl(context.Context, string) (crawler.Outcome, error) {
+	return crawler.Outcome{Pages: f.pages, SeenLinks: f.seenLinks}, f.err
 }
 
 func agency() model.Agency {
@@ -306,7 +307,7 @@ func TestRunChecksTheAccessibilityStatement(t *testing.T) {
 	if st.statement == nil {
 		t.Fatal("the statement was not checked")
 	}
-	if !st.statement.Found || !st.statement.Complete() {
+	if !st.statement.Found() || !st.statement.Complete() {
 		t.Fatalf("statement = %+v", st.statement)
 	}
 }
@@ -319,11 +320,33 @@ func TestRunRecordsAMissingStatement(t *testing.T) {
 		Run(context.Background(), agency()); err != nil {
 		t.Fatalf("Run: %v", err)
 	}
-	if st.statement == nil || st.statement.Found {
+	if st.statement == nil || st.statement.State != statement.StateMissing {
 		t.Fatalf("statement = %+v", st.statement)
 	}
 	// Every requirement is still listed, so the page can name what is missing.
 	if len(st.statement.Findings) != len(statement.Requirements) {
 		t.Fatalf("%d findings", len(st.statement.Findings))
+	}
+}
+
+// The RKI links its accessibility statement and its robots.txt forbids the directory
+// it sits in. Recording that as "has no statement" would accuse an authority that has
+// one; it is our limit, not their failing.
+func TestRunSeparatesUnreadableFromMissing(t *testing.T) {
+	st := &fakeStore{scanID: 42}
+	pages := []model.PageResult{{URL: "https://www.rki.de/", DOMNodes: 800, IsEntry: true}}
+
+	if _, err := New(st, &fakeCrawler{
+		pages:     pages,
+		seenLinks: []string{"https://www.rki.de/DE/Service/Barrierefreiheit/barrierefreiheit_node.html"},
+	}, crawler.Config{}, nil).Run(context.Background(), agency()); err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+
+	if st.statement == nil || st.statement.State != statement.StateUnreadable {
+		t.Fatalf("statement = %+v", st.statement)
+	}
+	if st.statement.URL == "" {
+		t.Error("the address we could not read is missing")
 	}
 }

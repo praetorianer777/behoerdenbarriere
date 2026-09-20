@@ -157,7 +157,7 @@ const latestScan = {
     ],
   },
   statement: {
-    found: true,
+    state: 'found' as const,
     url: 'https://www.bmwsb.bund.de/erklaerung-zur-barrierefreiheit',
     findings: [
       { requirement: 'reachable', met: true },
