@@ -108,6 +108,49 @@ describe('Behördenseite', () => {
     expect(screen.getByText(/78 %/)).toBeInTheDocument()
   })
 
+  // Die Erklärung ist eine Rechtspflicht, keine Kennzahl — sie muss als eigener Punkt
+  // erscheinen, mit dem, was fehlt.
+  it('prüft die Erklärung zur Barrierefreiheit', async () => {
+    render()
+
+    await screen.findByRole('heading', { name: 'Erklärung zur Barrierefreiheit' })
+    expect(screen.getByText(/5 von 6 Pflichtangaben/)).toBeInTheDocument()
+    expect(screen.getByText('Hinweis auf das Schlichtungsverfahren')).toBeInTheDocument()
+    // Der Fundort steht dabei, damit man dem Befund widersprechen kann.
+    expect(screen.getAllByText(/teilweise vereinbar/).length).toBeGreaterThan(0)
+  })
+
+  it('benennt eine fehlende Erklärung als Rechtsverstoß', async () => {
+    vi.spyOn(api, 'latestScan').mockResolvedValue({
+      ...latestScan,
+      statement: { state: 'missing' as const, findings: [] },
+    })
+
+    render()
+    expect(
+      await screen.findByText(/keine Erklärung zur Barrierefreiheit gefunden/),
+    ).toBeInTheDocument()
+    expect(screen.getByText(/§ 12b/)).toBeInTheDocument()
+  })
+
+  // Gesehen, aber nicht lesbar: Das darf nicht als "hat keine" erscheinen.
+  it('unterscheidet gesperrt von fehlend', async () => {
+    vi.spyOn(api, 'latestScan').mockResolvedValue({
+      ...latestScan,
+      statement: {
+        state: 'unreadable' as const,
+        url: 'https://www.rki.de/DE/Service/Barrierefreiheit/barrierefreiheit_node.html',
+        findings: [],
+      },
+    })
+
+    render()
+    expect(await screen.findByText(/nicht abrufen/)).toBeInTheDocument()
+    expect(
+      screen.queryByText(/keine Erklärung zur Barrierefreiheit gefunden/),
+    ).not.toBeInTheDocument()
+  })
+
   it('kommt ohne Prüfung aus', async () => {
     vi.spyOn(api, 'agency').mockResolvedValue({
       ...agencyDetail,

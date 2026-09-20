@@ -55,10 +55,14 @@ const pageInfoScript = `(() => {
     }
   };
   walk(document);
+  // Der sichtbare Text, gekappt: Er wird nur gelesen, um die Erklärung zur
+  // Barrierefreiheit zu prüfen, und nicht gespeichert.
+  const text = (document.body && document.body.innerText || '').slice(0, 40000);
   return JSON.stringify({
     title: document.title || '',
     domNodes: nodes,
     lang: document.documentElement.getAttribute('lang') || '',
+    text: text,
     links: links.slice(0, 2000)
   });
 })()`
@@ -233,6 +237,7 @@ func (s *Scanner) Scan(ctx context.Context, url string) PageScan {
 		Title    string   `json:"title"`
 		DOMNodes int      `json:"domNodes"`
 		Lang     string   `json:"lang"`
+		Text     string   `json:"text"`
 		Links    []string `json:"links"`
 	}
 	if err := json.Unmarshal([]byte(infoJSON), &info); err != nil {
@@ -241,6 +246,7 @@ func (s *Scanner) Scan(ctx context.Context, url string) PageScan {
 	}
 	out.Result.Title = info.Title
 	out.Result.DOMNodes = info.DOMNodes
+	out.Result.Text = info.Text
 	out.Links = info.Links
 
 	var axeRes axeResult

@@ -11,6 +11,7 @@ import (
 
 	"github.com/praetorianer777/behoerdenbarriere/internal/model"
 	"github.com/praetorianer777/behoerdenbarriere/internal/scanner"
+	"github.com/praetorianer777/behoerdenbarriere/internal/statement"
 )
 
 // PageScanner is the part of the scanner the crawler uses. An interface, so the
@@ -60,16 +61,26 @@ func New(s PageScanner, cfg Config) *Crawler {
 // all — following links from a page we were not allowed to fetch would be worse.
 var ErrDisallowed = errors.New("robots.txt forbids the start page")
 
+// Outcome is what a crawl leaves behind.
+type Outcome struct {
+	Pages []model.PageResult
+	// SeenLinks are the addresses the crawl came across but did not necessarily
+	// fetch. What was seen and not read is the difference between "the authority has
+	// no accessibility statement" and "robots.txt did not let us look" — the RKI
+	// excludes the very directory theirs sits in.
+	SeenLinks []string
+}
+
 // Crawl walks the site from startURL and returns the result for every page checked.
 // Running into the time or page budget is not an error: a partial result still says
 // something, and every page is checked before it is counted.
-func (c *Crawler) Crawl(ctx context.Context, startURL string) ([]model.PageResult, error) {
+func (c *Crawler) Crawl(ctx context.Context, startURL string) (Outcome, error) {
 	start := Normalize(startURL)
 	if start == "" {
-		return nil, errors.New("unusable start URL: " + startURL)
+		return Outcome{}, errors.New("unusable start URL: " + startURL)
 	}
 	if !c.robots.Allowed(ctx, start) {
-		return nil, ErrDisallowed
+		return Outcome{}, ErrDisallowed
 	}
 
 	parent := ctx
@@ -87,8 +98,9 @@ func (c *Crawler) Crawl(ctx context.Context, startURL string) ([]model.PageResul
 	f := newFrontier()
 	f.push(Target{URL: start, Depth: 0, IsEntry: true})
 
-	results := make([]model.PageResult, 0, c.cfg.MaxPages)
-	for len(results) < c.cfg.MaxPages && !f.empty() {
+	outcome := Outcome{Pages: make([]model.PageResult, 0, c.cfg.MaxPages)}
+	seen := map[string]bool{}
+	for len(outcome.Pages) < c.cfg.MaxPages && !f.empty() {
 		target, ok := f.pop()
 		if !ok {
 			break
@@ -102,7 +114,7 @@ func (c *Crawler) Crawl(ctx context.Context, startURL string) ([]model.PageResul
 		scan.Result.Depth = target.Depth
 		scan.Result.IsEntry = target.IsEntry
 		scan.Result.Priority = target.Priority
-		results = append(results, scan.Result)
+		outcome.Pages = append(outcome.Pages, scan.Result)
 
 		if target.Depth >= c.cfg.MaxDepth {
 			continue
@@ -112,13 +124,18 @@ func (c *Crawler) Crawl(ctx context.Context, startURL string) ([]model.PageResul
 			if normalized == "" || !SameSite(start, normalized) {
 				continue
 			}
+			if !seen[normalized] {
+				seen[normalized] = true
+				outcome.SeenLinks = append(outcome.SeenLinks, normalized)
+			}
 			if !c.robots.Allowed(ctx, normalized) {
 				continue
 			}
 			f.push(Target{
-				URL:      normalized,
-				Depth:    target.Depth + 1,
-				Priority: IsPriority(normalized),
+				URL:       normalized,
+				Depth:     target.Depth + 1,
+				Priority:  IsPriority(normalized),
+				Statement: statement.IsStatementURL(normalized),
 			})
 		}
 	}
@@ -127,7 +144,7 @@ func (c *Crawler) Crawl(ctx context.Context, startURL string) ([]model.PageResul
 	// A cancellation from the outside is different — then the caller is shutting down
 	// and wants to know.
 	if err := parent.Err(); err != nil {
-		return results, err
+		return outcome, err
 	}
-	return results, nil
+	return outcome, nil
 }

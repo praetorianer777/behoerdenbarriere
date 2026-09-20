@@ -14,6 +14,7 @@ import (
 	"github.com/praetorianer777/behoerdenbarriere/internal/lighthouse"
 	"github.com/praetorianer777/behoerdenbarriere/internal/model"
 	"github.com/praetorianer777/behoerdenbarriere/internal/scoring"
+	"github.com/praetorianer777/behoerdenbarriere/internal/statement"
 	"github.com/praetorianer777/behoerdenbarriere/internal/store"
 )
 
@@ -26,6 +27,7 @@ type fakeStore struct {
 	result        scoring.Result
 	failed        error
 	closed        bool
+	statement     *statement.Result
 	lighthouse    *store.LighthouseResult
 	lighthouseErr error
 }
@@ -47,18 +49,24 @@ func (f *fakeStore) FailScan(_ context.Context, _ int64, cause error) error {
 	return nil
 }
 
+func (f *fakeStore) SaveStatement(_ context.Context, _ int64, result statement.Result) error {
+	f.statement = &result
+	return nil
+}
+
 func (f *fakeStore) SaveLighthouse(_ context.Context, _ int64, result store.LighthouseResult) error {
 	f.lighthouse = &result
 	return f.lighthouseErr
 }
 
 type fakeCrawler struct {
-	pages []model.PageResult
-	err   error
+	pages     []model.PageResult
+	seenLinks []string
+	err       error
 }
 
-func (f *fakeCrawler) Crawl(context.Context, string) ([]model.PageResult, error) {
-	return f.pages, f.err
+func (f *fakeCrawler) Crawl(context.Context, string) (crawler.Outcome, error) {
+	return crawler.Outcome{Pages: f.pages, SeenLinks: f.seenLinks}, f.err
 }
 
 func agency() model.Agency {
@@ -273,5 +281,72 @@ func TestRunWithoutAnAuditor(t *testing.T) {
 	}
 	if st.lighthouse != nil {
 		t.Fatalf("score without an auditor: %+v", st.lighthouse)
+	}
+}
+
+// The statement is read out of the pages the crawl already fetched — asking the
+// authority's server again for the same page to answer a legal question would be
+// discourteous for no gain.
+func TestRunChecksTheAccessibilityStatement(t *testing.T) {
+	st := &fakeStore{scanID: 42}
+	pages := []model.PageResult{
+		{URL: "https://www.bmi.bund.de/", DOMNodes: 800, IsEntry: true, Text: "Startseite"},
+		{
+			URL: "https://www.bmi.bund.de/erklaerung-zur-barrierefreiheit", Depth: 1,
+			Priority: true, DOMNodes: 400,
+			Text: "Diese Website ist mit der BITV teilweise vereinbar. Nicht barrierefreie Inhalte: " +
+				"einige PDF-Dokumente. Erstellt am 14.03.2026. Barrieren melden: barriere@bmi.bund.de. " +
+				"Schlichtungsstelle nach § 16 BGG.",
+		},
+	}
+
+	if _, err := New(st, &fakeCrawler{pages: pages}, crawler.Config{}, nil).
+		Run(context.Background(), agency()); err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if st.statement == nil {
+		t.Fatal("the statement was not checked")
+	}
+	if !st.statement.Found() || !st.statement.Complete() {
+		t.Fatalf("statement = %+v", st.statement)
+	}
+}
+
+func TestRunRecordsAMissingStatement(t *testing.T) {
+	st := &fakeStore{scanID: 42}
+	pages := []model.PageResult{{URL: "https://www.bmi.bund.de/", DOMNodes: 800, IsEntry: true}}
+
+	if _, err := New(st, &fakeCrawler{pages: pages}, crawler.Config{}, nil).
+		Run(context.Background(), agency()); err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if st.statement == nil || st.statement.State != statement.StateMissing {
+		t.Fatalf("statement = %+v", st.statement)
+	}
+	// Every requirement is still listed, so the page can name what is missing.
+	if len(st.statement.Findings) != len(statement.Requirements) {
+		t.Fatalf("%d findings", len(st.statement.Findings))
+	}
+}
+
+// The RKI links its accessibility statement and its robots.txt forbids the directory
+// it sits in. Recording that as "has no statement" would accuse an authority that has
+// one; it is our limit, not their failing.
+func TestRunSeparatesUnreadableFromMissing(t *testing.T) {
+	st := &fakeStore{scanID: 42}
+	pages := []model.PageResult{{URL: "https://www.rki.de/", DOMNodes: 800, IsEntry: true}}
+
+	if _, err := New(st, &fakeCrawler{
+		pages:     pages,
+		seenLinks: []string{"https://www.rki.de/DE/Service/Barrierefreiheit/barrierefreiheit_node.html"},
+	}, crawler.Config{}, nil).Run(context.Background(), agency()); err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+
+	if st.statement == nil || st.statement.State != statement.StateUnreadable {
+		t.Fatalf("statement = %+v", st.statement)
+	}
+	if st.statement.URL == "" {
+		t.Error("the address we could not read is missing")
 	}
 }

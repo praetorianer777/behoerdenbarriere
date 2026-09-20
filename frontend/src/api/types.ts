@@ -129,6 +129,23 @@ export interface SiteExplanation {
   improvements: Improvement[]
 }
 
+export type Requirement =
+  'reachable' | 'conformance' | 'shortcomings' | 'date' | 'feedback' | 'enforcement'
+
+export interface StatementFinding {
+  requirement: Requirement
+  met: boolean
+  evidence?: string
+}
+
+export type StatementState = 'missing' | 'unreadable' | 'found'
+
+export interface StatementResult {
+  state: StatementState
+  url?: string
+  findings: StatementFinding[]
+}
+
 export interface RuleChange {
   fixed: Rule[]
   introduced: Rule[]
@@ -155,6 +172,7 @@ export interface Scan {
   pages?: Page[]
   changes?: RuleChange
   explanation?: SiteExplanation
+  statement?: StatementResult
 }
 
 export interface Group {

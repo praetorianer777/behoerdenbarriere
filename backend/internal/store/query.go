@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"github.com/praetorianer777/behoerdenbarriere/internal/model"
+	"github.com/praetorianer777/behoerdenbarriere/internal/statement"
 )
 
 // AgencyListing is an authority as the ranking shows it: master data plus its latest
@@ -180,6 +181,7 @@ type ScanDetail struct {
 	PagesBlocked                                  int
 	LighthouseScore                               *float64
 	LighthouseFailed                              []string
+	Statement                                     *statement.Result
 }
 
 func (s *Store) ScanByID(ctx context.Context, id int64) (*ScanDetail, error) {
@@ -189,13 +191,13 @@ func (s *Store) ScanByID(ctx context.Context, id int64) (*ScanDetail, error) {
 		       coalesce(sc.error, ''), sc.score, coalesce(sc.grade, ''),
 		       sc.score_perceivable, sc.score_operable, sc.score_understandable, sc.score_robust,
 		       sc.pages_scanned, sc.pages_failed, sc.pages_blocked,
-		       sc.lighthouse_score, coalesce(sc.lighthouse_failed, '{}')
+		       sc.lighthouse_score, coalesce(sc.lighthouse_failed, '{}'), sc.statement
 		FROM scans sc JOIN agencies a ON a.id = sc.agency_id
 		WHERE sc.id = $1`, id,
 	).Scan(&d.ID, &d.AgencyID, &d.AgencySlug, &d.AgencyName, &d.Status, &d.StartedAt, &d.FinishedAt,
 		&d.Error, &d.Score, &d.Grade, &d.Perceivable, &d.Operable, &d.Understandable, &d.Robust,
 		&d.PagesScanned, &d.PagesFailed, &d.PagesBlocked,
-		&d.LighthouseScore, &d.LighthouseFailed)
+		&d.LighthouseScore, &d.LighthouseFailed, &d.Statement)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrNotFound
 	}

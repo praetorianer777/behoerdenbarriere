@@ -81,8 +81,12 @@ type PageResult struct {
 	DOMNodes   int         `json:"dom_nodes"`
 	LoadMS     int         `json:"load_ms"`
 	Violations []Violation `json:"violations"`
-	Score      float64     `json:"score"`
-	Err        string      `json:"error,omitempty"`
+	// Text is the visible text of the page. It is carried through a scan so the
+	// accessibility statement can be read, and deliberately not stored: we keep
+	// findings about pages, not copies of them.
+	Text  string  `json:"-"`
+	Score float64 `json:"score"`
+	Err   string  `json:"error,omitempty"`
 }
 
 func (p PageResult) Failed() bool { return p.Err != "" }

@@ -148,6 +148,22 @@ export const latestScan: Scan = {
       },
     ],
   },
+  statement: {
+    state: 'found' as const,
+    url: 'https://www.bmwsb.bund.de/erklaerung-zur-barrierefreiheit',
+    findings: [
+      { requirement: 'reachable', met: true },
+      {
+        requirement: 'conformance',
+        met: true,
+        evidence: '… ist mit der BITV teilweise vereinbar …',
+      },
+      { requirement: 'shortcomings', met: true, evidence: '… nicht barrierefreie Inhalte: PDF …' },
+      { requirement: 'date', met: true, evidence: '… erstellt am 14.03.2026 …' },
+      { requirement: 'feedback', met: true, evidence: '… Barrieren melden …' },
+      { requirement: 'enforcement', met: false },
+    ],
+  },
   changes: {
     fixed: [
       {
