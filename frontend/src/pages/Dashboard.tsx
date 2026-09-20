@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 
+import type { Group } from '../api/types'
 import { api } from '../api/client'
 import { Loading, LoadError } from '../components/Loading'
 import { formatDate, formatScore, gradeClass, impactLabel, levelLabel } from '../lib'
@@ -92,13 +93,16 @@ export function Dashboard() {
 
       <h2 className="mt-10 text-xl font-semibold">Nach Ebene</h2>
       <GroupTable
-        caption="Durchschnittlicher Score je Ebene"
+        caption="Behörden je Ebene, wie viele davon geprüft sind und ihr Durchschnitt"
         rows={data.by_level}
         labels={levelLabel}
       />
 
       <h2 className="mt-10 text-xl font-semibold">Nach Bundesland</h2>
-      <GroupTable caption="Durchschnittlicher Score je Bundesland" rows={data.by_state} />
+      <GroupTable
+        caption="Behörden je Bundesland, wie viele davon geprüft sind und ihr Durchschnitt"
+        rows={data.by_state}
+      />
 
       <h2 className="mt-10 text-xl font-semibold">Häufigste Barrieren</h2>
       <p className="mt-2 text-slate-700">
@@ -155,7 +159,7 @@ function GroupTable({
   labels,
 }: {
   caption: string
-  rows: { name: string; agencies: number; avg_score: number | null }[]
+  rows: Group[]
   labels?: Record<string, string>
 }) {
   return (
@@ -176,7 +180,10 @@ function GroupTable({
               Behörden
             </th>
             <th scope="col" className="px-3 py-2">
-              Durchschnitt
+              davon geprüft
+            </th>
+            <th scope="col" className="px-3 py-2">
+              Durchschnitt der geprüften
             </th>
           </tr>
         </thead>
@@ -187,6 +194,7 @@ function GroupTable({
                 {labels?.[row.name] ?? row.name}
               </th>
               <td className="px-3 py-2">{row.agencies}</td>
+              <td className="px-3 py-2">{row.scanned}</td>
               <td className="px-3 py-2">{formatScore(row.avg_score)}</td>
             </tr>
           ))}

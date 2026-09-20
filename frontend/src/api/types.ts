@@ -299,6 +299,8 @@ export interface Scan {
 export interface Group {
   name: string
   agencies: number
+  /** Wie viele davon geprüft sind — der Durchschnitt gilt nur für diese. */
+  scanned: number
   avg_score: number | null
 }
 

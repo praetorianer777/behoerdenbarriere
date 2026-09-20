@@ -213,6 +213,21 @@ func TestStatsCountsAndAverages(t *testing.T) {
 	if len(got.ByState) != 1 || got.ByState[0].Name != "Schleswig-Holstein" {
 		t.Errorf("by state = %+v", got.ByState)
 	}
+
+	// Kiel is the only authority in Schleswig-Holstein and has never been checked.
+	// Without the second number the row reads as an average over one authority
+	// instead of over none.
+	if sh := got.ByState[0]; sh.Agencies != 1 || sh.Scanned != 0 || sh.AvgScore != nil {
+		t.Errorf("Schleswig-Holstein = %+v, want 1 authority, none checked", sh)
+	}
+	for _, g := range got.ByLevel {
+		if g.Name == "bund" && (g.Agencies != 2 || g.Scanned != 2) {
+			t.Errorf("Bund = %+v, want 2 of 2 checked", g)
+		}
+		if g.Name == "kommune" && (g.Agencies != 1 || g.Scanned != 0) {
+			t.Errorf("Kommune = %+v, want 0 of 1 checked", g)
+		}
+	}
 }
 
 func TestStatsOnAnEmptyDatabase(t *testing.T) {
