@@ -175,8 +175,13 @@ Die Werkzeuge für den Betrieb — Behördenliste einspielen, Landkreise importi
 DNS-Einträge holen — liegen im API-Image, weil auf einem Server kein Go steht:
 
 ```sh
-docker compose -f docker-compose.yml -f docker-compose.prod.yml run --rm --entrypoint /seed api
+docker compose run --rm --entrypoint /seed api
 ```
+
+Der kurze Befehl setzt voraus, dass `COMPOSE_FILE` in der `.env` steht — sonst nimmt
+Docker Compose in diesem Verzeichnis die Entwicklungsfassung, und das scheitert nicht
+laut, sondern baut Images aus dem Quelltext und veröffentlicht den Datenbank-Port.
+`deploy/BETRIEB.md` beschreibt es beim Einrichten.
 
 Welcher Stand dort läuft, sagt die Installation selbst:
 

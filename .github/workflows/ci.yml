@@ -77,6 +77,11 @@ jobs:
       - name: Betriebsfassung prüfen
         run: ./deploy/check-compose.sh
 
+      # Ob der kurze Befehl aus der Anleitung in einer Installation auch das tut, was
+      # dort steht. Er tat es nicht, und das fiel erst auf dem Server auf.
+      - name: Kurzbefehl prüfen
+        run: ./deploy/check-kurzbefehl.sh
+
       # Was die Anleitung zu starten aufträgt, muss im Image auch liegen. Steht in
       # verschiedenen Dateien und ist genau deshalb schon einmal auseinandergelaufen.
       - name: Werkzeuge im Image prüfen
