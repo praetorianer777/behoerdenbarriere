@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Link, useSearchParams } from 'react-router'
 
+import type { Agency } from '../api/types'
 import { api } from '../api/client'
 import { GradeBadge } from '../components/GradeBadge'
 import { DeltaBadge } from '../components/DeltaBadge'
@@ -286,6 +287,8 @@ export function Ranking() {
               </table>
             </div>
 
+            <Legende items={agencies.data.items} />
+
             {pages > 1 && (
               <nav aria-label="Seiten" className="mt-6 flex flex-wrap items-center gap-4">
                 <button
@@ -313,6 +316,53 @@ export function Ranking() {
         </>
       )}
     </>
+  )
+}
+
+/**
+ * Was die Aufkleber an den Werten bedeuten. Sie stehen nur da, wenn in der Liste
+ * tatsächlich einer vorkommt: Ein dauerhafter Textblock unter einer Tabelle, die meist
+ * keinen davon enthält, wird überlesen — und dann auch dort, wo er gebraucht wird.
+ *
+ * Auf der Behördenseite steht die lange Fassung. Hier reicht ein Satz, der die Ursache
+ * nennt, denn genau die wird sonst geraten: „vorläufig" klingt nach einem Versäumnis
+ * der Behörde und ist eine Folge ihrer robots.txt.
+ */
+function Legende({ items }: { items: Agency[] }) {
+  const vorlaeufig = items.some((agency) => agency.provisional)
+  const verdeckt = items.some((agency) => agency.obscured)
+  if (!vorlaeufig && !verdeckt) return null
+
+  return (
+    <section className="mt-6 rounded-lg border border-slate-300 bg-white p-4 text-sm text-slate-700">
+      <h2 className="font-semibold">Die Hinweise an den Werten</h2>
+      <dl className="mt-2 space-y-2">
+        {vorlaeufig && (
+          <div>
+            <dt className="inline font-semibold">vorläufig — </dt>
+            <dd className="inline">
+              geprüft wurden weniger als fünf Seiten. Der Wert beschreibt diese Seiten, nicht die
+              Website. Meist verlangt die <code>robots.txt</code> der Behörde lange Pausen zwischen
+              zwei Anfragen, an die wir uns halten.
+            </dd>
+          </div>
+        )}
+        {verdeckt && (
+          <div>
+            <dt className="inline font-semibold">verdeckt — </dt>
+            <dd className="inline">
+              auf den meisten geprüften Seiten ließ sich die Abfrage nach Cookies nicht schließen.
+              Gemessen wurde dann das Banner und nicht die Seite dahinter.
+            </dd>
+          </div>
+        )}
+      </dl>
+      <p className="mt-2">
+        <Link to="/methodik" className="underline">
+          Wie wir prüfen
+        </Link>
+      </p>
+    </section>
   )
 }
 
