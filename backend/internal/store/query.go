@@ -487,3 +487,37 @@ func (s *Store) PageResultsForScan(ctx context.Context, scanID int64) ([]model.P
 	}
 	return pages, violations.Err()
 }
+
+// Failure is why the last attempt at an authority came to nothing.
+type Failure struct {
+	Reason string
+	At     time.Time
+}
+
+// LastFailure returns the newest failed scan of an authority, if the attempt after it
+// did not succeed. An authority that failed last month and has a score since does not
+// need to be told about it.
+//
+// It exists because a refusal must not look like an absence: bot protection takes about
+// twenty authorities out of the ranking, and "not checked" without a reason tells
+// nobody anything.
+func (s *Store) LastFailure(ctx context.Context, agencyID int64) (*Failure, error) {
+	var failure Failure
+	err := s.Pool.QueryRow(ctx, `
+		SELECT coalesce(error, ''), finished_at
+		FROM scans
+		WHERE agency_id = $1 AND finished_at IS NOT NULL
+		ORDER BY finished_at DESC
+		LIMIT 1`, agencyID).Scan(&failure.Reason, &failure.At)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("last failure: %w", err)
+	}
+	// Der letzte Lauf war erfolgreich: Dann gibt es nichts zu erklären.
+	if failure.Reason == "" {
+		return nil, ErrNotFound
+	}
+	return &failure, nil
+}

@@ -200,3 +200,14 @@ test('lässt sich über die Auswahl sortieren', async ({ page }) => {
   await expect(page).toHaveURL(/sort=scanned_asc/)
   await expect(page.getByLabel('Sortierung')).toHaveValue('scanned_asc')
 })
+
+test('sagt bei einer gesperrten Behörde, woran es lag', async ({ page }) => {
+  await page.goto('/behoerde/gesperrt')
+
+  await expect(
+    page.getByRole('heading', { name: 'Diese Website konnte nicht geprüft werden' }),
+  ).toBeVisible()
+  await expect(page.getByText(/Link11 - CAPTCHA/)).toBeVisible()
+  // Keine erfundene Note aus einer Sperrseite.
+  await expect(page.getByText(/Note [A-F]/)).toHaveCount(0)
+})

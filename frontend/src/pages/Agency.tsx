@@ -81,6 +81,23 @@ export function AgencyPage() {
         </p>
       </div>
 
+      {detail.failure && (
+        /* Eine abgewiesene Behörde sieht sonst aus wie eine, an die noch niemand
+           herangekommen ist — und der Verdacht fiele auf sie statt auf die Sperre. */
+        <section className="mt-6 rounded-lg border border-slate-400 bg-white p-4">
+          <h2 className="font-semibold">Diese Website konnte nicht geprüft werden</h2>
+          <p className="mt-2 text-slate-700">
+            Beim letzten Versuch am {formatDate(detail.failure.at)} kamen wir nicht an die Inhalte
+            heran: <span className="break-words">{detail.failure.reason}</span>
+          </p>
+          <p className="mt-2 text-sm text-slate-600">
+            Das ist keine Aussage über die Barrierefreiheit dieser Seite. Ein Schutz gegen
+            automatische Zugriffe hält auch uns fern — und eine Note aus einer Sperrseite wäre ein
+            Urteil über unseren Prüfer, nicht über die Behörde.
+          </p>
+        </section>
+      )}
+
       {scan.data?.statement && <StatementCheck statement={scan.data.statement} />}
 
       {scan.data?.third_parties && <ThirdParties contacts={scan.data.third_parties} />}

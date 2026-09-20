@@ -43,7 +43,14 @@ export interface TrendSummary {
   scans: number
 }
 
+export interface Failure {
+  reason: string
+  at: string
+}
+
 export interface AgencyDetail extends Agency {
+  // Warum die letzte Prüfung nichts ergeben hat. Kein Urteil über die Behörde.
+  failure?: Failure
   subscores: Subscores
   mail?: MailRecord
   trend: TrendSummary

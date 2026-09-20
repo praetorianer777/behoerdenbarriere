@@ -38,8 +38,16 @@ type subscoresDTO struct {
 	Robust         *float64 `json:"robust"`
 }
 
+// failureDTO says why the last attempt produced nothing — bot protection, an
+// unreachable host. It is not a judgement about the authority.
+type failureDTO struct {
+	Reason string    `json:"reason"`
+	At     time.Time `json:"at"`
+}
+
 type agencyDetailDTO struct {
 	agencyDTO
+	Failure   *failureDTO   `json:"failure,omitempty"`
 	Subscores subscoresDTO  `json:"subscores"`
 	Mail      *mailDTO      `json:"mail,omitempty"`
 	Trend     trend.Summary `json:"trend"`
