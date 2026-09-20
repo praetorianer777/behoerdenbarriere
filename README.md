@@ -28,9 +28,18 @@ Im Aufbau. Der Fortschritt steht in den
 
 ```sh
 cp .env.example .env
-make dev        # Postgres, Chrome, API und Worker starten
+make dev        # Postgres, Chrome, API, Worker und Oberfläche starten
+make seed       # Behördenliste einspielen
 make test       # Tests
 make scan URL=https://www.bund.de   # eine einzelne Seite prüfen
+```
+
+Danach liegt die Oberfläche auf <http://localhost:5173> und die API auf
+<http://localhost:8080>. Wer nur Container hat und kein Go, spielt die Behördenliste
+über das API-Image ein:
+
+```sh
+docker compose run --rm --entrypoint /seed api
 ```
 
 Die Tests des Datenbankpakets laufen gegen eine echte Postgres-Instanz und werden ohne

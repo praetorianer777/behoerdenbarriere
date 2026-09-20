@@ -61,6 +61,16 @@ jobs:
           CHROME_URL: http://localhost:9222
         run: go test -race ./...
 
+  # Compiling says nothing about whether the thing starts: the Go version in the
+  # Dockerfile had drifted away from go.mod and no image built at all, which only
+  # showed when someone ran the stack by hand.
+  images:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Images bauen
+        run: docker compose build
+
   frontend:
     runs-on: ubuntu-latest
     steps:

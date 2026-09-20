@@ -231,3 +231,29 @@ func keys(m map[string]model.Violation) []string {
 	}
 	return out
 }
+
+// A host name in CHROME_URL has to become an address before anything talks to Chrome:
+// its DevTools endpoint refuses a Host header that is neither an IP nor localhost,
+// which is exactly what a compose setup sends when it reaches the service as
+// http://chrome:9222.
+func TestWithResolvedHost(t *testing.T) {
+	got, err := withResolvedHost(context.Background(), "http://localhost:9222")
+	if err != nil {
+		t.Fatalf("localhost: %v", err)
+	}
+	if got != "http://localhost:9222" {
+		t.Errorf("localhost was rewritten: %q", got)
+	}
+
+	got, err = withResolvedHost(context.Background(), "http://127.0.0.1:9222")
+	if err != nil {
+		t.Fatalf("address: %v", err)
+	}
+	if got != "http://127.0.0.1:9222" {
+		t.Errorf("an address was rewritten: %q", got)
+	}
+
+	if _, err := withResolvedHost(context.Background(), "http://kein-solcher-host.invalid:9222"); err == nil {
+		t.Error("an unresolvable host was accepted")
+	}
+}

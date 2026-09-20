@@ -6,6 +6,7 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -107,6 +108,16 @@ func resolveWebSocketURL(ctx context.Context, chromeURL string) (string, error) 
 	if strings.HasPrefix(base, "ws://") || strings.HasPrefix(base, "wss://") {
 		return base, nil
 	}
+
+	// Chrome's DevTools endpoint refuses any request whose Host header is a name
+	// rather than an IP or "localhost" — in a compose setup, where the service is
+	// reached as http://chrome:9222, it answers "Host header is specified and is not
+	// an IP address or localhost" and the worker never starts. So the name is resolved
+	// here, once, and everything after this talks to the address.
+	base, err := withResolvedHost(ctx, base)
+	if err != nil {
+		return "", err
+	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, base+"/json/version", nil)
 	if err != nil {
 		return "", err
@@ -128,7 +139,8 @@ func resolveWebSocketURL(ctx context.Context, chromeURL string) (string, error) 
 
 	// Chrome answers with the host it knows itself by — inside a container that is
 	// "localhost", which from another container points at that container itself. The
-	// path carries the session id and has to be kept; the host is the one we asked.
+	// path carries the session id and has to be kept; the host is the one we asked,
+	// already resolved to an address above.
 	ws, err := url.Parse(payload.WebSocketDebuggerURL)
 	if err != nil {
 		return "", fmt.Errorf("chrome at %s returns an unusable webSocketDebuggerUrl: %w", chromeURL, err)
@@ -138,6 +150,29 @@ func resolveWebSocketURL(ctx context.Context, chromeURL string) (string, error) 
 		ws.Host = asked.Host
 	}
 	return ws.String(), nil
+}
+
+// withResolvedHost replaces a host name in the URL with one of its addresses.
+func withResolvedHost(ctx context.Context, rawURL string) (string, error) {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return "", err
+	}
+	host := u.Hostname()
+	if host == "" || host == "localhost" || net.ParseIP(host) != nil {
+		return rawURL, nil
+	}
+
+	addrs, err := net.DefaultResolver.LookupHost(ctx, host)
+	if err != nil || len(addrs) == 0 {
+		return "", fmt.Errorf("chrome host %q cannot be resolved: %w", host, err)
+	}
+	if port := u.Port(); port != "" {
+		u.Host = net.JoinHostPort(addrs[0], port)
+	} else {
+		u.Host = addrs[0]
+	}
+	return u.String(), nil
 }
 
 // PageScan is the outcome of a checked page together with the links found on it,
