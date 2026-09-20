@@ -17,12 +17,44 @@ In der `.env` müssen gesetzt werden:
 | `POSTGRES_PASSWORD` | Passwort der Datenbank. Ohne es startet nichts. |
 | `API_KEY` | Schlüssel für den manuellen Rescan und die höhere Abrufgrenze. |
 | `PUBLIC_URL` | Die öffentliche Adresse, z. B. `https://behoerdenbarriere.de`. Sie steuert die CORS-Freigabe. |
-| `PROXY_NETWORK` | Name des Docker-Netzes des Nginx Proxy Managers, Vorgabe `npm`. |
+| `PROXY_NETWORK` | Name des Docker-Netzes des Nginx Proxy Managers, Vorgabe `npm`. **Der Name ist fast nie `npm`** — siehe [Das Netz des Proxys](#das-netz-des-proxys). |
 
 Die Angaben zum Betreiber stehen in `frontend/src/betreiber.ts` und gehören ins
 Impressum und in die Datenschutzerklärung. **Solange dort Platzhalter stehen, weist die
 Website sichtbar darauf hin.** Das ist Absicht: Ein erfundenes Impressum wäre schlimmer
 als ein fehlendes.
+
+## Das Netz des Proxys
+
+Die Oberfläche hängt im selben Docker-Netz wie der Nginx Proxy Manager, sonst kommt der
+Proxy nicht an sie heran. Dieses Netz gehört ihm, nicht uns — deshalb ist es in der
+Betriebsfassung als `external` eingetragen, und deshalb bricht der Start ab, wenn der
+Name nicht stimmt:
+
+```
+network npm declared as external, but could not be found
+```
+
+Dann startet **gar nichts**. Der richtige Name steht in:
+
+```sh
+docker network ls
+```
+
+Ein per Compose installierter Proxy Manager nennt sein Netz nach seinem Projekt, meist
+`nginxproxymanager_default`. Diesen Namen in die `.env`:
+
+```sh
+echo "PROXY_NETWORK=nginxproxymanager_default" >> .env
+```
+
+Wer es sauberer trennen will, legt ein eigenes Netz an und hängt den Proxy zusätzlich
+hinein — dann bleibt der Name stabil, auch wenn der Proxy neu aufgesetzt wird:
+
+```sh
+docker network create npm
+docker network connect npm <container-des-proxys>
+```
 
 ## Starten
 
@@ -51,9 +83,18 @@ Registry. Veröffentlicht wird nur, was die vollständige Prüfung bestanden hat
 zeigt also immer auf einen Stand, der grün war.
 
 Der erste Befehl startet alles, der zweite spielt die von Hand gepflegte Behördenliste
-ein, der dritte ergänzt die Landkreise aus Wikidata. Danach arbeitet der Worker die
+ein (rund 130 Einträge), der dritte ergänzt die Landkreise aus Wikidata (rund 290).
+**Ohne den dritten fehlt die Ebene, auf der die meisten Menschen tatsächlich mit einer
+Behörde zu tun haben.** Danach arbeitet der Worker die
 Warteschlange von selbst ab und nimmt jede Behörde wieder auf, deren letzte Prüfung
 älter als `RESCAN_INTERVAL` ist.
+
+Die DNS-Einträge aller Behörden lassen sich einmal am Stück holen; im laufenden Betrieb
+frischt der Worker sie bei jeder Prüfung mit auf:
+
+```sh
+docker compose -f docker-compose.yml -f docker-compose.prod.yml run --rm --entrypoint /dns api
+```
 
 Kein Dienst veröffentlicht einen Port auf dem Host. Die Oberfläche hängt zusätzlich im
 Netz des Proxys und ist dort unter ihrem Containernamen erreichbar.

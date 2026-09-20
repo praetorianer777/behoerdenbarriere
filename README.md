@@ -151,6 +151,13 @@ mit `latest` und mit dem Commit. Auf dem Server holt ein Systemd-Timer sie ab:
 ./deploy/update.sh
 ```
 
+Die Werkzeuge für den Betrieb — Behördenliste einspielen, Landkreise importieren,
+DNS-Einträge holen — liegen im API-Image, weil auf einem Server kein Go steht:
+
+```sh
+docker compose -f docker-compose.yml -f docker-compose.prod.yml run --rm --entrypoint /seed api
+```
+
 Der Server zieht, GitHub schiebt nicht — damit braucht niemand von außen Zugang zu der
 Maschine. Einrichtung, Rückfall auf eine ältere Fassung und was dabei mit Migrationen
 zu beachten ist, steht in [deploy/BETRIEB.md](deploy/BETRIEB.md).
