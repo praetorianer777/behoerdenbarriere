@@ -26,11 +26,25 @@ export const levelLabel: Record<string, string> = {
   kommune: 'Kommune',
 }
 
+// Die vier WCAG-Prinzipien. Der Name allein sagt niemandem etwas: „Robust 91,8“ liest
+// sich wie eine Aussage über den Server, gemeint ist die Zusammenarbeit mit
+// Screenreadern. Deshalb steht unter jedem Wort, worum es geht.
 export const principleLabel: Record<string, string> = {
   perceivable: 'Wahrnehmbar',
   operable: 'Bedienbar',
   understandable: 'Verständlich',
   robust: 'Robust',
+}
+
+export const principleExplanation: Record<string, string> = {
+  perceivable:
+    'Ist der Inhalt zu sehen, zu hören oder vorzulesen? Bilder ohne Beschreibung und zu blasser Text zählen hierher.',
+  operable:
+    'Lässt sich alles bedienen, auch ohne Maus? Tastatur, genug Zeit, erreichbare Schaltflächen.',
+  understandable:
+    'Ist die Seite verständlich und berechenbar? Sprache angegeben, Felder beschriftet, nichts springt von selbst.',
+  robust:
+    'Kommen Hilfsmittel damit zurecht? Ob ein Screenreader oder eine Braillezeile die Seite richtig wiedergibt.',
 }
 
 export const directionLabel: Record<Direction, string> = {

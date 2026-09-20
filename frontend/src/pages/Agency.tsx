@@ -19,6 +19,7 @@ import {
   formatScore,
   impactLabel,
   levelLabel,
+  principleExplanation,
   principleLabel,
 } from '../lib'
 
@@ -198,6 +199,7 @@ export function AgencyPage() {
               <li key={key} className="rounded-lg border border-slate-200 bg-white p-4">
                 <h3 className="text-sm font-medium text-slate-700">{principleLabel[key]}</h3>
                 <p className="mt-1 text-2xl font-semibold">{formatScore(detail.subscores[key])}</p>
+                <p className="mt-2 text-sm text-slate-700">{principleExplanation[key]}</p>
               </li>
             ))}
           </ul>

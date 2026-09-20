@@ -40,6 +40,16 @@ describe('Behördenseite', () => {
     expect(screen.getByText(/Note A in etwa 3 Monate/)).toBeInTheDocument()
   })
 
+  // Vier Wörter mit vier Zahlen sagen niemandem etwas: „Robust 91,8“ liest sich wie
+  // eine Aussage über den Server.
+  it('erklärt die vier WCAG-Prinzipien in einem Satz', async () => {
+    render()
+
+    expect(await screen.findByRole('heading', { name: 'Nach WCAG-Prinzip' })).toBeInTheDocument()
+    expect(screen.getByText(/Kommen Hilfsmittel damit zurecht/)).toBeInTheDocument()
+    expect(screen.getByText(/auch ohne Maus/)).toBeInTheDocument()
+  })
+
   it('zeigt gefundene und behobene Verstöße', async () => {
     render()
 
