@@ -21,6 +21,7 @@ import {
   levelLabel,
   principleLabel,
 } from '../lib'
+import { regelName, regelWirkung } from '../regeln'
 
 // Die Diagrammbibliothek ist der größte Brocken im Bündel und wird nur auf dieser
 // Seite gebraucht; nachladen spart dem Ranking zwei Drittel der Übertragung.
@@ -145,10 +146,10 @@ export function AgencyPage() {
                   <h3 className="font-semibold break-words hyphens-auto">
                     {improvement.help_url ? (
                       <a href={improvement.help_url} className="underline">
-                        {improvement.help ?? improvement.rule_id}
+                        {regelName(improvement)}
                       </a>
                     ) : (
-                      (improvement.help ?? improvement.rule_id)
+                      regelName(improvement)
                     )}
                   </h3>
                   <span className="font-semibold whitespace-nowrap">
@@ -159,6 +160,9 @@ export function AgencyPage() {
                     Punkte
                   </span>
                 </div>
+                {regelWirkung(improvement.rule_id) && (
+                  <p className="mt-1 text-slate-700">{regelWirkung(improvement.rule_id)}</p>
+                )}
                 <p className="mt-1 text-sm text-slate-700">
                   {impactLabel[improvement.impact]} · auf {improvement.pages}{' '}
                   {improvement.pages === 1 ? 'Seite' : 'Seiten'}, {improvement.nodes}{' '}
