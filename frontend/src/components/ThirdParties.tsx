@@ -5,7 +5,7 @@ const phases: ContactPhase[] = ['before_consent', 'after_declined', 'after_accep
 
 /**
  * Welche fremden Hosts eine Seite kontaktiert, ist eine Datenschutzfrage und keine
- * Frage der Barrierefreiheit. Der Abschnitt steht deshalb neben dem Score und fließt
+ * Frage der Barrierefreiheit. Der Abschnitt steht deshalb neben dem Wert und fließt
  * nicht in ihn ein.
  *
  * Gezeigt wird, was beobachtet wurde: welcher Host, in welcher Phase des Besuchs, auf

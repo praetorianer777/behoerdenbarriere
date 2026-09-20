@@ -43,7 +43,7 @@ test('die Rangliste lässt sich mit der Tastatur bedienen', async ({ page }, tes
   test.skip(testInfo.project.name !== 'desktop', 'die Tabelle gibt es nur im breiten Fenster')
 
   await page.goto('/')
-  await page.getByRole('button', { name: /Score/ }).focus()
+  await page.getByRole('button', { name: /^Wert/ }).focus()
   await page.keyboard.press('Enter')
 
   await expect(page).toHaveURL(/sort=score_asc/)

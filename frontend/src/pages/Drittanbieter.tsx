@@ -52,7 +52,7 @@ export function Drittanbieter() {
         neuesten Prüfungen von {scanned.toLocaleString('de-DE')} Behörden.
       </p>
       <p className="mt-2 text-slate-700">
-        Das hat mit Barrierefreiheit nichts zu tun und zählt deshalb nicht in den Score.
+        Das hat mit Barrierefreiheit nichts zu tun und zählt deshalb nicht in den Wert.
       </p>
 
       {items.length === 0 && (

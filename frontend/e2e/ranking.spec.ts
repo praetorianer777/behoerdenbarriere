@@ -48,7 +48,7 @@ test('nennt Tempo und Hochrechnung auf der Detailseite', async ({ page }) => {
 })
 
 // Ein Banner, das sich nicht schließen ließ, macht den Befund zu einem Befund über das
-// Banner. Wer den Score liest, muss das auf der Seite sehen.
+// Banner. Wer den Wert liest, muss das auf der Seite sehen.
 test('weist auf nicht schließbare Einwilligungsabfragen hin', async ({ page }) => {
   await page.goto('/behoerde/bmwsb')
   await expect(page.getByText(/nicht schließen/)).toBeVisible()

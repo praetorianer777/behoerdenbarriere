@@ -62,7 +62,7 @@ export function Methodology() {
       <h2 className="mt-8 text-xl font-semibold">Noten</h2>
       <p className="mt-2">A ab 90 Punkten, B ab 80, C ab 70, D ab 60, E ab 50, darunter F.</p>
 
-      <h2 className="mt-8 text-xl font-semibold">Was der Score nicht kann</h2>
+      <h2 className="mt-8 text-xl font-semibold">Was der Wert nicht kann</h2>
       <p className="mt-2">
         Automatisierte Tests erfassen je nach Quelle nur etwa 30 bis 40 Prozent der WCAG-Kriterien.
         Ob eine Alternativbeschreibung das Bild tatsächlich beschreibt, ob eine Überschrift den
@@ -72,7 +72,7 @@ export function Methodology() {
         belastbar: die gefundenen Verstöße sind da.
       </p>
       <p className="mt-4">
-        Auch der Zeitpunkt zählt: Ein Score beschreibt den Stand des letzten Scans, nicht den von
+        Auch der Zeitpunkt zählt: Ein Wert beschreibt den Stand des letzten Scans, nicht den von
         heute.
       </p>
 
@@ -98,7 +98,7 @@ export function Methodology() {
         Möglichkeit zum Ablehnen gibt, klicken wir auf Zustimmen — sonst käme niemand an die Seite.
       </p>
       <p className="mt-4">
-        Lässt sich die Abfrage gar nicht schließen, steht das im Ergebnis. Der Score beschreibt dann
+        Lässt sich die Abfrage gar nicht schließen, steht das im Ergebnis. Der Wert beschreibt dann
         das Banner und nicht die Seite dahinter. Traf das auf die Mehrheit der geprüften Seiten zu,
         heißt der Wert <strong>verdeckt</strong> und steht so auch im Ranking — die Einschränkung
         gehört an die Zahl, nicht unter den Rand des Sichtbaren. Er kann dann in beide Richtungen
@@ -114,7 +114,7 @@ export function Methodology() {
         sich nichts ablehnen ließ, nach der Zustimmung.
       </p>
       <p className="mt-4">
-        In den Score fließt davon nichts ein. Das ist eine Frage des Datenschutzes und keine der
+        In den Wert fließt davon nichts ein. Das ist eine Frage des Datenschutzes und keine der
         Barrierefreiheit; beides zu vermischen würde beide Aussagen unbrauchbar machen. Und ein
         Hostname ist kein Urteil: Er sagt, wohin der Browser eine Anfrage schickt, nicht, wer die
         Daten am Ende verarbeitet. Wir veröffentlichen die Beobachtung, nicht die Bewertung.
@@ -133,7 +133,7 @@ export function Methodology() {
         deutscher Dienstleister stehen, der selbst bei einem US-Anbieter liegt, und er kann ein
         Spamfilter sein, während die Postfächer anderswo stehen. Ein SPF-Eintrag ist erst recht kein
         Mail-Hosting: Er erlaubt einem Dienst nur, im Namen der Domain zu senden. Beides führen wir
-        getrennt, und neben jeder Einordnung steht der Roheintrag. In den Score fließt nichts davon
+        getrennt, und neben jeder Einordnung steht der Roheintrag. In den Wert fließt nichts davon
         ein.
       </p>
 
@@ -161,10 +161,10 @@ export function Methodology() {
         was sonst in hundert einzelnen Berichten steht.
       </p>
       <p className="mt-4">
-        Deshalb steht auf jeder Behördenseite zusätzlich Googles Lighthouse-Score. Er ist der
-        einzige etablierte, offen dokumentierte Wert und rechnet bewusst anders: Jede Regel besteht
-        ganz oder gar nicht. Wo beide Zahlen weit auseinanderliegen, ist das ein Hinweis — auf die
-        Seite oder auf unsere Formel.
+        Deshalb steht auf jeder Behördenseite zusätzlich Googles Lighthouse-Wert. Er ist der einzige
+        etablierte, offen dokumentierte Wert und rechnet bewusst anders: Jede Regel besteht ganz
+        oder gar nicht. Wo beide Zahlen weit auseinanderliegen, ist das ein Hinweis — auf die Seite
+        oder auf unsere Formel.
       </p>
 
       <h2 className="mt-8 text-xl font-semibold">Rücksicht beim Prüfen</h2>

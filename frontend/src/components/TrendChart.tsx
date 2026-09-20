@@ -57,20 +57,20 @@ export function TrendChart({ history }: Props) {
       </div>
 
       <figcaption className="sr-only">
-        Verlauf des Scores über {points.length} Prüfungen. Die Werte stehen in der Tabelle darunter.
+        Verlauf des Werts über {points.length} Prüfungen. Die Werte stehen in der Tabelle darunter.
       </figcaption>
 
       <details className="mt-2">
         <summary className="cursor-pointer text-sm underline">Werte als Tabelle</summary>
         <table className="mt-2 w-full max-w-md border-collapse bg-white text-left">
-          <caption className="sr-only">Score je Prüfung</caption>
+          <caption className="sr-only">Wert je Prüfung</caption>
           <thead>
             <tr className="border-b border-slate-300">
               <th scope="col" className="px-3 py-2">
                 Geprüft am
               </th>
               <th scope="col" className="px-3 py-2">
-                Score
+                Wert
               </th>
               <th scope="col" className="px-3 py-2">
                 Note

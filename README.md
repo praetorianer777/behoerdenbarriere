@@ -5,7 +5,7 @@ Behörden müssen barrierefrei sein. Wir schauen nach, ob sie es sind.
 Behördenbarriere crawlt die Websites deutscher Behörden, prüft jede Seite mit
 [axe-core](https://github.com/dequelabs/axe-core) gegen WCAG 2.1 AA — den Maßstab, den
 BITV 2.0 und EN 301 549 für öffentliche Stellen setzen — und macht aus den Befunden einen
-nachvollziehbaren Score von 0 bis 100 samt Schulnote. Die Ergebnisse stehen als Ranking,
+nachvollziehbaren Wert von 0 bis 100 samt Schulnote. Die Ergebnisse stehen als Ranking,
 Behördendetail und bundesweites Dashboard offen zur Verfügung.
 
 ## Stand
@@ -20,8 +20,8 @@ Im Aufbau. Der Fortschritt steht in den
 | `backend/cmd/api` | Go, chi | REST-Schnittstelle für das Frontend |
 | `backend/cmd/worker` | Go | Crawl, Prüfung, Bewertung, Zeitplan |
 | `backend/internal/scanner` | chromedp, axe-core | Seite laden, prüfen, Links auslesen |
-| `backend/internal/scoring` | Go | Befunde in Score und Note umrechnen |
-| `lighthouse` | Node, Lighthouse | Googles Score als Vergleichswert |
+| `backend/internal/scoring` | Go | Befunde in Wert und Note umrechnen |
+| `lighthouse` | Node, Lighthouse | Googles Wert als Vergleichswert |
 | `frontend` | React, Tailwind | Ranking, Detail, Dashboard, Methodik, Statistik |
 | Postgres | | Behörden, Scans, Seiten, Verstöße, Job-Queue, Nutzungszähler |
 
@@ -101,7 +101,7 @@ abgebildet. Der Wert einer Behörde ist das gewichtete Mittel ihrer Seiten: die 
 zählt dreifach, die rechtlich besonders relevanten Seiten — Erklärung zur
 Barrierefreiheit, Kontakt, Formulare — doppelt.
 
-**Zweite Meinung.** Zu jeder Startseite wird zusätzlich Googles Lighthouse-Score
+**Zweite Meinung.** Zu jeder Startseite wird zusätzlich Googles Lighthouse-Wert
 erhoben — der einzige etablierte, offen dokumentierte Wert. Er rechnet bewusst anders:
 Jede Regel besteht ganz oder gar nicht. Über die bisher geprüften Behörden liegt er im
 Mittel 26 Punkte über unserem und drängt sich zwischen 84 und 100, während unsere Werte
@@ -130,7 +130,7 @@ Note A für ein Captcha.)
 
 **Grenzen des Verfahrens.** Automatisierte Prüfungen decken je nach Quelle nur etwa
 30 bis 40 Prozent der WCAG-Kriterien ab. Ob eine Alternativbeschreibung das Bild
-tatsächlich beschreibt, kann kein Programm beurteilen. Der Score ist ein Indikator und
+tatsächlich beschreibt, kann kein Programm beurteilen. Der Wert ist ein Indikator und
 kein BITV-Prüfbericht, und eine gute Note ersetzt keine manuelle Prüfung.
 
 ## Was eine Seite an Dritte sendet
@@ -143,7 +143,7 @@ einer, dem jemand zugestimmt hat.
 
 Gespeichert wird der beobachtete Hostname, nie unsere Einordnung: Wem die Daten am Ende
 gehören, sagt ein Name nicht, und eine bessere Zuordnung darf nicht bedeuten, dass jede
-Behörde neu gecrawlt werden muss. In den Score fließt davon nichts ein — das ist eine
+Behörde neu gecrawlt werden muss. In den Wert fließt davon nichts ein — das ist eine
 Frage des Datenschutzes, nicht der Barrierefreiheit, und beides zu vermischen macht
 beide Aussagen unbrauchbar.
 
@@ -159,7 +159,7 @@ Ein MX-Eintrag sagt, wer die Post **annimmt**, nicht wer sie liest; ein SPF-Eint
 sagt, wer senden darf, und gerade nicht, wo die Postfächer liegen. Beides steht deshalb
 in getrennten Feldern, der vollständige Eintrag wird so gespeichert, wie er
 veröffentlicht ist, und neben jeder Einordnung angezeigt. Auch das zählt nicht in den
-Score.
+Wert.
 
 ## Auf einen Server bringen
 

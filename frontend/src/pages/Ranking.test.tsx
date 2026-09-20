@@ -14,7 +14,19 @@ describe('Ranking', () => {
   })
   afterEach(() => vi.restoreAllMocks())
 
-  it('zeigt Behörden mit Score und Note', async () => {
+  // Score, Wert und Punkte waren dreimal dasselbe, und „Score" war das einzige
+  // englische Wort in der Oberfläche.
+  it('nennt die Zahl überall Wert und sagt, wohin gut liegt', async () => {
+    renderPage(<Ranking />)
+
+    expect(await screen.findByRole('button', { name: /^Wert/ })).toBeInTheDocument()
+    expect(
+      screen.getByText(/100 heißt, dass die Prüfung keine Barriere gefunden hat/),
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/Score/)).not.toBeInTheDocument()
+  })
+
+  it('zeigt Behörden mit Wert und Note', async () => {
     renderPage(<Ranking />)
 
     const row = await screen.findByRole('row', { name: /Bundesregierung/ })

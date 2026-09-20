@@ -70,7 +70,7 @@ export function Layout() {
         <div className="mx-auto max-w-6xl px-4 py-6 text-sm text-slate-700">
           <p>
             Automatisierte Prüfung nach WCAG 2.1 AA. Automatische Tests erfassen einen Teil der
-            Kriterien — der Score ist ein Hinweis, kein BITV-Prüfbericht.{' '}
+            Kriterien — der Wert ist ein Hinweis, kein BITV-Prüfbericht.{' '}
             <NavLink to="/methodik" className="underline">
               Wie wir prüfen
             </NavLink>
