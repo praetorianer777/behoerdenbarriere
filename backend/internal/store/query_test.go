@@ -301,3 +301,57 @@ func TestPagesForScanPutsTheEntryPageFirst(t *testing.T) {
 		t.Fatalf("order = %+v", got)
 	}
 }
+
+// The explanation of a score is rebuilt from what was stored, so the stored pages
+// have to come back exactly as they went in — findings included.
+func TestPageResultsForScanRebuildTheFindings(t *testing.T) {
+	s := storetest.New(t)
+	ctx := context.Background()
+	agencyID := freshAgency(t, s)
+
+	scanID, err := s.StartScan(ctx, agencyID, nil)
+	if err != nil {
+		t.Fatalf("start: %v", err)
+	}
+	pages := []model.PageResult{
+		{URL: "https://example.org/", Title: "Start", IsEntry: true, DOMNodes: 800,
+			Violations: []model.Violation{
+				{RuleID: "image-alt", Impact: model.ImpactCritical, Principle: model.Perceivable,
+					Help: "Bilder brauchen eine Alternative", NodeCount: 12},
+				{RuleID: "region", Impact: model.ImpactModerate, Principle: model.Robust, NodeCount: 1},
+			}},
+		{URL: "https://example.org/kontakt", Priority: true, DOMNodes: 600},
+		{URL: "https://example.org/kaputt", Err: "timeout"},
+	}
+	if err := s.FinishScan(ctx, scanID, pages, scoring.SiteScore(pages)); err != nil {
+		t.Fatalf("finish: %v", err)
+	}
+
+	got, err := s.PageResultsForScan(ctx, scanID)
+	if err != nil {
+		t.Fatalf("page results: %v", err)
+	}
+	if len(got) != 3 {
+		t.Fatalf("%d pages", len(got))
+	}
+
+	byURL := map[string]model.PageResult{}
+	for _, page := range got {
+		byURL[page.URL] = page
+	}
+	entry := byURL["https://example.org/"]
+	if !entry.IsEntry || entry.DOMNodes != 800 || len(entry.Violations) != 2 {
+		t.Fatalf("entry page = %+v", entry)
+	}
+	if !byURL["https://example.org/kontakt"].Priority {
+		t.Error("the priority page lost its mark")
+	}
+	if !byURL["https://example.org/kaputt"].Failed() {
+		t.Error("the failed page lost its error")
+	}
+
+	// And the score computed from the rebuilt pages is the score that was stored.
+	if rebuilt := scoring.SiteScore(got).Score; rebuilt != scoring.SiteScore(pages).Score {
+		t.Fatalf("rebuilt score %v, stored %v", rebuilt, scoring.SiteScore(pages).Score)
+	}
+}

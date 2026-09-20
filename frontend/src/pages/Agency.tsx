@@ -8,11 +8,13 @@ import { DeltaBadge } from '../components/DeltaBadge'
 import { GradeBadge } from '../components/GradeBadge'
 import { Loading, LoadError } from '../components/Loading'
 import { RuleList } from '../components/RuleList'
+import { ScoreReasons } from '../components/ScoreReasons'
 import {
   directionLabel,
   formatDate,
   formatMonths,
   formatScore,
+  impactLabel,
   levelLabel,
   principleLabel,
 } from '../lib'
@@ -75,6 +77,48 @@ export function AgencyPage() {
             : 'noch nicht geprüft'}
         </p>
       </div>
+
+      {scan.data?.explanation && scan.data.explanation.improvements.length > 0 && (
+        <section className="mt-8">
+          <h2 className="text-xl font-semibold">Was am meisten bringt</h2>
+          <p className="mt-2 text-slate-700">
+            Die Befunde in der Reihenfolge, in der sie den Wert dieser Behörde am stärksten heben —
+            gerechnet über alle geprüften Seiten und ihr jeweiliges Gewicht.
+          </p>
+          <ol className="mt-3 space-y-3">
+            {scan.data.explanation.improvements.slice(0, 8).map((improvement) => (
+              <li
+                key={improvement.rule_id}
+                className="rounded-lg border border-slate-200 bg-white p-4"
+              >
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <h3 className="font-semibold break-words hyphens-auto">
+                    {improvement.help_url ? (
+                      <a href={improvement.help_url} className="underline">
+                        {improvement.help ?? improvement.rule_id}
+                      </a>
+                    ) : (
+                      (improvement.help ?? improvement.rule_id)
+                    )}
+                  </h3>
+                  <span className="font-semibold whitespace-nowrap">
+                    +
+                    {improvement.points_if_fixed.toLocaleString('de-DE', {
+                      maximumFractionDigits: 1,
+                    })}{' '}
+                    Punkte
+                  </span>
+                </div>
+                <p className="mt-1 text-sm text-slate-700">
+                  {impactLabel[improvement.impact]} · auf {improvement.pages}{' '}
+                  {improvement.pages === 1 ? 'Seite' : 'Seiten'}, {improvement.nodes}{' '}
+                  {improvement.nodes === 1 ? 'Element' : 'Elemente'} betroffen
+                </p>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
 
       {detail.lighthouse_score !== undefined && (
         <section className="mt-6 rounded-lg border border-slate-200 bg-white p-6">
@@ -238,6 +282,25 @@ export function AgencyPage() {
               </tbody>
             </table>
           </div>
+
+          <h3 className="mt-8 text-lg font-semibold">Begründung je Seite</h3>
+          <ul className="mt-3 space-y-2">
+            {(scan.data.explanation?.pages ?? []).map((explained) => (
+              <li key={explained.url} className="rounded-lg border border-slate-200 bg-white">
+                <details>
+                  <summary className="min-h-11 cursor-pointer px-4 py-3">
+                    <span className="break-all">{explained.title || explained.url}</span>
+                    <span className="ml-2 font-semibold whitespace-nowrap">
+                      {formatScore(explained.score)}
+                    </span>
+                  </summary>
+                  <div className="border-t border-slate-200 px-4 py-3">
+                    <ScoreReasons page={explained} />
+                  </div>
+                </details>
+              </li>
+            ))}
+          </ul>
         </>
       )}
     </>

@@ -24,16 +24,24 @@ func PageScore(page model.PageResult) float64 {
 	return scoreFromViolations(page.Violations, page.DOMNodes)
 }
 
+func nodeCount(v model.Violation) int {
+	if v.NodeCount < 1 {
+		return 1
+	}
+	return v.NodeCount
+}
+
+// penaltyOf is what one finding adds to a page's burden. The logarithm dampens the
+// count: 50 violations of one kind are worse than one, but not fifty times worse —
+// they share a single cause.
+func penaltyOf(v model.Violation) float64 {
+	return impactWeight[v.Impact] * (1 + math.Log(float64(nodeCount(v))))
+}
+
 func scoreFromViolations(violations []model.Violation, domNodes int) float64 {
 	raw := 0.0
 	for _, v := range violations {
-		nodes := v.NodeCount
-		if nodes < 1 {
-			nodes = 1
-		}
-		// The logarithm dampens the count: 50 violations of one kind are worse than one,
-		// but not fifty times worse — they share a single cause.
-		raw += impactWeight[v.Impact] * (1 + math.Log(float64(nodes)))
+		raw += penaltyOf(v)
 	}
 	if raw == 0 {
 		return 100
@@ -42,7 +50,13 @@ func scoreFromViolations(violations []model.Violation, domNodes int) float64 {
 	if size < minDOMNodes {
 		size = minDOMNodes
 	}
-	density := raw / size * 1000
+	return scoreFromDensity(raw / size * 1000)
+}
+
+func scoreFromDensity(density float64) float64 {
+	if density <= 0 {
+		return 100
+	}
 	return round2(100 * math.Exp(-density/decayK))
 }
 

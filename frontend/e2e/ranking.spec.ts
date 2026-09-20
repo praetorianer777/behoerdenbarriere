@@ -54,6 +54,22 @@ test('weist auf nicht schließbare Einwilligungsabfragen hin', async ({ page }) 
   await expect(page.getByText(/nicht schließen/)).toBeVisible()
 })
 
+// Eine Zahl, die nicht sagt, woraus sie besteht, ist eine Behauptung — und die
+// Begründung muss auch auf dem Telefon erreichbar sein, nicht nur am Schreibtisch.
+test('begründet den Wert je Seite', async ({ page }) => {
+  await page.goto('/behoerde/bmwsb')
+
+  await expect(page.getByRole('heading', { name: 'Was am meisten bringt' })).toBeVisible()
+  await expect(page.getByText(/\+16,1 Punkte/)).toBeVisible()
+
+  // Aufklappen über die Zusammenfassung, so wie es auch eine Nutzerin täte.
+  await page.locator('summary').filter({ hasText: 'Startseite' }).first().click()
+
+  await expect(page.getByRole('table', { name: /Befunde dieser Seite/ })).toBeVisible()
+  await expect(page.getByRole('cell', { name: '78 %' })).toBeVisible()
+  await expect(page.getByRole('cell', { name: '+21,4' })).toBeVisible()
+})
+
 test('zeigt beide Bewertungen nebeneinander', async ({ page }) => {
   await page.goto('/behoerde/bmwsb')
 

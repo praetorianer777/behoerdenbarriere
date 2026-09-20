@@ -86,6 +86,49 @@ export interface Page {
   violations: number
 }
 
+export interface Reason {
+  rule_id: string
+  impact: Impact
+  principle: string
+  help?: string
+  help_url?: string
+  nodes: number
+  weight: number
+  penalty: number
+  share: number
+  points_if_fixed: number
+}
+
+export interface PageExplanation {
+  url: string
+  title?: string
+  score: number
+  dom_nodes: number
+  density: number
+  weight: number
+  is_entry: boolean
+  priority: boolean
+  reasons: Reason[]
+}
+
+export interface Improvement {
+  rule_id: string
+  impact: Impact
+  principle: string
+  help?: string
+  help_url?: string
+  pages: number
+  nodes: number
+  points_if_fixed: number
+}
+
+export interface SiteExplanation {
+  score: number
+  grade: string
+  pages: PageExplanation[]
+  improvements: Improvement[]
+}
+
 export interface RuleChange {
   fixed: Rule[]
   introduced: Rule[]
@@ -111,6 +154,7 @@ export interface Scan {
   rules?: Rule[]
   pages?: Page[]
   changes?: RuleChange
+  explanation?: SiteExplanation
 }
 
 export interface Group {

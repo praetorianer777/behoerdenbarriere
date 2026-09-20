@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/praetorianer777/behoerdenbarriere/internal/model"
 	"github.com/praetorianer777/behoerdenbarriere/internal/scoring"
 	"github.com/praetorianer777/behoerdenbarriere/internal/store"
 	"github.com/praetorianer777/behoerdenbarriere/internal/trend"
@@ -19,18 +20,19 @@ type fakeDB struct {
 
 	// calls counts every query, so a test can show that a rejected request never
 	// reached the database.
-	calls     int
-	history   []trend.Point
-	scanIDs   []int64
-	scan      *store.ScanDetail
-	rules     map[int64][]scoring.RuleSummary
-	pages     []store.PageDetail
-	stats     *store.Stats
-	states    []string
-	queued    []int64
-	usage     *store.UsageSummary
-	usageDays int
-	failWith  error
+	calls       int
+	history     []trend.Point
+	scanIDs     []int64
+	scan        *store.ScanDetail
+	rules       map[int64][]scoring.RuleSummary
+	pages       []store.PageDetail
+	pageResults []model.PageResult
+	stats       *store.Stats
+	states      []string
+	queued      []int64
+	usage       *store.UsageSummary
+	usageDays   int
+	failWith    error
 }
 
 func (f *fakeDB) Ping(context.Context) error { f.calls++; return f.pingErr }
@@ -99,6 +101,11 @@ func (f *fakeDB) ScanByID(_ context.Context, id int64) (*store.ScanDetail, error
 func (f *fakeDB) RulesForScan(_ context.Context, scanID int64) ([]scoring.RuleSummary, error) {
 	f.calls++
 	return f.rules[scanID], nil
+}
+
+func (f *fakeDB) PageResultsForScan(context.Context, int64) ([]model.PageResult, error) {
+	f.calls++
+	return f.pageResults, nil
 }
 
 func (f *fakeDB) PagesForScan(context.Context, int64) ([]store.PageDetail, error) {

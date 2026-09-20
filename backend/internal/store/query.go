@@ -400,3 +400,61 @@ func (s *Store) AgencyIDBySlug(ctx context.Context, slug string) (int64, error) 
 	}
 	return id, err
 }
+
+// PageResultsForScan rebuilds the checked pages with their findings, so the scoring
+// package can take the score apart again exactly as it put it together.
+func (s *Store) PageResultsForScan(ctx context.Context, scanID int64) ([]model.PageResult, error) {
+	rows, err := s.Pool.Query(ctx, `
+		SELECT p.id, p.url, coalesce(p.title, ''), p.depth, p.is_entry, p.priority,
+		       coalesce(p.http_status, 0), p.dom_nodes, coalesce(p.error, '')
+		FROM pages p WHERE p.scan_id = $1
+		ORDER BY p.is_entry DESC, p.priority DESC, p.page_score ASC NULLS LAST`, scanID)
+	if err != nil {
+		return nil, fmt.Errorf("pages of the scan: %w", err)
+	}
+	defer rows.Close()
+
+	pages := make([]model.PageResult, 0)
+	byID := map[int64]int{}
+	for rows.Next() {
+		var id int64
+		var page model.PageResult
+		if err := rows.Scan(&id, &page.URL, &page.Title, &page.Depth, &page.IsEntry,
+			&page.Priority, &page.HTTPStatus, &page.DOMNodes, &page.Err); err != nil {
+			return nil, err
+		}
+		byID[id] = len(pages)
+		pages = append(pages, page)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	if len(pages) == 0 {
+		return pages, nil
+	}
+
+	violations, err := s.Pool.Query(ctx, `
+		SELECT v.page_id, v.rule_id, v.impact, v.principle, coalesce(v.help, ''),
+		       coalesce(v.help_url, ''), v.node_count, coalesce(v.sample_html, ''),
+		       coalesce(v.sample_target, '')
+		FROM violations v
+		JOIN pages p ON p.id = v.page_id
+		WHERE p.scan_id = $1`, scanID)
+	if err != nil {
+		return nil, fmt.Errorf("findings of the scan: %w", err)
+	}
+	defer violations.Close()
+
+	for violations.Next() {
+		var pageID int64
+		var v model.Violation
+		if err := violations.Scan(&pageID, &v.RuleID, &v.Impact, &v.Principle, &v.Help,
+			&v.HelpURL, &v.NodeCount, &v.SampleHTML, &v.SampleTarget); err != nil {
+			return nil, err
+		}
+		if index, ok := byID[pageID]; ok {
+			pages[index].Violations = append(pages[index].Violations, v)
+		}
+	}
+	return pages, violations.Err()
+}
