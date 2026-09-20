@@ -6,9 +6,10 @@
 # veröffentlicht, wenn die gesamte Prüfung grün war. Mit IMAGE_TAG lässt sich eine
 # bestimmte Fassung festnageln — siehe deploy/BETRIEB.md.
 #
-# Diese Datei ergänzt die Entwicklungsfassung: Sie nimmt alle Ports vom Host weg, hängt
-# die Oberfläche in das Netz des Proxys und lässt alles nach einem Neustart des Servers
-# von selbst wieder anlaufen.
+# Diese Datei ergänzt die Entwicklungsfassung: Sie nimmt alle Ports vom Host weg bis auf
+# einen — die Oberfläche — und lässt alles nach einem Neustart des Servers von selbst
+# wieder anlaufen. Auf diesen einen Port wird der Proxy von Hand gerichtet; er darf
+# auch auf einer anderen Maschine stehen.
 services:
   postgres:
     # Keine Veröffentlichung nach außen: Die Datenbank ist nur für die anderen
@@ -59,10 +60,17 @@ services:
     image: ghcr.io/praetorianer777/behoerdenbarriere-frontend:${IMAGE_TAG:-latest}
     build: !reset null
     restart: unless-stopped
-    # Der Nginx Proxy Manager erreicht die Oberfläche über den Containernamen im
-    # gemeinsamen Netz; ein Port auf dem Host wird dafür nicht gebraucht.
-    ports: !override []
-    networks: [default, proxy]
+    # Der einzige Port nach außen. Der Proxy wird von Hand hierauf gerichtet und steht
+    # oft auf einer anderen Maschine, deshalb ein Port auf dem Host und kein
+    # gemeinsames Docker-Netz.
+    #
+    # Die API bekommt bewusst keinen eigenen: Das nginx der Oberfläche reicht /api
+    # intern weiter, ein zweiter Port wäre ein zweiter Weg hinein ohne Gewinn.
+    #
+    # WEB_BIND schränkt ein, auf welcher Adresse der Port überhaupt erscheint — ohne
+    # Angabe auf allen. Wer den Proxy auf einer festen Adresse hat, gehört gefiltert:
+    # siehe deploy/BETRIEB.md.
+    ports: !override ["${WEB_BIND:-0.0.0.0}:${WEB_PORT:-8081}:80"]
 
   # Die Scan-Historie ist das Einzige, was sich nicht wiederherstellen lässt: Ein neuer
   # Scan misst den heutigen Stand, nicht den von letztem Jahr.
@@ -81,11 +89,6 @@ services:
       - ./deploy/backup.sh:/usr/local/bin/backup.sh:ro
       - backups:/backups
     entrypoint: ["/bin/sh", "/usr/local/bin/backup.sh"]
-
-networks:
-  proxy:
-    external: true
-    name: ${PROXY_NETWORK:-npm}
 
 volumes:
   backups:

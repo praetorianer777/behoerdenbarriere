@@ -13,7 +13,6 @@ cd "$(dirname "$0")/.."
 POSTGRES_PASSWORD=pruefung \
 API_KEY=pruefung \
 PUBLIC_URL=https://example.org \
-PROXY_NETWORK=npm \
   docker compose -f docker-compose.yml -f docker-compose.prod.yml config >/tmp/compose-prod.yaml
 
 missing=0

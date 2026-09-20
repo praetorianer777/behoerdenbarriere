@@ -11,24 +11,25 @@ set -eu
 cd "$(dirname "$0")/.."
 
 project=installationspruefung
-network=$project-proxy
 tag=pruefung
+# Der Port, unter dem die Oberfläche in dieser Prüfung erscheint. Nicht der
+# voreingestellte: Auf dem Rechner, der das hier laufen lässt, kann er belegt sein.
+port=18081
 compose="docker compose -p $project -f docker-compose.yml -f docker-compose.prod.yml"
 
 export IMAGE_TAG=$tag
 export POSTGRES_PASSWORD=pruefung
 export API_KEY=pruefung
 export PUBLIC_URL=http://localhost
-export PROXY_NETWORK=$network
+export WEB_PORT=$port
+export WEB_BIND=127.0.0.1
 
 cleanup() {
     $compose down --volumes --remove-orphans >/dev/null 2>&1 || true
-    docker network rm "$network" >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
 
 cleanup
-docker network create "$network" >/dev/null
 
 echo "== Images aus diesem Stand bauen"
 # Gebaut wird aus der Entwicklungsfassung, gestartet wird die Betriebsfassung: Geprüft
@@ -49,20 +50,19 @@ case "$seeded" in
     *) echo "Das Einspielen hat nichts gemeldet." >&2; exit 1 ;;
 esac
 
-echo "== Die Oberfläche durch ihr eigenes nginx fragen"
-# Von einem Container im selben Netz, denn in der Betriebsfassung veröffentlicht kein
-# Dienst einen Port auf dem Host. Genau dieser Weg — nginx reicht /api an die API
-# weiter — ist schon einmal gebrochen, ohne dass es jemandem aufgefallen wäre.
+echo "== Die Oberfläche über ihren veröffentlichten Port fragen"
+# Über den Port auf dem Host, also genau so, wie der Proxy von seiner Maschine aus
+# fragen wird. Und einmal /api hinterher: Dieser Weg — nginx reicht an die API weiter —
+# ist schon einmal gebrochen, ohne dass es jemandem aufgefallen wäre.
 ask() {
-    docker run --rm --network "$project"_default curlimages/curl:8.11.1 \
-        --silent --show-error --fail --max-time 10 --retry 12 --retry-delay 2 \
-        --retry-all-errors "$1"
+    curl --silent --show-error --fail --max-time 10 --retry 12 --retry-delay 2 \
+        --retry-all-errors "http://127.0.0.1:$port$1"
 }
 
-ask http://frontend/ >/dev/null
+ask / >/dev/null
 echo "  Die Seite antwortet."
 
-agencies=$(ask "http://frontend/api/v1/agencies?per_page=1")
+agencies=$(ask "/api/v1/agencies?per_page=1")
 total=$(printf '%s' "$agencies" | grep -o '"total":[0-9]*' | head -1 | cut -d: -f2)
 if [ "${total:-0}" -lt 100 ]; then
     echo "Die API liefert durch das nginx der Oberfläche $total Behörden: $agencies" >&2
