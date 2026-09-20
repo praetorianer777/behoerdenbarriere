@@ -193,6 +193,19 @@ der Tag.
 Wieder nach vorn: die Zeile `IMAGE_TAG` aus der `.env` entfernen und `deploy/update.sh`
 noch einmal.
 
+## Vorher ausprobieren
+
+Wer eine Änderung an der Betriebsfassung, am Image oder an dieser Anleitung macht, kann
+die Installation auf dem eigenen Rechner nachspielen — dieselbe Prüfung läuft in der CI:
+
+```sh
+./deploy/check-installation.sh
+```
+
+Sie baut die Images aus dem aktuellen Stand, startet die Betriebsfassung, spielt die
+Behördenliste ein und fragt die Seite und die API durch das nginx der Oberfläche ab.
+Danach räumt sie alles wieder weg.
+
 ## Nachsehen, was los ist
 
 ```sh

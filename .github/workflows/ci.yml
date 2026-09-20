@@ -82,12 +82,23 @@ jobs:
       - name: Werkzeuge im Image prüfen
         run: ./deploy/check-image.sh
 
+  # Die übrigen Jobs prüfen das Produkt. Dieser prüft die Installation: Er fährt die
+  # Betriebsfassung mit den Images aus diesem Stand hoch, spielt die Behördenliste ein
+  # und fragt die Seite durch ihr eigenes nginx — den Weg, den die Anleitung beschreibt
+  # und den bis dahin nur ein Mensch auf einem Server gegangen ist.
+  installation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Frische Installation prüfen
+        run: ./deploy/check-installation.sh
+
   # Veröffentlicht wird erst, wenn alles grün ist: Was unter "latest" liegt, hat die
   # vollständige Prüfung bestanden — einschließlich der Barrierefreiheit der eigenen
   # Seite. Der Server zieht sich die Images selbst, deshalb braucht GitHub keinen
   # Zugang zu ihm.
   release:
-    needs: [backend, frontend, e2e, images, accessibility]
+    needs: [backend, frontend, e2e, images, accessibility, installation]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
