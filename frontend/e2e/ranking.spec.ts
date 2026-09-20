@@ -70,6 +70,36 @@ test('begründet den Wert je Seite', async ({ page }) => {
   await expect(page.getByRole('cell', { name: '+21,4' })).toBeVisible()
 })
 
+// Wer von 426 Behörden die Pflichtangaben verlangt, muss die eigenen vorzeigen —
+// und zwar von jeder Seite aus erreichbar, wie das Gesetz es für Behörden verlangt.
+test('führt die eigenen Rechtstexte im Fuß jeder Seite', async ({ page }) => {
+  for (const route of ['/', '/methodik']) {
+    await page.goto(route)
+    const fuss = page.getByRole('navigation', { name: 'Rechtliches' })
+    await expect(fuss.getByRole('link', { name: 'Impressum' })).toBeVisible()
+    await expect(fuss.getByRole('link', { name: 'Datenschutz' })).toBeVisible()
+    await expect(fuss.getByRole('link', { name: 'Erklärung zur Barrierefreiheit' })).toBeVisible()
+  }
+})
+
+test('die eigene Erklärung nennt alle Pflichtangaben', async ({ page }) => {
+  await page.goto('/barrierefreiheit')
+
+  // Dieselben sechs Punkte, die wir bei Behörden prüfen.
+  await expect(page.getByText(/teilweise vereinbar/)).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Nicht barrierefreie Inhalte' })).toBeVisible()
+  await expect(page.getByText(/erstellt und zuletzt überprüft/)).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Barrieren melden' })).toBeVisible()
+  await expect(page.getByText(/Schlichtungsstelle nach § 16 BGG/)).toBeVisible()
+})
+
+// Ein erfundenes Impressum wäre schlimmer als ein fehlendes, deshalb sagt die Seite
+// selbst, solange die Angaben fehlen.
+test('weist auf fehlende Betreiberangaben hin', async ({ page }) => {
+  await page.goto('/impressum')
+  await expect(page.getByRole('alert')).toContainText('noch nicht vollständig')
+})
+
 test('zeigt die Prüfung der Erklärung zur Barrierefreiheit', async ({ page }) => {
   await page.goto('/behoerde/bmwsb')
 

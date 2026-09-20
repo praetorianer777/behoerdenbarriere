@@ -211,4 +211,13 @@ export async function stubApi(page: Page) {
   })
 }
 
-export const routes = ['/', '/dashboard', '/methodik', '/statistik', '/behoerde/bmwsb']
+export const routes = [
+  '/',
+  '/dashboard',
+  '/methodik',
+  '/statistik',
+  '/impressum',
+  '/datenschutz',
+  '/barrierefreiheit',
+  '/behoerde/bmwsb',
+]

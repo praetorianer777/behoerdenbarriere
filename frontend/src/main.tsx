@@ -9,6 +9,9 @@ import { Ranking } from './pages/Ranking'
 import { AgencyPage } from './pages/Agency'
 import { Dashboard } from './pages/Dashboard'
 import { Methodology } from './pages/Methodology'
+import { Impressum } from './pages/Impressum'
+import { Datenschutz } from './pages/Datenschutz'
+import { Barrierefreiheit } from './pages/Barrierefreiheit'
 import { Statistics } from './pages/Statistics'
 import { NotFound } from './pages/NotFound'
 
@@ -34,6 +37,9 @@ createRoot(document.getElementById('root')!).render(
             <Route path="behoerde/:slug" element={<AgencyPage />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="methodik" element={<Methodology />} />
+            <Route path="impressum" element={<Impressum />} />
+            <Route path="datenschutz" element={<Datenschutz />} />
+            <Route path="barrierefreiheit" element={<Barrierefreiheit />} />
             <Route path="statistik" element={<Statistics />} />
             <Route path="*" element={<NotFound />} />
           </Route>

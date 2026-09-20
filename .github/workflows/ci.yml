@@ -134,10 +134,11 @@ jobs:
           retention-days: 7
 
   # Zusätzlich prüft der eigene Scanner die gebaute Seite — dieselbe Prüfung, die die
-  # Behörden bekommen, auf uns selbst angewandt.
+  # Behörden bekommen, auf uns selbst angewandt. Ausgeliefert wird dabei das echte
+  # Frontend-Image: Ein einfacher Dateiserver kennt die Routen der Anwendung nicht und
+  # liefert für /barrierefreiheit eine 404-Seite, die jede Prüfung bestehen würde.
   accessibility:
     runs-on: ubuntu-latest
-    needs: frontend
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-go@v6
@@ -145,14 +146,6 @@ jobs:
           go-version-file: backend/go.mod
           cache-dependency-path: backend/go.sum
 
-      - uses: actions/download-artifact@v4
-        with:
-          name: frontend-dist
-          path: frontend/dist
-
-      # Derselbe Chrome wie im Backend-Job: im Netz des Runners, damit er den lokalen
-      # Testserver erreicht. Über den Exec-Allocator gestartet ist der Browser einmal
-      # mit "websocket url timeout reached" gar nicht hochgekommen.
       - name: Chrome starten
         run: |
           docker run -d --name chrome --network host --shm-size=1g \
@@ -164,16 +157,25 @@ jobs:
           curl -sf http://localhost:9222/json/version >/dev/null
 
       - name: Seite ausliefern
-        working-directory: frontend/dist
         run: |
-          python3 -m http.server 4173 &
+          docker build -t behoerdenbarriere-frontend ./frontend
+          docker run -d --name frontend --network host behoerdenbarriere-frontend
           for _ in $(seq 1 30); do
-            curl -sf http://localhost:4173/ >/dev/null && break
+            curl -sf http://localhost/ >/dev/null && break
             sleep 1
           done
+          curl -sf http://localhost/ >/dev/null
 
       - name: Eigene Seite prüfen
         working-directory: backend
         env:
           CHROME_URL: http://localhost:9222
-        run: go run ./cmd/scan -url http://localhost:4173/ -strict
+        run: go run ./cmd/scan -url http://localhost/ -strict
+
+      # Wer von 426 Behörden eine Erklärung zur Barrierefreiheit verlangt, muss die
+      # eigene vorzeigen können — geprüft mit demselben Programm.
+      - name: Eigene Erklärung zur Barrierefreiheit prüfen
+        working-directory: backend
+        env:
+          CHROME_URL: http://localhost:9222
+        run: go run ./cmd/statement -url http://localhost/barrierefreiheit -strict

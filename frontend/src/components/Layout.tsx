@@ -66,12 +66,37 @@ export function Layout() {
             Kriterien — der Score ist ein Hinweis, kein BITV-Prüfbericht.{' '}
             <NavLink to="/methodik" className="underline">
               Wie wir prüfen
-            </NavLink>{' '}
-            ·{' '}
-            <NavLink to="/statistik" className="underline">
-              Nutzung dieser Seite
             </NavLink>
           </p>
+          {/* Die Erklärung zur Barrierefreiheit steht im Fuß und damit auf jeder Seite
+              — genau das verlangen wir von den geprüften Behörden. */}
+          <nav aria-label="Rechtliches" className="mt-4">
+            <ul className="flex flex-wrap gap-x-6 gap-y-2">
+              <li>
+                <NavLink to="/impressum" className="inline-flex min-h-11 items-center underline">
+                  Impressum
+                </NavLink>
+              </li>
+              <li>
+                <NavLink to="/datenschutz" className="inline-flex min-h-11 items-center underline">
+                  Datenschutz
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/barrierefreiheit"
+                  className="inline-flex min-h-11 items-center underline"
+                >
+                  Erklärung zur Barrierefreiheit
+                </NavLink>
+              </li>
+              <li>
+                <NavLink to="/statistik" className="inline-flex min-h-11 items-center underline">
+                  Statistik
+                </NavLink>
+              </li>
+            </ul>
+          </nav>
         </div>
       </footer>
     </div>
