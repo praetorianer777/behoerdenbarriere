@@ -115,6 +115,12 @@ fünf geprüften Seiten wird als **vorläufig** gekennzeichnet, überall dort, w
 Er beschreibt diese Seiten, nicht die Website. Umgangen wird die Pause nicht; die
 Behörde bekommt stattdessen ein größeres Zeitbudget, gedeckelt auf eine halbe Stunde.
 
+**Werte hinter einem Banner.** Lässt sich eine Einwilligungsabfrage nicht schließen,
+misst die Prüfung das Banner statt der Seite dahinter — und ein sauber gebautes Banner
+ergibt dann eine gute Note. War das bei der Mehrheit der geprüften Seiten so, wird der
+Wert als **verdeckt** gekennzeichnet, überall dort, wo er steht. Beobachtet an elf von
+82 Scans, darunter Aachen mit 91,2 und Note A aus 61 von 67 verdeckten Seiten.
+
 **Sperrseiten.** Manche Behörden schützen ihre Website gegen automatische Zugriffe —
 Captchas, Bot-Manager, ein 403 an der Tür. Solche Seiten werden nicht bewertet, sondern
 abgelehnt: Eine Note aus einer Sperrseite wäre ein Urteil über unseren Prüfer,

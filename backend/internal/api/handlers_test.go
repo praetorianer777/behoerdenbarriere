@@ -484,3 +484,31 @@ func TestScoreOverEnoughPagesIsNotMarked(t *testing.T) {
 		t.Errorf("42 pages are enough: %+v", got.Items[0])
 	}
 }
+
+// A grade computed mostly over consent banners must be recognisable in the ranking,
+// where there is no room for the explanation that stands on the authority's page.
+func TestListMarksScoresMeasuredOverBanners(t *testing.T) {
+	listing := sampleAgencies()
+	listing[0].Pages = 67
+	listing[0].PagesBlocked = 61
+
+	db := &fakeDB{agencies: listing, total: 2}
+	rec := request(t, db, "GET", "/api/v1/agencies", nil)
+
+	got := decode[struct {
+		Items []struct {
+			Slug     string `json:"slug"`
+			Obscured bool   `json:"obscured"`
+		} `json:"items"`
+	}](t, rec)
+	if len(got.Items) != 2 {
+		t.Fatalf("items = %d", len(got.Items))
+	}
+	if !got.Items[0].Obscured {
+		t.Errorf("61 of 67 pages behind a banner is not marked: %+v", got.Items[0])
+	}
+	// The unchecked authority has no score, so there is nothing to qualify.
+	if got.Items[1].Obscured {
+		t.Errorf("an unchecked authority must not be marked: %+v", got.Items[1])
+	}
+}

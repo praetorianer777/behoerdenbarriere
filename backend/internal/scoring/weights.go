@@ -90,3 +90,13 @@ const MinPages = 5
 // Provisional reports whether a result rests on too few pages to be read as a score for
 // the whole site.
 func Provisional(pages int) bool { return pages > 0 && pages < MinPages }
+
+// Obscured reports whether a result describes the consent banner more than the site
+// behind it. A banner that cannot be dismissed stays in front of every check, and the
+// findings are then findings about the banner — a tidy banner in front of an unchecked
+// site produces a good grade, the same way bot protection did.
+//
+// More than half the checked pages is the line. In the data the cases are not close to
+// it: either nothing is blocked or three quarters and more are, and a scan where a
+// minority of pages sat behind a banner still says something about the site.
+func Obscured(blocked, pages int) bool { return pages > 0 && blocked*2 > pages }

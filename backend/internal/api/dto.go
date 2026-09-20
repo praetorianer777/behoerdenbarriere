@@ -32,6 +32,10 @@ type agencyDTO struct {
 	// Provisional says the value rests on too few pages to describe the site. It is
 	// carried with the score rather than left to the reader to work out from Pages.
 	Provisional bool `json:"provisional,omitempty"`
+	// Obscured says most of what was checked was a consent banner rather than the
+	// site behind it. Same reason as Provisional: the restriction belongs at the
+	// number, not two screens below it.
+	Obscured bool `json:"obscured,omitempty"`
 }
 
 type subscoresDTO struct {
@@ -268,6 +272,8 @@ func toAgencyDTO(a store.AgencyListing) agencyDTO {
 		// Ein Wert über eine Seite ist kein Wert über eine Website. Das gehört an den
 		// Wert selbst, nicht in eine Fußnote in der Detailansicht.
 		Provisional: a.Score != nil && scoring.Provisional(a.Pages),
+		// Ein sauberes Banner vor einer ungeprüften Seite ergibt eine gute Note.
+		Obscured: a.Score != nil && scoring.Obscured(a.PagesBlocked, a.Pages),
 	}
 	if a.Score != nil && a.PrevScore != nil {
 		delta := round2(*a.Score - *a.PrevScore)
