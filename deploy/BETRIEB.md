@@ -17,43 +17,42 @@ In der `.env` müssen gesetzt werden:
 | `POSTGRES_PASSWORD` | Passwort der Datenbank. Ohne es startet nichts. |
 | `API_KEY` | Schlüssel für den manuellen Rescan und die höhere Abrufgrenze. |
 | `PUBLIC_URL` | Die öffentliche Adresse, z. B. `https://behoerdenbarriere.de`. Sie steuert die CORS-Freigabe. |
-| `PROXY_NETWORK` | Name des Docker-Netzes des Nginx Proxy Managers, Vorgabe `npm`. **Der Name ist fast nie `npm`** — siehe [Das Netz des Proxys](#das-netz-des-proxys). |
+| `WEB_PORT` | Port auf dem Server, auf dem die Oberfläche erscheint. Vorgabe `8081`. Darauf wird der Proxy gerichtet. |
+| `WEB_BIND` | Adresse, auf der dieser Port erscheint. Vorgabe `0.0.0.0`, also überall — siehe [Der Port nach außen](#der-port-nach-außen). |
 
 Die Angaben zum Betreiber stehen in `frontend/src/betreiber.ts` und gehören ins
 Impressum und in die Datenschutzerklärung. **Solange dort Platzhalter stehen, weist die
 Website sichtbar darauf hin.** Das ist Absicht: Ein erfundenes Impressum wäre schlimmer
 als ein fehlendes.
 
-## Das Netz des Proxys
+## Der Port nach außen
 
-Die Oberfläche hängt im selben Docker-Netz wie der Nginx Proxy Manager, sonst kommt der
-Proxy nicht an sie heran. Dieses Netz gehört ihm, nicht uns — deshalb ist es in der
-Betriebsfassung als `external` eingetragen, und deshalb bricht der Start ab, wenn der
-Name nicht stimmt:
+Nach außen zeigt genau ein Port: der der Oberfläche, voreingestellt `8081`. Auf den wird
+der Proxy gerichtet. Die API bekommt bewusst keinen eigenen — das nginx der Oberfläche
+reicht `/api` intern an sie weiter, ein zweiter Port wäre ein zweiter Weg hinein, ohne
+dass man etwas davon hätte.
 
-```
-network npm declared as external, but could not be found
-```
-
-Dann startet **gar nichts**. Der richtige Name steht in:
+Ein veröffentlichter Port ist für jeden erreichbar, der die Maschine erreicht. Steht der
+Proxy auf einer festen Adresse, gehört der Port auf sie beschränkt:
 
 ```sh
-docker network ls
+sudo ufw allow from 192.168.1.10 to any port 8081 proto tcp
 ```
 
-Ein per Compose installierter Proxy Manager nennt sein Netz nach seinem Projekt, meist
-`nginxproxymanager_default`. Diesen Namen in die `.env`:
+Wer stattdessen ein privates Netz zwischen beiden Maschinen hat, kann den Port auch nur
+dort erscheinen lassen:
 
 ```sh
-echo "PROXY_NETWORK=nginxproxymanager_default" >> .env
+echo "WEB_BIND=10.8.0.3" >> .env
 ```
 
-Wer es sauberer trennen will, legt ein eigenes Netz an und hängt den Proxy zusätzlich
-hinein — dann bleibt der Name stabil, auch wenn der Proxy neu aufgesetzt wird:
+**Docker umgeht die Firewall.** Ein veröffentlichter Port hängt seine eigenen Regeln vor
+die von `ufw`; `ufw deny` allein reicht dafür nicht. Entweder `WEB_BIND` auf eine
+Adresse setzen, die von außen gar nicht erreichbar ist, oder die Regel in der
+`DOCKER-USER`-Kette anlegen:
 
 ```sh
-docker network create npm
-docker network connect npm <container-des-proxys>
+sudo iptables -I DOCKER-USER -p tcp --dport 8081 ! -s 192.168.1.10 -j DROP
 ```
 
 ## Starten
@@ -96,8 +95,8 @@ frischt der Worker sie bei jeder Prüfung mit auf:
 docker compose -f docker-compose.yml -f docker-compose.prod.yml run --rm --entrypoint /dns api
 ```
 
-Kein Dienst veröffentlicht einen Port auf dem Host. Die Oberfläche hängt zusätzlich im
-Netz des Proxys und ist dort unter ihrem Containernamen erreichbar.
+Außer der Oberfläche veröffentlicht kein Dienst einen Port auf dem Host — Datenbank,
+API, Chrome und Lighthouse sind nur für die anderen Container erreichbar.
 
 ## Nginx Proxy Manager
 
@@ -105,20 +104,21 @@ Neuer Proxy Host:
 
 - **Domain Names:** die öffentliche Adresse
 - **Scheme:** `http`
-- **Forward Hostname / IP:** `behoerdenbarriere-frontend-1` (oder wie der Container bei
-  Ihnen heißt — `docker ps` zeigt es)
-- **Forward Port:** `80`
+- **Forward Hostname / IP:** die Adresse des Servers, auf dem diese Installation läuft
+- **Forward Port:** der `WEB_PORT`, voreingestellt `8081`
 - **Websockets Support:** aus, wird nicht gebraucht
 - **SSL:** Zertifikat anfordern, *Force SSL* und *HTTP/2* einschalten
 
-Der Container muss im selben Docker-Netz liegen wie der Proxy Manager; genau dafür ist
-`PROXY_NETWORK` da. Die API wird nicht getrennt veröffentlicht: Die Oberfläche reicht
-`/api` intern an sie weiter.
+Der Proxy darf auf einer eigenen Maschine stehen; er spricht den Server über das Netz an
+wie jeder andere Aufrufer. Die API wird nicht getrennt veröffentlicht: Die Oberfläche
+reicht `/api` intern an sie weiter.
 
-Der Proxy setzt `X-Forwarded-For`. Die API glaubt diesen Kopf nur, wenn die Anfrage aus
-einem der Netze in `API_TRUSTED_PROXIES` kommt — voreingestellt sind Loopback und die
-privaten Bereiche, was für Docker passt. Steht der Proxy woanders, muss dessen Netz
-dort eingetragen werden, sonst landen alle Aufrufer in einem gemeinsamen Zähler.
+Die Adresse der Besuchenden geht über zwei Stationen — Proxy, dann das nginx der
+Oberfläche. Beide hängen sie an `X-Forwarded-For` an, und die API glaubt den Kopf nur
+bei einer Anfrage aus einem Netz in `API_TRUSTED_PROXIES`. Voreingestellt sind Loopback
+und die privaten Bereiche; für einen Proxy im eigenen Netz passt das. Steht er unter
+einer öffentlichen Adresse, muss die dort eingetragen werden — sonst landen alle
+Aufrufer in einem gemeinsamen Zähler.
 
 ## Sicherungen
 
