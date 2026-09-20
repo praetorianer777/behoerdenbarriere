@@ -10,6 +10,7 @@ import (
 
 	"github.com/praetorianer777/behoerdenbarriere/internal/model"
 	"github.com/praetorianer777/behoerdenbarriere/internal/scoring"
+	"github.com/praetorianer777/behoerdenbarriere/internal/statement"
 	"github.com/praetorianer777/behoerdenbarriere/internal/store"
 	"github.com/praetorianer777/behoerdenbarriere/internal/trend"
 )
@@ -288,6 +289,40 @@ func TestLatestScanExplainsTheScore(t *testing.T) {
 	if len(got.Explanation.Improvements) == 0 ||
 		got.Explanation.Improvements[0].RuleID != "image-alt" {
 		t.Errorf("improvements = %+v", got.Explanation.Improvements)
+	}
+}
+
+// A missing statement is a breach of a duty, and the answer has to carry it —
+// separately from the score, because they say different things.
+func TestLatestScanCarriesTheStatementCheck(t *testing.T) {
+	scan := sampleScan()
+	scan.Statement = &statement.Result{
+		Found: true,
+		URL:   "https://www.bmi.bund.de/erklaerung-zur-barrierefreiheit",
+		Findings: []statement.Finding{
+			{Requirement: statement.Reachable, Met: true},
+			{Requirement: statement.Conformance, Met: true, Evidence: "teilweise vereinbar"},
+			{Requirement: statement.Enforcement, Met: false},
+		},
+	}
+	db := &fakeDB{
+		agencies: sampleAgencies(),
+		scanIDs:  []int64{99},
+		scan:     scan,
+		rules:    map[int64][]scoring.RuleSummary{},
+	}
+
+	rec := request(t, db, http.MethodGet, "/api/v1/agencies/bmi/scans/latest", nil)
+	got := decode[scanDTO](t, rec)
+
+	if got.Statement == nil || !got.Statement.Found {
+		t.Fatalf("statement = %+v", got.Statement)
+	}
+	if got.Statement.Complete() {
+		t.Error("marked complete although the enforcement procedure is missing")
+	}
+	if got.Statement.Findings[1].Evidence == "" {
+		t.Error("the evidence was dropped")
 	}
 }
 

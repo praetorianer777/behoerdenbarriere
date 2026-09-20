@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/praetorianer777/behoerdenbarriere/internal/scoring"
+	"github.com/praetorianer777/behoerdenbarriere/internal/statement"
 	"github.com/praetorianer777/behoerdenbarriere/internal/store"
 	"github.com/praetorianer777/behoerdenbarriere/internal/trend"
 )
@@ -99,6 +100,9 @@ type scanDTO struct {
 	// Explanation says how the score came about: what each finding contributed and
 	// what fixing it would give back.
 	Explanation *scoring.SiteExplanation `json:"explanation,omitempty"`
+	// Statement is the check of the legally required accessibility statement. It
+	// stands beside the score, not in it.
+	Statement *statement.Result `json:"statement,omitempty"`
 }
 
 type groupDTO struct {
@@ -224,6 +228,7 @@ func toScanDTO(d store.ScanDetail) scanDTO {
 		Subscores:    subscoresDTO{d.Perceivable, d.Operable, d.Understandable, d.Robust},
 		PagesScanned: d.PagesScanned, PagesFailed: d.PagesFailed, PagesBlocked: d.PagesBlocked,
 		Lighthouse: d.LighthouseScore, LighthouseFailed: d.LighthouseFailed,
+		Statement: d.Statement,
 	}
 }
 

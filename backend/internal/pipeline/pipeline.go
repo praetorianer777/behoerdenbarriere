@@ -17,6 +17,7 @@ import (
 	"github.com/praetorianer777/behoerdenbarriere/internal/lighthouse"
 	"github.com/praetorianer777/behoerdenbarriere/internal/model"
 	"github.com/praetorianer777/behoerdenbarriere/internal/scoring"
+	"github.com/praetorianer777/behoerdenbarriere/internal/statement"
 	"github.com/praetorianer777/behoerdenbarriere/internal/store"
 	"github.com/praetorianer777/behoerdenbarriere/internal/telemetry"
 )
@@ -27,6 +28,7 @@ type Store interface {
 	FinishScan(ctx context.Context, scanID int64, pages []model.PageResult, result scoring.Result) error
 	FailScan(ctx context.Context, scanID int64, cause error) error
 	SaveLighthouse(ctx context.Context, scanID int64, result store.LighthouseResult) error
+	SaveStatement(ctx context.Context, scanID int64, result statement.Result) error
 }
 
 // Auditor is the second opinion on the entry page — Google's Lighthouse score, which
@@ -115,6 +117,7 @@ func (p *Pipeline) Run(ctx context.Context, agency model.Agency) (*Result, error
 	)
 	telemetry.RecordScan(ctx, telemetry.StatusDone, result.Pages, time.Since(started))
 
+	p.checkStatement(ctx, scanID, agency, pages)
 	p.audit(ctx, scanID, agency)
 
 	p.log.InfoContext(ctx, "scan finished",
@@ -150,6 +153,31 @@ func (p *Pipeline) failed(ctx context.Context, span trace.Span, started time.Tim
 	span.SetStatus(codes.Error, err.Error())
 	telemetry.RecordScan(ctx, telemetry.StatusFailed, pages, time.Since(started))
 	return err
+}
+
+// checkStatement reads the accessibility statement out of what the crawl already saw.
+// No extra request: the crawler pulls those pages forward anyway, and asking the
+// authority's server twice for the same page to answer a legal question would be
+// discourteous for no gain.
+func (p *Pipeline) checkStatement(ctx context.Context, scanID int64, agency model.Agency, pages []model.PageResult) {
+	candidates := make([]statement.Page, 0, len(pages))
+	for _, page := range pages {
+		if page.Failed() {
+			continue
+		}
+		candidates = append(candidates, statement.Page{
+			URL: page.URL, Text: page.Text, Depth: page.Depth,
+		})
+	}
+
+	result := statement.Check(candidates)
+	if err := p.store.SaveStatement(ctx, scanID, result); err != nil {
+		p.log.ErrorContext(ctx, "could not store the statement check", "agency", agency.Slug, "error", err)
+		return
+	}
+	p.log.InfoContext(ctx, "accessibility statement checked",
+		"agency", agency.Slug, "found", result.Found,
+		"met", result.Met(), "of", len(statement.Requirements))
 }
 
 // audit asks Lighthouse about the entry page. Only the entry page: a second full

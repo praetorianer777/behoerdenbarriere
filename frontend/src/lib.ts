@@ -40,6 +40,16 @@ export const directionLabel: Record<Direction, string> = {
   unknown: 'noch kein Vergleich',
 }
 
+// Die Pflichtangaben aus § 12b BGG in der Reihenfolge, in der das Gesetz sie nennt.
+export const requirementLabel: Record<string, string> = {
+  reachable: 'Von der Startseite aus erreichbar',
+  conformance: 'Angabe, wie weit die Seite vereinbar ist',
+  shortcomings: 'Auflistung der nicht barrierefreien Inhalte',
+  date: 'Datum der Erstellung oder Überprüfung',
+  feedback: 'Möglichkeit, Barrieren zu melden',
+  enforcement: 'Hinweis auf das Schlichtungsverfahren',
+}
+
 export function formatScore(score: number | null | undefined): string {
   if (score === null || score === undefined) return 'nicht geprüft'
   return score.toLocaleString('de-DE', { maximumFractionDigits: 1 })

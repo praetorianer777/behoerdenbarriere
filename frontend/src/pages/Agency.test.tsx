@@ -108,6 +108,31 @@ describe('Behördenseite', () => {
     expect(screen.getByText(/78 %/)).toBeInTheDocument()
   })
 
+  // Die Erklärung ist eine Rechtspflicht, keine Kennzahl — sie muss als eigener Punkt
+  // erscheinen, mit dem, was fehlt.
+  it('prüft die Erklärung zur Barrierefreiheit', async () => {
+    render()
+
+    await screen.findByRole('heading', { name: 'Erklärung zur Barrierefreiheit' })
+    expect(screen.getByText(/5 von 6 Pflichtangaben/)).toBeInTheDocument()
+    expect(screen.getByText('Hinweis auf das Schlichtungsverfahren')).toBeInTheDocument()
+    // Der Fundort steht dabei, damit man dem Befund widersprechen kann.
+    expect(screen.getAllByText(/teilweise vereinbar/).length).toBeGreaterThan(0)
+  })
+
+  it('benennt eine fehlende Erklärung als Rechtsverstoß', async () => {
+    vi.spyOn(api, 'latestScan').mockResolvedValue({
+      ...latestScan,
+      statement: { found: false, findings: [] },
+    })
+
+    render()
+    expect(
+      await screen.findByText(/keine Erklärung zur Barrierefreiheit gefunden/),
+    ).toBeInTheDocument()
+    expect(screen.getByText(/§ 12b/)).toBeInTheDocument()
+  })
+
   it('kommt ohne Prüfung aus', async () => {
     vi.spyOn(api, 'agency').mockResolvedValue({
       ...agencyDetail,

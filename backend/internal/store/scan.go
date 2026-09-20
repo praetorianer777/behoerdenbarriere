@@ -12,6 +12,7 @@ import (
 
 	"github.com/praetorianer777/behoerdenbarriere/internal/model"
 	"github.com/praetorianer777/behoerdenbarriere/internal/scoring"
+	"github.com/praetorianer777/behoerdenbarriere/internal/statement"
 	"github.com/praetorianer777/behoerdenbarriere/internal/trend"
 )
 
@@ -58,6 +59,14 @@ func (s *Store) SaveLighthouse(ctx context.Context, scanID int64, result Lightho
 	_, err := s.Pool.Exec(ctx, `
 		UPDATE scans SET lighthouse_score = $2, lighthouse_failed = $3 WHERE id = $1`,
 		scanID, result.Score, failed)
+	return err
+}
+
+// SaveStatement stores what the check of the accessibility statement found. It is
+// written separately from the scan for the same reason it is shown separately: a
+// missing statement is a legal failing, not a barrier in the page.
+func (s *Store) SaveStatement(ctx context.Context, scanID int64, result statement.Result) error {
+	_, err := s.Pool.Exec(ctx, `UPDATE scans SET statement = $2 WHERE id = $1`, scanID, result)
 	return err
 }
 

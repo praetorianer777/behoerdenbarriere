@@ -70,6 +70,15 @@ test('begründet den Wert je Seite', async ({ page }) => {
   await expect(page.getByRole('cell', { name: '+21,4' })).toBeVisible()
 })
 
+test('zeigt die Prüfung der Erklärung zur Barrierefreiheit', async ({ page }) => {
+  await page.goto('/behoerde/bmwsb')
+
+  await expect(page.getByRole('heading', { name: 'Erklärung zur Barrierefreiheit' })).toBeVisible()
+  await expect(page.getByText(/5 von 6 Pflichtangaben/)).toBeVisible()
+  // Was fehlt, muss benannt sein — nicht nur, dass etwas fehlt.
+  await expect(page.getByText('Hinweis auf das Schlichtungsverfahren')).toBeVisible()
+})
+
 test('zeigt beide Bewertungen nebeneinander', async ({ page }) => {
   await page.goto('/behoerde/bmwsb')
 
