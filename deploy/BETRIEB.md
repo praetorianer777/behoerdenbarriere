@@ -213,6 +213,25 @@ Sie baut die Images aus dem aktuellen Stand, startet die Betriebsfassung, spielt
 Behördenliste ein und fragt die Seite und die API durch das nginx der Oberfläche ab.
 Danach räumt sie alles wieder weg.
 
+## Wie viele Prüfungen gleichzeitig
+
+`WORKER_CONCURRENCY` in der `.env`, Vorgabe 4. Eine Prüfung wartet fast die ganze Zeit
+— auf den Takt gegenüber der Behörde, auf das Nachladen der Seite —, kostet also kaum
+Rechenzeit. Teurer ist der Arbeitsspeicher: Jede gleichzeitige Prüfung hält einen
+Browser-Tab offen, grob 50 bis 100 MB.
+
+Für die Behörden ändert sich dadurch nichts: Der Takt von einer Anfrage pro Sekunde
+gilt je Host und über alle laufenden Prüfungen hinweg. Vier gleichzeitige Prüfungen
+unter `bund.de` teilen sich also eine Anfrage pro Sekunde, nicht vier.
+
+Höher drehen lohnt sich, solange Speicher da ist:
+
+```sh
+echo "WORKER_CONCURRENCY=8" >> .env
+./deploy/update.sh
+docker stats --no-stream
+```
+
 ## Nachsehen, was los ist
 
 Welcher Stand läuft:

@@ -19,6 +19,11 @@ import (
 type Client struct {
 	url  string
 	http *http.Client
+	// Ein Lighthouse-Lauf startet seinen eigenen Browser. Laufen mehrere Prüfungen
+	// gleichzeitig, dürfen sie nicht auch mehrere Browser gleichzeitig starten — der
+	// Dienst hat einen Container und ein Gigabyte Shared Memory, und zwei Läufe darin
+	// verdrängen einander, statt sich zu beschleunigen.
+	slot chan struct{}
 }
 
 // New returns a client, or nil when no service is configured. A nil client answers
@@ -31,7 +36,11 @@ func New(serviceURL string, timeout time.Duration) *Client {
 	if timeout <= 0 {
 		timeout = 2 * time.Minute
 	}
-	return &Client{url: serviceURL, http: &http.Client{Timeout: timeout}}
+	return &Client{
+		url:  serviceURL,
+		http: &http.Client{Timeout: timeout},
+		slot: make(chan struct{}, 1),
+	}
 }
 
 // Result is what one audit produced.
@@ -47,6 +56,15 @@ type Result struct {
 func (c *Client) Audit(ctx context.Context, pageURL string) (*Result, error) {
 	if c == nil {
 		return nil, nil
+	}
+
+	// Einer nach dem anderen. Wartet ein Lauf hier, kostet das nichts: Der Wert ist
+	// eine Gegenprobe zur Einstiegsseite und kein Teil unseres Ergebnisses.
+	select {
+	case c.slot <- struct{}{}:
+		defer func() { <-c.slot }()
+	case <-ctx.Done():
+		return nil, ctx.Err()
 	}
 
 	body, err := json.Marshal(map[string]string{"url": pageURL})
