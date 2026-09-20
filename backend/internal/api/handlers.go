@@ -383,7 +383,7 @@ func mailCounts(in []store.MailCount) []mailCountDTO {
 func groups(in []store.GroupScore) []groupDTO {
 	out := make([]groupDTO, 0, len(in))
 	for _, g := range in {
-		out = append(out, groupDTO{Name: g.Name, Agencies: g.Agencies, AvgScore: g.AvgScore})
+		out = append(out, groupDTO{Name: g.Name, Agencies: g.Agencies, Scanned: g.Scanned, AvgScore: g.AvgScore})
 	}
 	return out
 }

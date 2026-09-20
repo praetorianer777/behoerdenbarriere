@@ -313,6 +313,11 @@ type Stats struct {
 type GroupScore struct {
 	Name     string
 	Agencies int
+	// Scanned is how many of Agencies the average rests on. A column that pairs a
+	// count of all authorities with an average over the checked ones reads as one
+	// statement, and that statement is false: Saarland was shown as eight authorities
+	// averaging zero when one had been checked, and its only page was a block page.
+	Scanned  int
 	AvgScore *float64
 }
 
@@ -355,12 +360,12 @@ func (s *Store) Stats(ctx context.Context) (*Stats, error) {
 
 	groups := func(column string, into *[]GroupScore) error {
 		return s.eachRow(ctx, `
-			SELECT `+column+`, count(*), avg(s.score)
+			SELECT `+column+`, count(*), count(s.score), avg(s.score)
 			FROM agencies a `+latestScans+`
 			WHERE a.active AND `+column+` IS NOT NULL
 			GROUP BY 1 ORDER BY 1`, func(rows pgx.Rows) error {
 			var g GroupScore
-			if err := rows.Scan(&g.Name, &g.Agencies, &g.AvgScore); err != nil {
+			if err := rows.Scan(&g.Name, &g.Agencies, &g.Scanned, &g.AvgScore); err != nil {
 				return err
 			}
 			*into = append(*into, g)

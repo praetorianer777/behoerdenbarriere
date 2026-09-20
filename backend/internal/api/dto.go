@@ -190,6 +190,7 @@ type thirdPartyListDTO struct {
 type groupDTO struct {
 	Name     string   `json:"name"`
 	Agencies int      `json:"agencies"`
+	Scanned  int      `json:"scanned"`
 	AvgScore *float64 `json:"avg_score"`
 }
 
