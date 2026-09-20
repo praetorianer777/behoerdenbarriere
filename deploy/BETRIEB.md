@@ -8,7 +8,14 @@ Für einen eigenen Server mit Docker und einem Nginx Proxy Manager davor.
 git clone https://github.com/praetorianer777/behoerdenbarriere.git
 cd behoerdenbarriere
 cp .env.example .env
+sed -i 's|^# COMPOSE_FILE=|COMPOSE_FILE=|' .env
 ```
+
+Die zweite Zeile ist keine Kosmetik. Ohne `COMPOSE_FILE` nimmt ein schlichtes
+`docker compose ...` in diesem Verzeichnis die Entwicklungsfassung: Es baut die Images
+aus dem Quelltext, statt die geholten zu nehmen, **veröffentlicht den Datenbank-Port auf
+dem Host** und hält die Sicherung für einen Überrest, den man wegräumen könnte. Nichts
+davon scheitert laut. Mit der Zeile ist der kurze Befehl der richtige.
 
 In der `.env` müssen gesetzt werden:
 
@@ -19,6 +26,7 @@ In der `.env` müssen gesetzt werden:
 | `PUBLIC_URL` | Die öffentliche Adresse, z. B. `https://behoerdenbarriere.de`. Sie steuert die CORS-Freigabe. |
 | `WEB_PORT` | Port auf dem Server, auf dem die Oberfläche erscheint. Vorgabe `8081`. Darauf wird der Proxy gerichtet. |
 | `WEB_BIND` | Adresse, auf der dieser Port erscheint. Vorgabe `0.0.0.0`, also überall — siehe [Der Port nach außen](#der-port-nach-außen). |
+| `COMPOSE_FILE` | `docker-compose.yml:docker-compose.prod.yml`. Macht die Betriebsfassung zur Vorgabe, siehe oben. |
 
 Die Angaben zum Betreiber stehen in `frontend/src/betreiber.ts` und gehören ins
 Impressum und in die Datenschutzerklärung. **Solange dort Platzhalter stehen, weist die
@@ -59,8 +67,8 @@ sudo iptables -I DOCKER-USER -p tcp --dport 8081 ! -s 192.168.1.10 -j DROP
 
 ```sh
 ./deploy/update.sh
-docker compose -f docker-compose.yml -f docker-compose.prod.yml run --rm --entrypoint /seed api
-docker compose -f docker-compose.yml -f docker-compose.prod.yml run --rm --entrypoint /import api
+docker compose run --rm --entrypoint /seed api
+docker compose run --rm --entrypoint /import api
 ```
 
 Gestartet wird mit demselben Skript, mit dem später aktualisiert wird — **nicht** mit
@@ -99,7 +107,7 @@ Die DNS-Einträge aller Behörden lassen sich einmal am Stück holen; im laufend
 frischt der Worker sie bei jeder Prüfung mit auf:
 
 ```sh
-docker compose -f docker-compose.yml -f docker-compose.prod.yml run --rm --entrypoint /dns api
+docker compose run --rm --entrypoint /dns api
 ```
 
 Außer der Oberfläche veröffentlicht kein Dienst einen Port auf dem Host — Datenbank,
@@ -139,10 +147,10 @@ beim nächsten Durchlauf neu.
 Einspielen einer Sicherung:
 
 ```sh
-docker compose -f docker-compose.yml -f docker-compose.prod.yml stop api worker
+docker compose stop api worker
 gunzip -c /var/lib/docker/volumes/behoerdenbarriere_backups/_data/behoerdenbarriere-….sql.gz \
-  | docker compose -f docker-compose.yml -f docker-compose.prod.yml exec -T postgres psql -U behoerdenbarriere
-docker compose -f docker-compose.yml -f docker-compose.prod.yml start api worker
+  | docker compose exec -T postgres psql -U behoerdenbarriere
+docker compose start api worker
 ```
 
 Es lohnt, das einmal auszuprobieren, bevor man es braucht — und die Sicherungen vom
@@ -251,7 +259,7 @@ Stimmen die nicht überein, fehlt ein `./deploy/update.sh` — oder die Veröffe
 läuft noch.
 
 ```sh
-docker compose -f docker-compose.yml -f docker-compose.prod.yml logs -f worker
+docker compose logs -f worker
 curl -s https://…/api/v1/stats | jq '{agencies, scanned, avg_score}'
 ```
 
