@@ -7,6 +7,7 @@ import (
 	"github.com/praetorianer777/behoerdenbarriere/internal/model"
 	"github.com/praetorianer777/behoerdenbarriere/internal/scoring"
 	"github.com/praetorianer777/behoerdenbarriere/internal/store"
+	"github.com/praetorianer777/behoerdenbarriere/internal/thirdparty"
 	"github.com/praetorianer777/behoerdenbarriere/internal/trend"
 )
 
@@ -32,10 +33,28 @@ type fakeDB struct {
 	queued      []int64
 	usage       *store.UsageSummary
 	usageDays   int
+	seen        []thirdparty.Seen
+	reach       []store.ContactReach
 	failWith    error
 }
 
 func (f *fakeDB) Ping(context.Context) error { f.calls++; return f.pingErr }
+
+func (f *fakeDB) ContactsForScan(context.Context, int64) ([]thirdparty.Seen, error) {
+	f.calls++
+	if f.failWith != nil {
+		return nil, f.failWith
+	}
+	return f.seen, nil
+}
+
+func (f *fakeDB) ContactReach(context.Context, int) ([]store.ContactReach, error) {
+	f.calls++
+	if f.failWith != nil {
+		return nil, f.failWith
+	}
+	return f.reach, nil
+}
 
 func (f *fakeDB) ListAgencies(_ context.Context, filter store.AgencyFilter) ([]store.AgencyListing, int, error) {
 	f.calls++

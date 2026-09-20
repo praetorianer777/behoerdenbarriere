@@ -53,6 +53,26 @@ const agencyDetail = {
 }
 
 const latestScan = {
+  third_parties: [
+    {
+      host: 'fonts.gstatic.com',
+      domain: 'gstatic.com',
+      group: 'google-fonts',
+      public_body: false,
+      phase: 'before_consent',
+      requests: 6,
+      pages: 4,
+    },
+    {
+      host: 'www.youtube-nocookie.com',
+      domain: 'youtube-nocookie.com',
+      group: 'youtube',
+      public_body: false,
+      phase: 'after_accepted',
+      requests: 2,
+      pages: 1,
+    },
+  ],
   id: 99,
   agency_slug: 'bmwsb',
   agency_name: agencies.items[0].name,
@@ -196,6 +216,30 @@ const usage = {
   views: 34,
 }
 
+const thirdParties = {
+  scanned: 120,
+  items: [
+    {
+      host: 'fonts.gstatic.com',
+      domain: 'gstatic.com',
+      group: 'google-fonts',
+      public_body: false,
+      phase: 'before_consent',
+      agencies: 48,
+      pages: 900,
+    },
+    {
+      host: 'www.youtube-nocookie.com',
+      domain: 'youtube-nocookie.com',
+      group: 'youtube',
+      public_body: false,
+      phase: 'after_accepted',
+      agencies: 9,
+      pages: 20,
+    },
+  ],
+}
+
 export async function stubApi(page: Page) {
   await page.route('**/api/v1/**', async (route) => {
     const path = new URL(route.request().url()).pathname
@@ -203,6 +247,7 @@ export async function stubApi(page: Page) {
 
     if (path.endsWith('/stats')) return json(stats)
     if (path.endsWith('/usage')) return json(usage)
+    if (path.endsWith('/thirdparties')) return json(thirdParties)
     if (path.endsWith('/view')) return route.fulfill({ status: 204, body: '' })
     if (path.endsWith('/scans/latest')) return json(latestScan)
     if (path.match(/\/agencies\/[^/]+$/)) return json(agencyDetail)
@@ -216,6 +261,7 @@ export const routes = [
   '/dashboard',
   '/methodik',
   '/statistik',
+  '/drittanbieter',
   '/impressum',
   '/datenschutz',
   '/barrierefreiheit',

@@ -12,6 +12,7 @@ const pageLabel: Record<string, string> = {
   '/dashboard': 'Überblick',
   '/methodik': 'Methodik',
   '/statistik': 'Statistik',
+  '/drittanbieter': 'Drittanbieter',
   '/behoerde/:slug': 'Behördenseiten',
 }
 

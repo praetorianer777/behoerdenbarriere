@@ -146,6 +146,51 @@ export interface StatementResult {
   findings: StatementFinding[]
 }
 
+export type ContactPhase = 'before_consent' | 'after_declined' | 'after_accepted'
+
+export type ContactGroup =
+  | 'google-fonts'
+  | 'google-analytics'
+  | 'google-maps'
+  | 'google-ads'
+  | 'google-other'
+  | 'youtube'
+  | 'vimeo'
+  | 'meta'
+  | 'x'
+  | 'linkedin'
+  | 'matomo'
+  | 'etracker'
+  | 'consent-tool'
+  | 'cdn'
+  | 'unknown'
+
+export interface ThirdParty {
+  host: string
+  domain: string
+  group: ContactGroup
+  public_body: boolean
+  self_hosted?: boolean
+  phase: ContactPhase
+  requests?: number
+  pages: number
+}
+
+export interface ThirdPartyReach {
+  host: string
+  domain: string
+  group: ContactGroup
+  public_body: boolean
+  phase: ContactPhase
+  agencies: number
+  pages: number
+}
+
+export interface ThirdPartyList {
+  items: ThirdPartyReach[]
+  scanned: number
+}
+
 export interface RuleChange {
   fixed: Rule[]
   introduced: Rule[]
@@ -173,6 +218,7 @@ export interface Scan {
   changes?: RuleChange
   explanation?: SiteExplanation
   statement?: StatementResult
+  third_parties?: ThirdParty[]
 }
 
 export interface Group {

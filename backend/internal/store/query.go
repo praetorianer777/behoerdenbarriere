@@ -169,6 +169,7 @@ type ScanDetail struct {
 	AgencyID                                      int64
 	AgencySlug                                    string
 	AgencyName                                    string
+	AgencyURL                                     string
 	Status                                        string
 	StartedAt                                     time.Time
 	FinishedAt                                    *time.Time
@@ -187,14 +188,14 @@ type ScanDetail struct {
 func (s *Store) ScanByID(ctx context.Context, id int64) (*ScanDetail, error) {
 	var d ScanDetail
 	err := s.Pool.QueryRow(ctx, `
-		SELECT sc.id, sc.agency_id, a.slug, a.name, sc.status, sc.started_at, sc.finished_at,
+		SELECT sc.id, sc.agency_id, a.slug, a.name, a.url, sc.status, sc.started_at, sc.finished_at,
 		       coalesce(sc.error, ''), sc.score, coalesce(sc.grade, ''),
 		       sc.score_perceivable, sc.score_operable, sc.score_understandable, sc.score_robust,
 		       sc.pages_scanned, sc.pages_failed, sc.pages_blocked,
 		       sc.lighthouse_score, coalesce(sc.lighthouse_failed, '{}'), sc.statement
 		FROM scans sc JOIN agencies a ON a.id = sc.agency_id
 		WHERE sc.id = $1`, id,
-	).Scan(&d.ID, &d.AgencyID, &d.AgencySlug, &d.AgencyName, &d.Status, &d.StartedAt, &d.FinishedAt,
+	).Scan(&d.ID, &d.AgencyID, &d.AgencySlug, &d.AgencyName, &d.AgencyURL, &d.Status, &d.StartedAt, &d.FinishedAt,
 		&d.Error, &d.Score, &d.Grade, &d.Perceivable, &d.Operable, &d.Understandable, &d.Robust,
 		&d.PagesScanned, &d.PagesFailed, &d.PagesBlocked,
 		&d.LighthouseScore, &d.LighthouseFailed, &d.Statement)

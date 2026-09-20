@@ -7,8 +7,9 @@ import { Dashboard } from '../pages/Dashboard'
 import { Methodology } from '../pages/Methodology'
 import { Ranking } from '../pages/Ranking'
 import { Statistics } from '../pages/Statistics'
+import { Drittanbieter } from '../pages/Drittanbieter'
 import { AgencyPage } from '../pages/Agency'
-import { agencyDetail, agencyList, latestScan, stats, usage } from './fixtures'
+import { agencyDetail, agencyList, latestScan, stats, thirdParties, usage } from './fixtures'
 import { renderPage } from './render'
 
 /**
@@ -35,6 +36,7 @@ describe('Barrierefreiheit der eigenen Seiten', () => {
     vi.spyOn(api, 'agency').mockResolvedValue(agencyDetail)
     vi.spyOn(api, 'latestScan').mockResolvedValue(latestScan)
     vi.spyOn(api, 'usage').mockResolvedValue(usage)
+    vi.spyOn(api, 'thirdParties').mockResolvedValue(thirdParties)
   })
   afterEach(() => vi.restoreAllMocks())
 
@@ -65,6 +67,12 @@ describe('Barrierefreiheit der eigenen Seiten', () => {
       level: 1,
       name: 'Nutzung dieser Seite',
     })
+    await expectNoViolations(container)
+  })
+
+  it('Drittanbieter', async () => {
+    const { container } = renderPage(<Drittanbieter />)
+    await screen.findByRole('heading', { level: 1, name: 'Drittanbieter auf Behördenseiten' })
     await expectNoViolations(container)
   })
 

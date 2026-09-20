@@ -123,3 +123,24 @@ test('Verlauf steht auch als Tabelle bereit', async ({ page }) => {
   await page.getByText('Werte als Tabelle').click()
   await expect(page.getByRole('cell', { name: '70,5' })).toBeVisible()
 })
+
+test('nennt die Drittanbieter einer Behörde mit dem Zeitpunkt', async ({ page }) => {
+  await page.goto('/behoerde/bmwsb')
+
+  await expect(page.getByRole('heading', { name: 'Eingebundene Drittanbieter' })).toBeVisible()
+  await expect(page.getByText('fonts.gstatic.com')).toBeVisible()
+  // Der Zeitpunkt ist der Befund, nicht der bloße Host.
+  await expect(page.getByRole('heading', { name: 'vor der Einwilligung' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'nach Zustimmung' })).toBeVisible()
+})
+
+test('führt die bundesweite Auswertung der Drittanbieter', async ({ page }) => {
+  await page.goto('/')
+  await page.getByRole('link', { name: 'Drittanbieter' }).click()
+
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Drittanbieter auf Behördenseiten' }),
+  ).toBeVisible()
+  await expect(page.getByRole('row', { name: /Google Fonts/ })).toContainText('40 %')
+  await expect(page.getByRole('heading', { name: 'Was diese Zahlen nicht sagen' })).toBeVisible()
+})

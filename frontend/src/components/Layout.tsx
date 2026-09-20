@@ -7,6 +7,7 @@ const navigation = [
   { to: '/', label: 'Ranking', end: true },
   { to: '/dashboard', label: 'Überblick', end: false },
   { to: '/methodik', label: 'Methodik', end: false },
+  { to: '/drittanbieter', label: 'Drittanbieter', end: false },
   { to: '/statistik', label: 'Statistik', end: false },
 ]
 

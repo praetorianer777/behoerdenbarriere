@@ -80,6 +80,31 @@ const (
 	ConsentBlocked  Consent = "blocked"  // the layer stayed; what follows describes the banner
 )
 
+// ContactPhase says when during a visit a request went out. The phase is the whole
+// point of recording contacts at all: a tracker that fires on page load is a different
+// matter from one that loads because someone agreed to it.
+type ContactPhase string
+
+const (
+	// PhaseBeforeConsent covers everything up to the moment a consent layer was
+	// answered — and everything on a page that never asked, or whose layer stayed.
+	PhaseBeforeConsent ContactPhase = "before_consent"
+	PhaseAfterDeclined ContactPhase = "after_declined"
+	PhaseAfterAccepted ContactPhase = "after_accepted"
+)
+
+// Contact is one host a page reached out to in one phase, and how often. Only hosts
+// outside the page's own registrable domain are kept: the site loading its own assets
+// says nothing about anyone's data leaving.
+//
+// What is recorded is the host name, not a verdict. Who ends up holding the data is a
+// question the host name alone cannot answer.
+type Contact struct {
+	Host     string       `json:"host"`
+	Phase    ContactPhase `json:"phase"`
+	Requests int          `json:"requests"`
+}
+
 // PageResult is the outcome of checking a single page.
 type PageResult struct {
 	URL        string      `json:"url"`
@@ -92,6 +117,7 @@ type PageResult struct {
 	DOMNodes   int         `json:"dom_nodes"`
 	LoadMS     int         `json:"load_ms"`
 	Violations []Violation `json:"violations"`
+	Contacts   []Contact   `json:"contacts,omitempty"`
 	// Text is the visible text of the page. It is carried through a scan so the
 	// accessibility statement can be read, and deliberately not stored: we keep
 	// findings about pages, not copies of them.

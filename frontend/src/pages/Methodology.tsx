@@ -89,6 +89,21 @@ export function Methodology() {
         sauberes Banner ist keine saubere Website.
       </p>
 
+      <h2 className="mt-8 text-xl font-semibold">Eingebundene Drittanbieter</h2>
+      <p className="mt-2">
+        Weil wir jede Seite ohnehin in einem echten Browser laden, sehen wir nebenbei, welche
+        fremden Hosts sie kontaktiert — Google Fonts, Analysedienste, eingebettete Videos. Jeder
+        solche Aufruf überträgt die IP-Adresse der Besuchenden an einen Dritten. Wir halten fest,
+        welcher Host wann kontaktiert wurde: vor jeder Einwilligung, nach unserer Ablehnung oder, wo
+        sich nichts ablehnen ließ, nach der Zustimmung.
+      </p>
+      <p className="mt-4">
+        In den Score fließt davon nichts ein. Das ist eine Frage des Datenschutzes und keine der
+        Barrierefreiheit; beides zu vermischen würde beide Aussagen unbrauchbar machen. Und ein
+        Hostname ist kein Urteil: Er sagt, wohin der Browser eine Anfrage schickt, nicht, wer die
+        Daten am Ende verarbeitet. Wir veröffentlichen die Beobachtung, nicht die Bewertung.
+      </p>
+
       <h2 className="mt-8 text-xl font-semibold">Was wir über Besuche zählen</h2>
       <p className="mt-2">
         Wir zählen Seitenaufrufe und Besuche in unserer eigenen API, ohne Cookie, ohne Kennung im
