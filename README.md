@@ -141,6 +141,20 @@ in getrennten Feldern, der vollständige Eintrag wird so gespeichert, wie er
 veröffentlicht ist, und neben jeder Einordnung angezeigt. Auch das zählt nicht in den
 Score.
 
+## Auf einen Server bringen
+
+Die CI baut bei jedem grünen `main` die vier eigenen Images und veröffentlicht sie in
+der GitHub Container Registry (`ghcr.io/praetorianer777/behoerdenbarriere-*`), getaggt
+mit `latest` und mit dem Commit. Auf dem Server holt ein Systemd-Timer sie ab:
+
+```sh
+./deploy/update.sh
+```
+
+Der Server zieht, GitHub schiebt nicht — damit braucht niemand von außen Zugang zu der
+Maschine. Einrichtung, Rückfall auf eine ältere Fassung und was dabei mit Migrationen
+zu beachten ist, steht in [deploy/BETRIEB.md](deploy/BETRIEB.md).
+
 ## Grenzen der API
 
 Die Daten sind öffentlich und sollen auch in größeren Mengen nutzbar bleiben. Die

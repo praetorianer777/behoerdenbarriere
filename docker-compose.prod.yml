@@ -1,6 +1,10 @@
 # Betrieb auf einem eigenen Server, hinter einem Nginx Proxy Manager.
 #
-#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# Gebaut wird hier nichts: Die Images kommen fertig aus der CI und werden nur
+# veröffentlicht, wenn die gesamte Prüfung grün war. Mit IMAGE_TAG lässt sich eine
+# bestimmte Fassung festnageln — siehe deploy/BETRIEB.md.
 #
 # Diese Datei ergänzt die Entwicklungsfassung: Sie nimmt alle Ports vom Host weg, hängt
 # die Oberfläche in das Netz des Proxys und lässt alles nach einem Neustart des Servers
@@ -21,10 +25,14 @@ services:
     restart: unless-stopped
 
   lighthouse:
+    image: ghcr.io/praetorianer777/behoerdenbarriere-lighthouse:${IMAGE_TAG:-latest}
+    build: !reset null
     ports: !override []
     restart: unless-stopped
 
   api:
+    image: ghcr.io/praetorianer777/behoerdenbarriere-api:${IMAGE_TAG:-latest}
+    build: !reset null
     ports: !override []
     restart: unless-stopped
     environment:
@@ -36,6 +44,8 @@ services:
       API_TRUSTED_PROXIES: ${API_TRUSTED_PROXIES:-127.0.0.0/8,::1/128,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,fc00::/7}
 
   worker:
+    image: ghcr.io/praetorianer777/behoerdenbarriere-worker:${IMAGE_TAG:-latest}
+    build: !reset null
     restart: unless-stopped
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-behoerdenbarriere}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-behoerdenbarriere}?sslmode=disable
@@ -46,6 +56,8 @@ services:
       CRAWL_RATE_PER_SEC: ${CRAWL_RATE_PER_SEC:-1}
 
   frontend:
+    image: ghcr.io/praetorianer777/behoerdenbarriere-frontend:${IMAGE_TAG:-latest}
+    build: !reset null
     restart: unless-stopped
     # Der Nginx Proxy Manager erreicht die Oberfläche über den Containernamen im
     # gemeinsamen Netz; ein Port auf dem Host wird dafür nicht gebraucht.

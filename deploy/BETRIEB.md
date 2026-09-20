@@ -27,10 +27,15 @@ als ein fehlendes.
 ## Starten
 
 ```sh
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 docker compose -f docker-compose.yml -f docker-compose.prod.yml run --rm --entrypoint /seed api
 docker compose -f docker-compose.yml -f docker-compose.prod.yml run --rm --entrypoint /import api
 ```
+
+Gebaut wird dabei nichts: Die vier eigenen Images (`api`, `worker`, `frontend`,
+`lighthouse`) kommen fertig aus der CI und liegen öffentlich in der GitHub Container
+Registry. Veröffentlicht wird nur, was die vollständige Prüfung bestanden hat — `latest`
+zeigt also immer auf einen Stand, der grün war.
 
 Der erste Befehl startet alles, der zweite spielt die von Hand gepflegte Behördenliste
 ein, der dritte ergänzt die Landkreise aus Wikidata. Danach arbeitet der Worker die
@@ -85,12 +90,54 @@ ist bei einem Plattenschaden mit weg.
 
 ## Aktualisieren
 
+Von Hand, sofort:
+
 ```sh
-git pull
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+./deploy/update.sh
 ```
 
-Migrationen laufen beim Start von API und Worker von selbst mit.
+Das holt die zuletzt veröffentlichten Images, startet neu, was sich geändert hat, und
+räumt die abgelösten weg. Migrationen laufen beim Start von API und Worker von selbst
+mit.
+
+Automatisch, täglich:
+
+```sh
+sudo cp deploy/behoerdenbarriere-update.service deploy/behoerdenbarriere-update.timer /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now behoerdenbarriere-update.timer
+systemctl list-timers behoerdenbarriere-update
+```
+
+Die Einheiten erwarten das Projekt unter `/opt/behoerdenbarriere`; liegt es woanders,
+sind `WorkingDirectory` und `ExecStart` in der `.service` anzupassen.
+
+**Der Server holt, GitHub schiebt nicht.** Deshalb braucht GitHub keinen Zugang zu
+dieser Maschine: kein Schlüssel als Secret, kein von außen erreichbarer SSH-Port, nichts
+zu widerrufen, wenn irgendwo ein Token ausläuft. Der Preis ist, dass eine Änderung erst
+mit dem nächsten Lauf ankommt — oder eben mit `deploy/update.sh` von Hand.
+
+Schlägt ein Update fehl, endet der Dienst mit einem Fehler und die laufenden Container
+bleiben, wie sie sind. `journalctl -u behoerdenbarriere-update` sagt, woran es lag.
+
+### Auf eine bestimmte Fassung zurück
+
+Jedes Image trägt neben `latest` auch den Commit, aus dem es gebaut wurde:
+
+```sh
+echo "IMAGE_TAG=6f2c1ab…" >> .env
+./deploy/update.sh
+```
+
+**Über eine Migration hinweg ist das nicht damit getan.** Migrationen laufen nur
+vorwärts: Eine Datenbank, die der neue Stand bereits umgebaut hat, versteht der alte
+unter Umständen nicht mehr. Wenn zwischen den beiden Fassungen eine neue Datei in
+`backend/internal/store/migrations/` liegt, gehört zum Zurück auch das Einspielen der
+letzten Sicherung — siehe [Sicherungen](#sicherungen). Ohne Migration dazwischen genügt
+der Tag.
+
+Wieder nach vorn: die Zeile `IMAGE_TAG` aus der `.env` entfernen und `deploy/update.sh`
+noch einmal.
 
 ## Nachsehen, was los ist
 
