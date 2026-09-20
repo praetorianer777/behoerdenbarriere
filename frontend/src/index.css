@@ -9,6 +9,15 @@
   --color-grade-f: oklch(0.48 0.19 25);
 }
 
+/* Fließtext bleibt lesbar. Jenseits von etwa 70 Zeichen findet das Auge beim
+   Zeilenwechsel den Anfang der nächsten Zeile nicht mehr zuverlässig — auf einer Seite
+   über Lesbarkeit eine schlechte Regel zum Brechen. Tabellen, Raster und Listen bleiben
+   breit, die brauchen den Platz; wo ein Absatz ihn auch braucht, hebt max-w-none das
+   hier wieder auf. */
+main p {
+  max-width: 70ch;
+}
+
 /* Der Fokus muss sichtbar sein, und zwar überall: eine Seite über Barrierefreiheit,
    die ihn versteckt, widerlegt sich selbst. */
 :focus-visible {
