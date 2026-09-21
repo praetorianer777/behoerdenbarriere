@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import { Notenverteilung } from './Notenverteilung'
-import { notenSatz } from '../noten'
+import { haeufigsteNote, notenSatz } from '../noten'
 
 describe('Satz über der Notenverteilung', () => {
   it('nennt die häufigste Note mit Zahl und Anteil', () => {
@@ -42,5 +42,16 @@ describe('Notenverteilung', () => {
     expect(balken[5].style.width).toBe('100%')
     expect(balken[0].style.width).toBe('50%')
     expect(balken[1].style.width).toBe('0%')
+  })
+})
+
+describe('häufigste Note', () => {
+  it('nennt eine, bei Gleichstand alle', () => {
+    expect(haeufigsteNote({ A: 1, F: 3 })).toBe('F')
+    expect(haeufigsteNote({ A: 2, C: 2, F: 1 })).toBe('A und C')
+  })
+
+  it('nennt ohne Prüfungen keine', () => {
+    expect(haeufigsteNote({})).toBeUndefined()
   })
 })

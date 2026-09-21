@@ -15,3 +15,13 @@ export function notenSatz(grades: Record<string, number>, scanned: number): stri
   }
   return `Die häufigsten Noten sind ${spitze.join(' und ')}, je ${meiste} von ${scanned} geprüften Behörden.`
 }
+
+/**
+ * Die Note mit den meisten Behörden — bei Gleichstand alle, mit „und" verbunden, und
+ * ohne geprüfte Behörde nichts. Ein Band, das bei 0:0 „A" nennt, hätte gelogen.
+ */
+export function haeufigsteNote(grades: Record<string, number>): string | undefined {
+  const meiste = Math.max(0, ...noten.map((note) => grades[note] ?? 0))
+  if (meiste === 0) return undefined
+  return noten.filter((note) => (grades[note] ?? 0) === meiste).join(' und ')
+}
