@@ -1,4 +1,5 @@
-import { betreiber } from '../betreiber'
+import { useBetreiber } from '../betreiber'
+import { Loading, LoadError } from '../components/Loading'
 import { Platzhalterhinweis } from '../components/Platzhalterhinweis'
 import { formatDate } from '../lib'
 
@@ -8,12 +9,17 @@ import { formatDate } from '../lib'
  * Wer Transparenz verlangt, kommt daran nicht vorbei.
  */
 export function Barrierefreiheit() {
+  const angaben = useBetreiber()
+  if (angaben.isPending) return <Loading what="Die Angaben zum Betreiber" />
+  if (angaben.isError) return <LoadError what="Die Angaben zum Betreiber" error={angaben.error} />
+  const betreiber = angaben.data
+
   return (
     <div className="max-w-3xl">
       <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
         Erklärung zur Barrierefreiheit
       </h1>
-      <Platzhalterhinweis />
+      <Platzhalterhinweis betreiber={betreiber} />
 
       <p className="mt-4">
         Diese Erklärung gilt für die Website behoerdenbarriere.de. Wir sind keine öffentliche Stelle
@@ -52,7 +58,7 @@ export function Barrierefreiheit() {
 
       <h2 className="mt-8 text-xl font-semibold">Erstellung dieser Erklärung</h2>
       <p className="mt-2">
-        Diese Erklärung wurde am {formatDate(betreiber.barrierefreiheitGeprueftAm)} erstellt und
+        Diese Erklärung wurde am {formatDate(betreiber.accessibility_checked_at)} erstellt und
         zuletzt überprüft. Grundlage war eine Selbstbewertung: Jede Seite wird bei jeder Änderung
         automatisiert mit axe-core gegen WCAG 2.1 AA geprüft — mit demselben Prüfprogramm, das wir
         auf Behördenseiten anwenden — und zusätzlich in drei Bildschirmbreiten sowie mit der

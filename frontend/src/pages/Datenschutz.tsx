@@ -1,11 +1,17 @@
-import { betreiber } from '../betreiber'
+import { useBetreiber } from '../betreiber'
+import { Loading, LoadError } from '../components/Loading'
 import { Platzhalterhinweis } from '../components/Platzhalterhinweis'
 
 export function Datenschutz() {
+  const angaben = useBetreiber()
+  if (angaben.isPending) return <Loading what="Die Angaben zum Betreiber" />
+  if (angaben.isError) return <LoadError what="Die Angaben zum Betreiber" error={angaben.error} />
+  const betreiber = angaben.data
+
   return (
     <div className="max-w-3xl">
       <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Datenschutzerklärung</h1>
-      <Platzhalterhinweis />
+      <Platzhalterhinweis betreiber={betreiber} />
 
       <p className="mt-4">
         Diese Website kommt ohne Cookies aus, bindet nichts von fremden Servern ein und setzt keine
@@ -17,9 +23,9 @@ export function Datenschutz() {
       <address className="mt-2 not-italic">
         {betreiber.name}
         <br />
-        {betreiber.strasse}
+        {betreiber.street}
         <br />
-        {betreiber.ort}
+        {betreiber.city}
         <br />
         <a href={`mailto:${betreiber.email}`} className="break-all underline">
           {betreiber.email}

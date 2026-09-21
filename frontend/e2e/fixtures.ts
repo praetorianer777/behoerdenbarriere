@@ -312,12 +312,24 @@ const verdeckt = {
   obscured: true,
 }
 
+const betreiber = {
+  name: 'Musterverein für digitale Teilhabe e. V.',
+  street: 'Beispielweg 1',
+  city: '12345 Musterstadt',
+  country: 'Deutschland',
+  email: 'post@example.org',
+  hosting: 'Beispiel-Hoster GmbH, Falkenstein',
+  accessibility_checked_at: '2026-09-20',
+  complete: true,
+}
+
 export async function stubApi(page: Page) {
   await page.route('**/api/v1/**', async (route) => {
     const path = new URL(route.request().url()).pathname
     const json = (body: unknown) => route.fulfill({ json: body })
 
     if (path.endsWith('/stats')) return json(stats)
+    if (path.endsWith('/operator')) return json(betreiber)
     if (path.endsWith('/usage')) return json(usage)
     if (path.endsWith('/thirdparties')) return json(thirdParties)
     if (path.endsWith('/mail')) return json(mailSummary)

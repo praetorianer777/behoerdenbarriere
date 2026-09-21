@@ -1,21 +1,27 @@
-import { betreiber } from '../betreiber'
+import { useBetreiber } from '../betreiber'
+import { Loading, LoadError } from '../components/Loading'
 import { Platzhalterhinweis } from '../components/Platzhalterhinweis'
 
 export function Impressum() {
+  const angaben = useBetreiber()
+  if (angaben.isPending) return <Loading what="Die Angaben zum Betreiber" />
+  if (angaben.isError) return <LoadError what="Die Angaben zum Betreiber" error={angaben.error} />
+  const betreiber = angaben.data
+
   return (
     <div className="max-w-3xl">
       <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Impressum</h1>
-      <Platzhalterhinweis />
+      <Platzhalterhinweis betreiber={betreiber} />
 
       <h2 className="mt-8 text-xl font-semibold">Angaben nach § 5 DDG</h2>
       <address className="mt-2 not-italic">
         {betreiber.name}
         <br />
-        {betreiber.strasse}
+        {betreiber.street}
         <br />
-        {betreiber.ort}
+        {betreiber.city}
         <br />
-        {betreiber.land}
+        {betreiber.country}
       </address>
 
       <h2 className="mt-8 text-xl font-semibold">Kontakt</h2>
@@ -24,18 +30,18 @@ export function Impressum() {
         <a href={`mailto:${betreiber.email}`} className="break-all underline">
           {betreiber.email}
         </a>
-        {betreiber.telefon && (
+        {betreiber.phone && (
           <>
             <br />
-            Telefon: {betreiber.telefon}
+            Telefon: {betreiber.phone}
           </>
         )}
       </p>
 
-      {betreiber.ustId && (
+      {betreiber.vat_id && (
         <>
           <h2 className="mt-8 text-xl font-semibold">Umsatzsteuer-Identifikationsnummer</h2>
-          <p className="mt-2">{betreiber.ustId}</p>
+          <p className="mt-2">{betreiber.vat_id}</p>
         </>
       )}
 

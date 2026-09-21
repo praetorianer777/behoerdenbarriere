@@ -27,11 +27,14 @@ In der `.env` müssen gesetzt werden:
 | `WEB_PORT` | Port auf dem Server, auf dem die Oberfläche erscheint. Vorgabe `8081`. Darauf wird der Proxy gerichtet. |
 | `WEB_BIND` | Adresse, auf der dieser Port erscheint. Vorgabe `0.0.0.0`, also überall — siehe [Der Port nach außen](#der-port-nach-außen). |
 | `COMPOSE_FILE` | `docker-compose.yml:docker-compose.prod.yml`. Macht die Betriebsfassung zur Vorgabe, siehe oben. |
+| `OPERATOR_NAME`, `OPERATOR_STREET`, `OPERATOR_CITY`, `OPERATOR_EMAIL`, `OPERATOR_HOSTING` | Wer die Seite betreibt und wo sie läuft — Impressum und Datenschutzerklärung. Pflicht nach § 5 DDG. Solange etwas fehlt, weist die Website sichtbar darauf hin. |
+| `OPERATOR_COUNTRY`, `OPERATOR_PHONE`, `OPERATOR_VAT_ID`, `ACCESSIBILITY_CHECKED_AT` | Land (Vorgabe Deutschland), Telefon und USt-IdNr. (freiwillig), Datum der letzten Barrierefreiheitsprüfung. |
 
-Die Angaben zum Betreiber stehen in `frontend/src/betreiber.ts` und gehören ins
-Impressum und in die Datenschutzerklärung. **Solange dort Platzhalter stehen, weist die
-Website sichtbar darauf hin.** Das ist Absicht: Ein erfundenes Impressum wäre schlimmer
-als ein fehlendes.
+Die Angaben zum Betreiber kommen aus der `.env` und nicht aus dem Quelltext: Wer die
+veröffentlichten Images nutzt, kann den Code nicht anfassen — und soll es für sein
+eigenes Impressum auch nicht müssen. **Solange Angaben fehlen, weist die Website
+sichtbar darauf hin.** Das ist Absicht: Ein erfundenes Impressum wäre schlimmer als ein
+fehlendes.
 
 ## Der Port nach außen
 
