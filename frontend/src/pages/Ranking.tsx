@@ -5,6 +5,7 @@ import { Link, useSearchParams } from 'react-router'
 import type { Agency } from '../api/types'
 import { api } from '../api/client'
 import { GradeBadge } from '../components/GradeBadge'
+import { Kennzahlen } from '../components/Kennzahlen'
 import { DeltaBadge } from '../components/DeltaBadge'
 import { Loading, LoadError } from '../components/Loading'
 import { formatDate, levelLabel } from '../lib'
@@ -93,6 +94,8 @@ export function Ranking() {
         Jede Website wird automatisiert nach WCAG 2.1 AA geprüft. Der Wert geht von 0 bis 100: 100
         heißt, dass die Prüfung keine Barriere gefunden hat.
       </p>
+
+      <Kennzahlen stats={stats.data} />
 
       {/* Auf dem Telefon füllten Suchfeld und vier Auswahlen den ganzen ersten
           Bildschirm: Man öffnete das Ranking und sah kein Ranking. Ab Tablettbreite ist
