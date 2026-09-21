@@ -1,33 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
 
 import { api } from '../api/client'
+import { Kartogramm } from '../components/Kartogramm'
+import { laender as tiles } from '../laender'
 import { Loading, LoadError } from '../components/Loading'
 import { formatDate, levelLabel, mailProviderLabel } from '../lib'
 import type { MailCount } from '../api/types'
-
-/**
- * Die Kacheln stehen an ungefähr der Stelle, an der das Land auf der Karte liegt. Sie
- * bilden keine Flächen ab — ein Kartogramm ist eine Leseordnung, keine Landkarte, und
- * eine verzerrte Karte würde mehr behaupten als die Daten hergeben.
- */
-const tiles: { state: string; short: string; col: number; row: number }[] = [
-  { state: 'Schleswig-Holstein', short: 'SH', col: 3, row: 1 },
-  { state: 'Mecklenburg-Vorpommern', short: 'MV', col: 5, row: 1 },
-  { state: 'Bremen', short: 'HB', col: 2, row: 2 },
-  { state: 'Hamburg', short: 'HH', col: 3, row: 2 },
-  { state: 'Niedersachsen', short: 'NI', col: 4, row: 2 },
-  { state: 'Brandenburg', short: 'BB', col: 5, row: 2 },
-  { state: 'Berlin', short: 'BE', col: 6, row: 2 },
-  { state: 'Nordrhein-Westfalen', short: 'NW', col: 3, row: 3 },
-  { state: 'Sachsen-Anhalt', short: 'ST', col: 4, row: 3 },
-  { state: 'Sachsen', short: 'SN', col: 5, row: 3 },
-  { state: 'Rheinland-Pfalz', short: 'RP', col: 3, row: 4 },
-  { state: 'Hessen', short: 'HE', col: 4, row: 4 },
-  { state: 'Thüringen', short: 'TH', col: 5, row: 4 },
-  { state: 'Saarland', short: 'SL', col: 2, row: 5 },
-  { state: 'Baden-Württemberg', short: 'BW', col: 3, row: 5 },
-  { state: 'Bayern', short: 'BY', col: 4, row: 5 },
-]
 
 interface Share {
   total: number
@@ -102,29 +80,11 @@ export function EMail() {
               schematisch: Jede Kachel ist ein Land, kein Land ist so groß wie seine Kachel.
             </p>
 
-            {/* Die Kacheln wiederholen nur die Tabelle darunter. Für Screenreader
-                zählt die Tabelle, deshalb ist das Raster hier ausgeblendet. */}
-            <div
-              aria-hidden="true"
-              className="mt-4 grid grid-cols-6 gap-1 sm:gap-2"
-              style={{ gridTemplateRows: 'repeat(5, minmax(0, 1fr))' }}
-            >
-              {tiles.map((tile) => {
-                const share = byState.get(tile.state)
-                return (
-                  <div
-                    key={tile.short}
-                    style={{ gridColumn: tile.col, gridRow: tile.row }}
-                    className={`rounded-md border border-slate-300 p-2 text-center ${tileClass(share)}`}
-                  >
-                    <span className="block text-xs font-medium">{tile.short}</span>
-                    <span className="block text-sm font-semibold">
-                      {share && share.total > 0 ? `${share.percent} %` : '–'}
-                    </span>
-                  </div>
-                )
-              })}
-            </div>
+            <Kartogramm
+              werte={byState}
+              text={(share) => (share && share.total > 0 ? `${share.percent} %` : '–')}
+              klasse={tileClass}
+            />
 
             <table className="mt-6 w-full border-collapse text-left">
               <caption className="sr-only">

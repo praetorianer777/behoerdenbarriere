@@ -30,4 +30,24 @@ describe('Überblick', () => {
       }),
     ).toBeInTheDocument()
   })
+
+  // Der stärkste Befund des Projekts stand als Tabellenzeile da. Jetzt steht er als
+  // Satz über der Verteilung — gerechnet, nicht geschrieben.
+  it('sagt, welche Note die häufigste ist', async () => {
+    renderPage(<Dashboard />)
+    // Die Probe hat je eine Behörde mit C und D — ein Gleichstand, und der muss als
+    // solcher benannt werden statt als „häufigste Note C".
+    expect(
+      await screen.findByText('Die häufigsten Noten sind C und D, je 1 von 2 geprüften Behörden.'),
+    ).toBeInTheDocument()
+  })
+
+  // Die Karte ist Schmuck neben der Tabelle: Was sie zeigt, steht auch als Text.
+  it('hält neben der Karte die Tabelle der Länder bereit', async () => {
+    const { container } = renderPage(<Dashboard />)
+    await screen.findByRole('rowheader', { name: 'Schleswig-Holstein' })
+    const karte = container.querySelector('[aria-hidden="true"].grid')
+    expect(karte).not.toBeNull()
+    expect(karte?.textContent).toContain('SH')
+  })
 })
