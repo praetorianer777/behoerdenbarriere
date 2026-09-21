@@ -66,13 +66,22 @@ export function TrendChart({ history }: Props) {
           <caption className="sr-only">Wert je Prüfung</caption>
           <thead>
             <tr className="border-b border-slate-300">
-              <th scope="col" className="px-3 py-2">
+              <th
+                scope="col"
+                className="px-3 py-2 text-xs font-semibold tracking-wide text-slate-600 uppercase"
+              >
                 Geprüft am
               </th>
-              <th scope="col" className="px-3 py-2">
+              <th
+                scope="col"
+                className="px-3 py-2 text-xs font-semibold tracking-wide text-slate-600 uppercase"
+              >
                 Wert
               </th>
-              <th scope="col" className="px-3 py-2">
+              <th
+                scope="col"
+                className="px-3 py-2 text-xs font-semibold tracking-wide text-slate-600 uppercase"
+              >
                 Note
               </th>
             </tr>

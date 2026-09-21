@@ -50,19 +50,34 @@ export function ScoreReasons({ page }: { page: PageExplanation }) {
           </caption>
           <thead>
             <tr className="border-b border-slate-300">
-              <th scope="col" className="px-3 py-2">
+              <th
+                scope="col"
+                className="px-3 py-2 text-xs font-semibold tracking-wide text-slate-600 uppercase"
+              >
                 Befund
               </th>
-              <th scope="col" className="px-3 py-2">
+              <th
+                scope="col"
+                className="px-3 py-2 text-xs font-semibold tracking-wide text-slate-600 uppercase"
+              >
                 Schwere
               </th>
-              <th scope="col" className="px-3 py-2">
+              <th
+                scope="col"
+                className="px-3 py-2 text-xs font-semibold tracking-wide text-slate-600 uppercase"
+              >
                 Elemente
               </th>
-              <th scope="col" className="px-3 py-2">
+              <th
+                scope="col"
+                className="px-3 py-2 text-xs font-semibold tracking-wide text-slate-600 uppercase"
+              >
                 Anteil
               </th>
-              <th scope="col" className="px-3 py-2">
+              <th
+                scope="col"
+                className="px-3 py-2 text-xs font-semibold tracking-wide text-slate-600 uppercase"
+              >
                 Behoben: <span className="whitespace-nowrap">+ Punkte</span>
               </th>
             </tr>

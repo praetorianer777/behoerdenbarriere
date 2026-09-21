@@ -4,7 +4,7 @@ import { Platzhalterhinweis } from '../components/Platzhalterhinweis'
 export function Impressum() {
   return (
     <div className="max-w-3xl">
-      <h1 className="text-2xl font-bold sm:text-3xl">Impressum</h1>
+      <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Impressum</h1>
       <Platzhalterhinweis />
 
       <h2 className="mt-8 text-xl font-semibold">Angaben nach § 5 DDG</h2>

@@ -73,7 +73,9 @@ export function EMail() {
 
   return (
     <div className="max-w-3xl">
-      <h1 className="text-2xl font-bold sm:text-3xl">Wohin die Post der Behörden geht</h1>
+      <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+        Wohin die Post der Behörden geht
+      </h1>
       <p className="mt-2 text-slate-700">
         Jede Domain veröffentlicht im DNS, welcher Host ihre E-Mail entgegennimmt. Daraus lässt sich
         ablesen, über wessen Server die Korrespondenz einer Behörde läuft. Wir lesen nur, was
@@ -131,13 +133,22 @@ export function EMail() {
               </caption>
               <thead>
                 <tr className="border-b border-slate-300">
-                  <th scope="col" className="py-2 pr-4">
+                  <th
+                    scope="col"
+                    className="py-2 pr-4 text-xs font-semibold tracking-wide text-slate-600 uppercase"
+                  >
                     Bundesland
                   </th>
-                  <th scope="col" className="py-2 pr-4">
+                  <th
+                    scope="col"
+                    className="py-2 pr-4 text-xs font-semibold tracking-wide text-slate-600 uppercase"
+                  >
                     Behörden
                   </th>
-                  <th scope="col" className="py-2">
+                  <th
+                    scope="col"
+                    className="py-2 text-xs font-semibold tracking-wide text-slate-600 uppercase"
+                  >
                     davon US-Anbieter
                   </th>
                 </tr>
@@ -170,13 +181,22 @@ export function EMail() {
               </caption>
               <thead>
                 <tr className="border-b border-slate-300">
-                  <th scope="col" className="py-2 pr-4">
+                  <th
+                    scope="col"
+                    className="py-2 pr-4 text-xs font-semibold tracking-wide text-slate-600 uppercase"
+                  >
                     Anbieter
                   </th>
-                  <th scope="col" className="py-2 pr-4">
+                  <th
+                    scope="col"
+                    className="py-2 pr-4 text-xs font-semibold tracking-wide text-slate-600 uppercase"
+                  >
                     Behörden
                   </th>
-                  <th scope="col" className="py-2">
+                  <th
+                    scope="col"
+                    className="py-2 text-xs font-semibold tracking-wide text-slate-600 uppercase"
+                  >
                     Sitz
                   </th>
                 </tr>

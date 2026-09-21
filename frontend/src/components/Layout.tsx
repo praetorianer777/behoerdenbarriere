@@ -31,9 +31,15 @@ export function Layout() {
         Zum Inhalt springen
       </a>
 
-      <header className="border-b border-slate-200 bg-white">
+      {/* Der Balken oben ist die einzige Fläche in der Akzentfarbe: Er macht die Seite
+          wiedererkennbar, ohne dass irgendwo Text auf Farbe stehen müsste. */}
+      <header className="border-t-4 border-t-akzent border-b border-b-slate-200 bg-white">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-4">
-          <NavLink to="/" className="text-lg font-bold">
+          <NavLink
+            to="/"
+            className="flex items-center gap-2 text-xl font-bold tracking-tight text-slate-900"
+          >
+            <span aria-hidden="true" className="inline-block h-6 w-1.5 rounded-sm bg-akzent" />
             Behördenbarriere
           </NavLink>
           <nav aria-label="Hauptnavigation">
@@ -44,8 +50,8 @@ export function Layout() {
                     to={item.to}
                     end={item.end}
                     className={({ isActive }) =>
-                      `flex min-h-11 items-center rounded-md px-3 py-2 text-sm font-medium ${
-                        isActive ? 'bg-slate-900 text-white' : 'text-slate-700 hover:bg-slate-100'
+                      `flex min-h-11 items-center rounded-md px-3 py-2 text-base font-medium ${
+                        isActive ? 'bg-akzent text-white' : 'text-slate-700 hover:bg-akzent-hell'
                       }`
                     }
                   >

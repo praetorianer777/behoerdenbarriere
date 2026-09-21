@@ -1,7 +1,7 @@
 export function Methodology() {
   return (
     <div className="max-w-3xl">
-      <h1 className="text-2xl font-bold sm:text-3xl">Wie wir prüfen</h1>
+      <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Wie wir prüfen</h1>
 
       <h2 className="mt-8 text-xl font-semibold">Was geprüft wird</h2>
       <p className="mt-2">
@@ -22,10 +22,16 @@ export function Methodology() {
         <caption className="sr-only">Gewichtung der Verstöße nach Schwere</caption>
         <thead>
           <tr className="border-b border-slate-300">
-            <th scope="col" className="px-3 py-2">
+            <th
+              scope="col"
+              className="px-3 py-2 text-xs font-semibold tracking-wide text-slate-600 uppercase"
+            >
               Schwere
             </th>
-            <th scope="col" className="px-3 py-2">
+            <th
+              scope="col"
+              className="px-3 py-2 text-xs font-semibold tracking-wide text-slate-600 uppercase"
+            >
               Gewicht
             </th>
           </tr>
