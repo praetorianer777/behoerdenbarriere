@@ -41,10 +41,8 @@ describe('Filter im Ranking', () => {
     renderPage(<Ranking />, { route: '/?sort=scanned' })
 
     // Ohne Zähler im Namen: Sortieren ist kein Filtern.
-    const schalter = await screen.findByRole('button', {
-      name: 'Filter und Sortierung',
-      exact: true,
-    })
+    // Ein String als Name trifft nur den ganzen Namen — mit Zähler passt er nicht.
+    const schalter = await screen.findByRole('button', { name: 'Filter und Sortierung' })
     expect(schalter).toHaveAttribute('aria-expanded', 'false')
   })
 
