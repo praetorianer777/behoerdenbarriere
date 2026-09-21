@@ -43,6 +43,17 @@ services:
       # Hinter dem Proxy kommt die Adresse des Aufrufers aus X-Forwarded-For — aber nur,
       # weil der Proxy im selben Docker-Netz steht und damit vertrauenswürdig ist.
       API_TRUSTED_PROXIES: ${API_TRUSTED_PROXIES:-127.0.0.0/8,::1/128,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,fc00::/7}
+      # Wer die Seite betreibt, steht im Impressum und in der Datenschutzerklärung. Es
+      # kommt aus der .env, nicht aus dem Quelltext: Wer die Images nutzt, kann den
+      # Code nicht anfassen — und soll es für sein eigenes Impressum auch nicht müssen.
+      OPERATOR_NAME: ${OPERATOR_NAME:-}
+      OPERATOR_STREET: ${OPERATOR_STREET:-}
+      OPERATOR_CITY: ${OPERATOR_CITY:-}
+      OPERATOR_COUNTRY: ${OPERATOR_COUNTRY:-Deutschland}
+      OPERATOR_EMAIL: ${OPERATOR_EMAIL:-}
+      OPERATOR_PHONE: ${OPERATOR_PHONE:-}
+      OPERATOR_VAT_ID: ${OPERATOR_VAT_ID:-}
+      OPERATOR_HOSTING: ${OPERATOR_HOSTING:-}
 
   worker:
     image: ghcr.io/praetorianer777/behoerdenbarriere-worker:${IMAGE_TAG:-latest}

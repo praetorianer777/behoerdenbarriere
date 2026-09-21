@@ -75,6 +75,11 @@ func run() error {
 	server := api.NewServer(db, api.Options{
 		CORSOrigin: cfg.CORSOrigin,
 		APIKeys:    cfg.APIKeys(),
+		Operator: api.Operator{
+			Name: cfg.Operator.Name, Street: cfg.Operator.Street, City: cfg.Operator.City,
+			Country: cfg.Operator.Country, Email: cfg.Operator.Email, Phone: cfg.Operator.Phone,
+			VATID: cfg.Operator.VATID, Hosting: cfg.Operator.Hosting,
+		},
 		Limits: api.Limits{
 			ReadPerMinute:      cfg.API.ReadPerMinute,
 			ReadBurst:          cfg.API.ReadBurst,

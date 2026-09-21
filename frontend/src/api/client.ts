@@ -1,6 +1,7 @@
 import type {
   AgencyDetail,
   AgencyList,
+  Betreiber,
   MailSummary,
   Scan,
   Stats,
@@ -50,6 +51,7 @@ export const api = {
   latestScan: (slug: string, signal?: AbortSignal) =>
     get<Scan>(`/agencies/${slug}/scans/latest`, signal),
   stats: (signal?: AbortSignal) => get<Stats>('/stats', signal),
+  betreiber: (signal?: AbortSignal) => get<Betreiber>('/operator', signal),
   thirdParties: (signal?: AbortSignal) => get<ThirdPartyList>('/thirdparties', signal),
   mail: (signal?: AbortSignal) => get<MailSummary>('/mail', signal),
   usage: (days: number, signal?: AbortSignal) => get<Usage>(`/usage?days=${days}`, signal),

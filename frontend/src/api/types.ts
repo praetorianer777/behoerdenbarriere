@@ -348,3 +348,17 @@ export interface Usage {
   agencies: UsageKey[]
   endpoints: UsageKey[]
 }
+
+/** Wer die Seite betreibt — kommt aus der Umgebung des Servers, nicht aus dem Code. */
+export interface Betreiber {
+  name: string
+  street: string
+  city: string
+  country: string
+  email: string
+  phone?: string
+  vat_id?: string
+  hosting: string
+  /** Ob alles da ist, was § 5 DDG verlangt. Solange nicht, warnt die Seite. */
+  complete: boolean
+}

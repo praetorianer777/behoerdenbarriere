@@ -21,12 +21,20 @@ type Config struct {
 	CORSOrigin        string
 	LogLevel          string
 
-	API    APIConfig
-	Usage  UsageConfig
-	Crawl  CrawlConfig
-	Scan   ScanConfig
-	Worker WorkerConfig
-	OTel   OTelConfig
+	API      APIConfig
+	Operator OperatorConfig
+	Usage    UsageConfig
+	Crawl    CrawlConfig
+	Scan     ScanConfig
+	Worker   WorkerConfig
+	OTel     OTelConfig
+}
+
+// OperatorConfig is who runs the installation, for the Impressum and the privacy
+// notice. Read from the environment like everything else about an installation, so
+// that nobody has to patch the source to put their own name on their own site.
+type OperatorConfig struct {
+	Name, Street, City, Country, Email, Phone, VATID, Hosting string
 }
 
 // OTelConfig switches OpenTelemetry on. Without an endpoint nothing is exported and
@@ -110,6 +118,17 @@ func Load() (*Config, error) {
 		APIKey:        env("API_KEY", ""),
 		CORSOrigin:    env("CORS_ORIGIN", "http://localhost:5173"),
 		LogLevel:      env("LOG_LEVEL", "info"),
+	}
+
+	c.Operator = OperatorConfig{
+		Name:    env("OPERATOR_NAME", ""),
+		Street:  env("OPERATOR_STREET", ""),
+		City:    env("OPERATOR_CITY", ""),
+		Country: env("OPERATOR_COUNTRY", "Deutschland"),
+		Email:   env("OPERATOR_EMAIL", ""),
+		Phone:   env("OPERATOR_PHONE", ""),
+		VATID:   env("OPERATOR_VAT_ID", ""),
+		Hosting: env("OPERATOR_HOSTING", ""),
 	}
 
 	var err error

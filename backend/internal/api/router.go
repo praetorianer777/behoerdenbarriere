@@ -59,6 +59,7 @@ type Options struct {
 	CORSOrigin string
 	APIKeys    []string
 	Limits     Limits
+	Operator   Operator
 }
 
 type Server struct {
@@ -66,6 +67,7 @@ type Server struct {
 	corsOrigin    string
 	apiKeys       []string
 	limits        Limits
+	operator      Operator
 	limiter       *limiter
 	rescanLimiter *limiter
 	usage         Recorder
@@ -88,6 +90,7 @@ func NewServer(db Queries, opts Options) *Server {
 		corsOrigin:    opts.CORSOrigin,
 		apiKeys:       opts.APIKeys,
 		limits:        limits,
+		operator:      opts.Operator,
 		limiter:       newLimiter(limits.BucketIdleTTL),
 		rescanLimiter: newLimiter(maxDuration(limits.RescanPerAgency, limits.BucketIdleTTL)),
 		log:           slog.Default(),
@@ -145,6 +148,7 @@ func (s *Server) Routes() http.Handler {
 			r.Get("/stats", s.handleStats)
 			r.Get("/rules", s.handleRules)
 			r.Get("/version", s.handleVersion)
+			r.Get("/operator", s.handleOperator)
 			r.Get("/thirdparties", s.handleThirdParties)
 			r.Get("/mail", s.handleMail)
 			r.Get("/usage", s.handleUsage)

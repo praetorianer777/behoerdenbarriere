@@ -216,3 +216,21 @@ func TestOTelRejectsInvalidValues(t *testing.T) {
 		})
 	}
 }
+
+// The operator is configuration like everything else about an installation, so that
+// nobody has to patch the source to put their own name on their own Impressum.
+func TestLoadReadsTheOperatorFromTheEnvironment(t *testing.T) {
+	t.Setenv("OPERATOR_NAME", "Musterverein e. V.")
+	t.Setenv("OPERATOR_EMAIL", "post@example.org")
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if cfg.Operator.Name != "Musterverein e. V." || cfg.Operator.Email != "post@example.org" {
+		t.Errorf("operator = %+v", cfg.Operator)
+	}
+	if cfg.Operator.Country != "Deutschland" {
+		t.Errorf("country default = %q, want Deutschland", cfg.Operator.Country)
+	}
+}

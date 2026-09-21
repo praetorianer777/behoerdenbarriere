@@ -328,3 +328,13 @@ export const mailSummary: MailSummary = {
     { name: 'bund', provider: 'public-it', agencies: 12, us_based: false },
   ],
 }
+
+export const betreiber = {
+  name: 'Musterverein für digitale Teilhabe e. V.',
+  street: 'Beispielweg 1',
+  city: '12345 Musterstadt',
+  country: 'Deutschland',
+  email: 'post@example.org',
+  hosting: 'Beispiel-Hoster GmbH, Falkenstein',
+  complete: true,
+}

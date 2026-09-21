@@ -1,41 +1,52 @@
-import { betreiber } from '../betreiber'
+import { useBetreiber } from '../betreiber'
+import { BetreiberEmail } from '../components/BetreiberEmail'
 import { Platzhalterhinweis } from '../components/Platzhalterhinweis'
 
 export function Impressum() {
+  // Der Text der Seite steht sofort; nur die Angaben zum Betreiber kommen vom
+  // Server. Die Seite darf nicht von der API abhängen — geprüft wird sie auch ohne.
+  const angaben = useBetreiber()
+  const betreiber = angaben.data ?? {
+    name: '',
+    street: '',
+    city: '',
+    country: '',
+    email: '',
+    hosting: '',
+    complete: false,
+  }
+
   return (
     <div className="max-w-3xl">
       <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Impressum</h1>
-      <Platzhalterhinweis />
+      <Platzhalterhinweis betreiber={angaben.data} fehlgeschlagen={angaben.isError} />
 
       <h2 className="mt-8 text-xl font-semibold">Angaben nach § 5 DDG</h2>
       <address className="mt-2 not-italic">
         {betreiber.name}
         <br />
-        {betreiber.strasse}
+        {betreiber.street}
         <br />
-        {betreiber.ort}
+        {betreiber.city}
         <br />
-        {betreiber.land}
+        {betreiber.country}
       </address>
 
       <h2 className="mt-8 text-xl font-semibold">Kontakt</h2>
       <p className="mt-2">
-        E-Mail:{' '}
-        <a href={`mailto:${betreiber.email}`} className="break-all underline">
-          {betreiber.email}
-        </a>
-        {betreiber.telefon && (
+        E-Mail: <BetreiberEmail email={betreiber.email} />
+        {betreiber.phone && (
           <>
             <br />
-            Telefon: {betreiber.telefon}
+            Telefon: {betreiber.phone}
           </>
         )}
       </p>
 
-      {betreiber.ustId && (
+      {betreiber.vat_id && (
         <>
           <h2 className="mt-8 text-xl font-semibold">Umsatzsteuer-Identifikationsnummer</h2>
-          <p className="mt-2">{betreiber.ustId}</p>
+          <p className="mt-2">{betreiber.vat_id}</p>
         </>
       )}
 

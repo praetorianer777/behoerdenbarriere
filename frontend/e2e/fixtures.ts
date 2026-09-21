@@ -312,12 +312,25 @@ const verdeckt = {
   obscured: true,
 }
 
+// Eine frische Installation: Die Umgebung nennt noch keinen Betreiber. Genau dann
+// muss die Seite warnen — das ist der Fall, den die Prüfung festhält.
+const betreiber = {
+  name: '',
+  street: '',
+  city: '',
+  country: 'Deutschland',
+  email: '',
+  hosting: '',
+  complete: false,
+}
+
 export async function stubApi(page: Page) {
   await page.route('**/api/v1/**', async (route) => {
     const path = new URL(route.request().url()).pathname
     const json = (body: unknown) => route.fulfill({ json: body })
 
     if (path.endsWith('/stats')) return json(stats)
+    if (path.endsWith('/operator')) return json(betreiber)
     if (path.endsWith('/usage')) return json(usage)
     if (path.endsWith('/thirdparties')) return json(thirdParties)
     if (path.endsWith('/mail')) return json(mailSummary)

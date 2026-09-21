@@ -1,11 +1,25 @@
-import { betreiber } from '../betreiber'
+import { useBetreiber } from '../betreiber'
+import { BetreiberEmail } from '../components/BetreiberEmail'
 import { Platzhalterhinweis } from '../components/Platzhalterhinweis'
 
 export function Datenschutz() {
+  // Der Text der Seite steht sofort; nur die Angaben zum Betreiber kommen vom
+  // Server. Die Seite darf nicht von der API abhängen — geprüft wird sie auch ohne.
+  const angaben = useBetreiber()
+  const betreiber = angaben.data ?? {
+    name: '',
+    street: '',
+    city: '',
+    country: '',
+    email: '',
+    hosting: '',
+    complete: false,
+  }
+
   return (
     <div className="max-w-3xl">
       <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Datenschutzerklärung</h1>
-      <Platzhalterhinweis />
+      <Platzhalterhinweis betreiber={angaben.data} fehlgeschlagen={angaben.isError} />
 
       <p className="mt-4">
         Diese Website kommt ohne Cookies aus, bindet nichts von fremden Servern ein und setzt keine
@@ -17,13 +31,11 @@ export function Datenschutz() {
       <address className="mt-2 not-italic">
         {betreiber.name}
         <br />
-        {betreiber.strasse}
+        {betreiber.street}
         <br />
-        {betreiber.ort}
+        {betreiber.city}
         <br />
-        <a href={`mailto:${betreiber.email}`} className="break-all underline">
-          {betreiber.email}
-        </a>
+        <BetreiberEmail email={betreiber.email} />
       </address>
 
       <h2 className="mt-8 text-xl font-semibold">Aufrufe dieser Website</h2>
