@@ -359,7 +359,6 @@ export interface Betreiber {
   phone?: string
   vat_id?: string
   hosting: string
-  accessibility_checked_at?: string
   /** Ob alles da ist, was § 5 DDG verlangt. Solange nicht, warnt die Seite. */
   complete: boolean
 }

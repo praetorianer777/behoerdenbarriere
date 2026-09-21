@@ -79,7 +79,6 @@ func run() error {
 			Name: cfg.Operator.Name, Street: cfg.Operator.Street, City: cfg.Operator.City,
 			Country: cfg.Operator.Country, Email: cfg.Operator.Email, Phone: cfg.Operator.Phone,
 			VATID: cfg.Operator.VATID, Hosting: cfg.Operator.Hosting,
-			CheckedAt: cfg.Operator.AccessibilityCheckedAt,
 		},
 		Limits: api.Limits{
 			ReadPerMinute:      cfg.API.ReadPerMinute,

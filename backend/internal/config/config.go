@@ -35,7 +35,6 @@ type Config struct {
 // that nobody has to patch the source to put their own name on their own site.
 type OperatorConfig struct {
 	Name, Street, City, Country, Email, Phone, VATID, Hosting string
-	AccessibilityCheckedAt                                    string
 }
 
 // OTelConfig switches OpenTelemetry on. Without an endpoint nothing is exported and
@@ -122,15 +121,14 @@ func Load() (*Config, error) {
 	}
 
 	c.Operator = OperatorConfig{
-		Name:                   env("OPERATOR_NAME", ""),
-		Street:                 env("OPERATOR_STREET", ""),
-		City:                   env("OPERATOR_CITY", ""),
-		Country:                env("OPERATOR_COUNTRY", "Deutschland"),
-		Email:                  env("OPERATOR_EMAIL", ""),
-		Phone:                  env("OPERATOR_PHONE", ""),
-		VATID:                  env("OPERATOR_VAT_ID", ""),
-		Hosting:                env("OPERATOR_HOSTING", ""),
-		AccessibilityCheckedAt: env("ACCESSIBILITY_CHECKED_AT", ""),
+		Name:    env("OPERATOR_NAME", ""),
+		Street:  env("OPERATOR_STREET", ""),
+		City:    env("OPERATOR_CITY", ""),
+		Country: env("OPERATOR_COUNTRY", "Deutschland"),
+		Email:   env("OPERATOR_EMAIL", ""),
+		Phone:   env("OPERATOR_PHONE", ""),
+		VATID:   env("OPERATOR_VAT_ID", ""),
+		Hosting: env("OPERATOR_HOSTING", ""),
 	}
 
 	var err error

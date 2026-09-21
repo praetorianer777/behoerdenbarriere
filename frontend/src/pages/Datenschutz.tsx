@@ -1,18 +1,25 @@
 import { useBetreiber } from '../betreiber'
-import { Loading, LoadError } from '../components/Loading'
 import { BetreiberEmail } from '../components/BetreiberEmail'
 import { Platzhalterhinweis } from '../components/Platzhalterhinweis'
 
 export function Datenschutz() {
+  // Der Text der Seite steht sofort; nur die Angaben zum Betreiber kommen vom
+  // Server. Die Seite darf nicht von der API abhängen — geprüft wird sie auch ohne.
   const angaben = useBetreiber()
-  if (angaben.isPending) return <Loading what="Die Angaben zum Betreiber" />
-  if (angaben.isError) return <LoadError what="Die Angaben zum Betreiber" error={angaben.error} />
-  const betreiber = angaben.data
+  const betreiber = angaben.data ?? {
+    name: '',
+    street: '',
+    city: '',
+    country: '',
+    email: '',
+    hosting: '',
+    complete: false,
+  }
 
   return (
     <div className="max-w-3xl">
       <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Datenschutzerklärung</h1>
-      <Platzhalterhinweis betreiber={betreiber} />
+      <Platzhalterhinweis betreiber={angaben.data} fehlgeschlagen={angaben.isError} />
 
       <p className="mt-4">
         Diese Website kommt ohne Cookies aus, bindet nichts von fremden Servern ein und setzt keine

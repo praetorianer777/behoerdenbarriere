@@ -336,6 +336,5 @@ export const betreiber = {
   country: 'Deutschland',
   email: 'post@example.org',
   hosting: 'Beispiel-Hoster GmbH, Falkenstein',
-  accessibility_checked_at: '2026-09-20',
   complete: true,
 }

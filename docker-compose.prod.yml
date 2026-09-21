@@ -54,7 +54,6 @@ services:
       OPERATOR_PHONE: ${OPERATOR_PHONE:-}
       OPERATOR_VAT_ID: ${OPERATOR_VAT_ID:-}
       OPERATOR_HOSTING: ${OPERATOR_HOSTING:-}
-      ACCESSIBILITY_CHECKED_AT: ${ACCESSIBILITY_CHECKED_AT:-}
 
   worker:
     image: ghcr.io/praetorianer777/behoerdenbarriere-worker:${IMAGE_TAG:-latest}

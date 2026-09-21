@@ -222,7 +222,6 @@ func TestOTelRejectsInvalidValues(t *testing.T) {
 func TestLoadReadsTheOperatorFromTheEnvironment(t *testing.T) {
 	t.Setenv("OPERATOR_NAME", "Musterverein e. V.")
 	t.Setenv("OPERATOR_EMAIL", "post@example.org")
-	t.Setenv("ACCESSIBILITY_CHECKED_AT", "2026-09-20")
 
 	cfg, err := Load()
 	if err != nil {
@@ -233,8 +232,5 @@ func TestLoadReadsTheOperatorFromTheEnvironment(t *testing.T) {
 	}
 	if cfg.Operator.Country != "Deutschland" {
 		t.Errorf("country default = %q, want Deutschland", cfg.Operator.Country)
-	}
-	if cfg.Operator.AccessibilityCheckedAt != "2026-09-20" {
-		t.Errorf("checked at = %q", cfg.Operator.AccessibilityCheckedAt)
 	}
 }

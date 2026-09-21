@@ -1,18 +1,25 @@
 import { useBetreiber } from '../betreiber'
-import { Loading, LoadError } from '../components/Loading'
 import { BetreiberEmail } from '../components/BetreiberEmail'
 import { Platzhalterhinweis } from '../components/Platzhalterhinweis'
 
 export function Impressum() {
+  // Der Text der Seite steht sofort; nur die Angaben zum Betreiber kommen vom
+  // Server. Die Seite darf nicht von der API abhängen — geprüft wird sie auch ohne.
   const angaben = useBetreiber()
-  if (angaben.isPending) return <Loading what="Die Angaben zum Betreiber" />
-  if (angaben.isError) return <LoadError what="Die Angaben zum Betreiber" error={angaben.error} />
-  const betreiber = angaben.data
+  const betreiber = angaben.data ?? {
+    name: '',
+    street: '',
+    city: '',
+    country: '',
+    email: '',
+    hosting: '',
+    complete: false,
+  }
 
   return (
     <div className="max-w-3xl">
       <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Impressum</h1>
-      <Platzhalterhinweis betreiber={betreiber} />
+      <Platzhalterhinweis betreiber={angaben.data} fehlgeschlagen={angaben.isError} />
 
       <h2 className="mt-8 text-xl font-semibold">Angaben nach § 5 DDG</h2>
       <address className="mt-2 not-italic">

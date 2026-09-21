@@ -51,7 +51,6 @@ services:
       OPERATOR_PHONE: ${OPERATOR_PHONE:-}
       OPERATOR_VAT_ID: ${OPERATOR_VAT_ID:-}
       OPERATOR_HOSTING: ${OPERATOR_HOSTING:-}
-      ACCESSIBILITY_CHECKED_AT: ${ACCESSIBILITY_CHECKED_AT:-}
     ports: ["8080:8080"]
     depends_on:
       postgres: {condition: service_healthy}

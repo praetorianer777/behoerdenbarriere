@@ -1,5 +1,4 @@
 import { useBetreiber } from '../betreiber'
-import { Loading, LoadError } from '../components/Loading'
 import { BetreiberEmail } from '../components/BetreiberEmail'
 import { Platzhalterhinweis } from '../components/Platzhalterhinweis'
 import { formatDate } from '../lib'
@@ -10,17 +9,25 @@ import { formatDate } from '../lib'
  * Wer Transparenz verlangt, kommt daran nicht vorbei.
  */
 export function Barrierefreiheit() {
+  // Der Text der Seite steht sofort; nur die Angaben zum Betreiber kommen vom
+  // Server. Die Seite darf nicht von der API abhängen — geprüft wird sie auch ohne.
   const angaben = useBetreiber()
-  if (angaben.isPending) return <Loading what="Die Angaben zum Betreiber" />
-  if (angaben.isError) return <LoadError what="Die Angaben zum Betreiber" error={angaben.error} />
-  const betreiber = angaben.data
+  const betreiber = angaben.data ?? {
+    name: '',
+    street: '',
+    city: '',
+    country: '',
+    email: '',
+    hosting: '',
+    complete: false,
+  }
 
   return (
     <div className="max-w-3xl">
       <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
         Erklärung zur Barrierefreiheit
       </h1>
-      <Platzhalterhinweis betreiber={betreiber} />
+      <Platzhalterhinweis betreiber={angaben.data} fehlgeschlagen={angaben.isError} />
 
       <p className="mt-4">
         Diese Erklärung gilt für die Website behoerdenbarriere.de. Wir sind keine öffentliche Stelle
@@ -59,16 +66,15 @@ export function Barrierefreiheit() {
 
       <h2 className="mt-8 text-xl font-semibold">Erstellung dieser Erklärung</h2>
       <p className="mt-2">
-        Diese Erklärung wurde am {formatDate(betreiber.accessibility_checked_at)} erstellt und
-        zuletzt überprüft. Grundlage war eine Selbstbewertung: Jede Seite wird bei jeder Änderung
-        automatisiert mit axe-core gegen WCAG 2.1 AA geprüft — mit demselben Prüfprogramm, das wir
-        auf Behördenseiten anwenden — und zusätzlich in drei Bildschirmbreiten sowie mit der
-        Tastatur getestet.
+        Diese Erklärung wurde am {formatDate(__BUILD_DATE__)} erstellt und zuletzt überprüft.
+        Grundlage war eine Selbstbewertung: Jede Seite wird bei jeder Änderung automatisiert mit
+        axe-core gegen WCAG 2.1 AA geprüft — mit demselben Prüfprogramm, das wir auf Behördenseiten
+        anwenden — und zusätzlich in drei Bildschirmbreiten sowie mit der Tastatur getestet.
       </p>
 
       <h2 className="mt-8 text-xl font-semibold">Barrieren melden</h2>
       <p className="mt-2">
-        Sind Ihnen Mängel beim barrierefreien Zugang aufgefallen? Schreiben Sie uns an{' '}
+        Sind Ihnen Mängel beim barrierefreien Zugang aufgefallen? Melden Sie sie uns per E-Mail an{' '}
         <BetreiberEmail email={betreiber.email} />. Wir antworten, so schnell wir können, und sagen
         Ihnen, was wir ändern — oder warum nicht.
       </p>
