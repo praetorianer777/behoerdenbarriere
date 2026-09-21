@@ -335,6 +335,16 @@ export async function stubApi(page: Page) {
   })
 }
 
+/**
+ * Auf schmalen Fenstern stehen die Filter eingeklappt, damit das Ranking im ersten
+ * Bildschirm beginnt. Wer sie bedienen will, muss sie erst aufklappen — im breiten
+ * Fenster gibt es die Schaltfläche nicht.
+ */
+export async function filterOeffnen(page: Page) {
+  const schalter = page.getByRole('button', { name: /Filter und Sortierung/ })
+  if (await schalter.isVisible()) await schalter.click()
+}
+
 export const routes = [
   '/',
   '/dashboard',

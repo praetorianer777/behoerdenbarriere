@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-import { stubApi } from './fixtures'
+import { filterOeffnen, stubApi } from './fixtures'
 
 test.beforeEach(async ({ page }) => {
   await stubApi(page)
@@ -32,10 +32,13 @@ test('unterscheidet ungeprüft von schlecht', async ({ page }) => {
 
 test('Filter landen in der Adresse und überleben einen Neuladen', async ({ page }) => {
   await page.goto('/')
+  await filterOeffnen(page)
 
   await page.getByLabel('Ebene').selectOption('kommune')
   await expect(page).toHaveURL(/level=kommune/)
 
+  // Ein gesetzter Filter hält den Kasten auch nach dem Neuladen offen: Eine kurze
+  // Liste ohne sichtbaren Grund sieht aus wie eine leere Datenbank.
   await page.reload()
   await expect(page.getByLabel('Ebene')).toHaveValue('kommune')
 })
@@ -194,6 +197,7 @@ test('sortiert nach Veränderung und sagt es auch ohne Pfeil', async ({ page }, 
 // Der Weg, der auf jedem Gerät funktioniert — und am Telefon der einzige.
 test('lässt sich über die Auswahl sortieren', async ({ page }) => {
   await page.goto('/')
+  await filterOeffnen(page)
 
   await page.getByLabel('Sortierung').selectOption('scanned_asc')
 

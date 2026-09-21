@@ -20,6 +20,11 @@ export function Ranking() {
   // Die Filter stehen in der Adresse, damit ein Stand teilbar und der Zurück-Knopf
   // brauchbar bleibt.
   const [params, setParams] = useSearchParams()
+  // Offen, wenn schon gefiltert wurde: Eine kurze Liste ohne sichtbaren Grund sieht
+  // aus wie eine leere Datenbank.
+  const [filterOffen, setFilterOffen] = useState(() =>
+    ['q', 'level', 'state', 'grade'].some((name) => params.get(name)),
+  )
   const query = {
     q: params.get('q') ?? '',
     level: params.get('level') ?? '',
@@ -29,6 +34,10 @@ export function Ranking() {
     page: Number(params.get('page') ?? 1),
     per_page: 50,
   }
+
+  // Wer gefiltert hat, soll auf dem Telefon sehen, wonach — sonst wirkt eine kurze
+  // Liste wie eine leere Datenbank.
+  const gesetzteFilter = [query.q, query.level, query.state, query.grade].filter(Boolean).length
 
   const agencies = useQuery({
     queryKey: ['agencies', query],
@@ -85,101 +94,121 @@ export function Ranking() {
         heißt, dass die Prüfung keine Barriere gefunden hat.
       </p>
 
-      <form
-        className="mt-6 grid gap-4 rounded-lg border border-slate-200 bg-white p-4 sm:grid-cols-2 lg:grid-cols-4"
-        onSubmit={(event) => event.preventDefault()}
-      >
-        <div>
-          <label htmlFor="suche" className="block text-sm font-medium">
-            Behörde suchen
-          </label>
-          <input
-            id="suche"
-            type="search"
-            value={suche}
-            onChange={(event) => setSuche(event.target.value)}
-            className="mt-1 min-h-11 w-full rounded-md border border-slate-400 px-3 py-2 text-base"
-          />
-        </div>
+      {/* Auf dem Telefon füllten Suchfeld und vier Auswahlen den ganzen ersten
+          Bildschirm: Man öffnete das Ranking und sah kein Ranking. Ab Tablettbreite ist
+          der Kasten immer offen, die Schaltfläche verschwindet. */}
+      <div className="mt-6">
+        <button
+          type="button"
+          className="flex min-h-11 w-full items-center justify-between rounded-lg border border-slate-400 bg-white px-4 py-2 font-medium sm:hidden"
+          aria-expanded={filterOffen}
+          aria-controls="filter"
+          onClick={() => setFilterOffen((offen) => !offen)}
+        >
+          <span>Filter und Sortierung{gesetzteFilter > 0 && ` (${gesetzteFilter})`}</span>
+          <span aria-hidden="true">{filterOffen ? '▲' : '▼'}</span>
+        </button>
 
-        <div>
-          <label htmlFor="ebene" className="block text-sm font-medium">
-            Ebene
-          </label>
-          <select
-            id="ebene"
-            value={query.level}
-            onChange={(event) => update({ level: event.target.value })}
-            className="mt-1 min-h-11 w-full rounded-md border border-slate-400 px-3 py-2 text-base"
-          >
-            <option value="">alle</option>
-            {levels.map((level) => (
-              <option key={level} value={level}>
-                {levelLabel[level]}
-              </option>
-            ))}
-          </select>
-        </div>
+        <form
+          id="filter"
+          className={`${filterOffen ? '' : 'hidden'} mt-2 gap-4 rounded-lg border border-slate-200 bg-white p-4 sm:mt-0 sm:grid sm:grid-cols-2 lg:grid-cols-4`}
+          onSubmit={(event) => event.preventDefault()}
+        >
+          {/* Die Suche steht für sich: Sie ist der Weg, den die meisten nehmen, und
+              füllte als fünftes Feld in einem Vierer-Raster eine halbe Zeile mit
+              nichts. */}
+          <div className="sm:col-span-2 lg:col-span-4">
+            <label htmlFor="suche" className="block text-sm font-medium">
+              Behörde suchen
+            </label>
+            <input
+              id="suche"
+              type="search"
+              value={suche}
+              onChange={(event) => setSuche(event.target.value)}
+              className="mt-1 min-h-11 w-full rounded-md border border-slate-400 px-3 py-2 text-base"
+            />
+          </div>
 
-        <div>
-          <label htmlFor="bundesland" className="block text-sm font-medium">
-            Bundesland
-          </label>
-          <select
-            id="bundesland"
-            value={query.state}
-            onChange={(event) => update({ state: event.target.value })}
-            className="mt-1 min-h-11 w-full rounded-md border border-slate-400 px-3 py-2 text-base"
-          >
-            <option value="">alle</option>
-            {(stats.data?.states ?? []).map((state) => (
-              <option key={state} value={state}>
-                {state}
-              </option>
-            ))}
-          </select>
-        </div>
+          <div>
+            <label htmlFor="ebene" className="block text-sm font-medium">
+              Ebene
+            </label>
+            <select
+              id="ebene"
+              value={query.level}
+              onChange={(event) => update({ level: event.target.value })}
+              className="mt-1 min-h-11 w-full rounded-md border border-slate-400 px-3 py-2 text-base"
+            >
+              <option value="">alle</option>
+              {levels.map((level) => (
+                <option key={level} value={level}>
+                  {levelLabel[level]}
+                </option>
+              ))}
+            </select>
+          </div>
 
-        <div>
-          {/* Auf dem Telefon wird die Tabelle zu Karten, und Spaltenköpfe zum Klicken
+          <div>
+            <label htmlFor="bundesland" className="block text-sm font-medium">
+              Bundesland
+            </label>
+            <select
+              id="bundesland"
+              value={query.state}
+              onChange={(event) => update({ state: event.target.value })}
+              className="mt-1 min-h-11 w-full rounded-md border border-slate-400 px-3 py-2 text-base"
+            >
+              <option value="">alle</option>
+              {(stats.data?.states ?? []).map((state) => (
+                <option key={state} value={state}>
+                  {state}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            {/* Auf dem Telefon wird die Tabelle zu Karten, und Spaltenköpfe zum Klicken
               gibt es dort nicht. Ohne diese Auswahl ließe sich am Telefon gar nicht
               sortieren. */}
-          <label htmlFor="sortierung" className="block text-sm font-medium">
-            Sortierung
-          </label>
-          <select
-            id="sortierung"
-            value={query.sort}
-            onChange={(event) => sortieren(event.target.value)}
-            className="mt-1 min-h-11 w-full rounded-md border border-slate-400 px-3 py-2 text-base"
-          >
-            {sortierungen.map((option) => (
-              <option key={option.wert} value={option.wert}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
+            <label htmlFor="sortierung" className="block text-sm font-medium">
+              Sortierung
+            </label>
+            <select
+              id="sortierung"
+              value={query.sort}
+              onChange={(event) => sortieren(event.target.value)}
+              className="mt-1 min-h-11 w-full rounded-md border border-slate-400 px-3 py-2 text-base"
+            >
+              {sortierungen.map((option) => (
+                <option key={option.wert} value={option.wert}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
 
-        <div>
-          <label htmlFor="note" className="block text-sm font-medium">
-            Note
-          </label>
-          <select
-            id="note"
-            value={query.grade}
-            onChange={(event) => update({ grade: event.target.value })}
-            className="mt-1 min-h-11 w-full rounded-md border border-slate-400 px-3 py-2 text-base"
-          >
-            <option value="">alle</option>
-            {grades.map((grade) => (
-              <option key={grade} value={grade}>
-                {grade}
-              </option>
-            ))}
-          </select>
-        </div>
-      </form>
+          <div>
+            <label htmlFor="note" className="block text-sm font-medium">
+              Note
+            </label>
+            <select
+              id="note"
+              value={query.grade}
+              onChange={(event) => update({ grade: event.target.value })}
+              className="mt-1 min-h-11 w-full rounded-md border border-slate-400 px-3 py-2 text-base"
+            >
+              <option value="">alle</option>
+              {grades.map((grade) => (
+                <option key={grade} value={grade}>
+                  {grade}
+                </option>
+              ))}
+            </select>
+          </div>
+        </form>
+      </div>
 
       {agencies.isPending && !agencies.isPlaceholderData ? (
         <Loading what="Das Ranking" />
@@ -336,7 +365,7 @@ function Legende({ items }: { items: Agency[] }) {
   return (
     <section className="mt-6 rounded-lg border border-slate-300 bg-white p-4 text-sm text-slate-700">
       <h2 className="font-semibold">Die Hinweise an den Werten</h2>
-      <dl className="mt-2 space-y-2">
+      <dl className="mt-2 max-w-prose space-y-2">
         {vorlaeufig && (
           <div>
             <dt className="inline font-semibold">vorläufig — </dt>
