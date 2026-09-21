@@ -312,15 +312,16 @@ const verdeckt = {
   obscured: true,
 }
 
+// Eine frische Installation: Die Umgebung nennt noch keinen Betreiber. Genau dann
+// muss die Seite warnen — das ist der Fall, den die Prüfung festhält.
 const betreiber = {
-  name: 'Musterverein für digitale Teilhabe e. V.',
-  street: 'Beispielweg 1',
-  city: '12345 Musterstadt',
+  name: '',
+  street: '',
+  city: '',
   country: 'Deutschland',
-  email: 'post@example.org',
-  hosting: 'Beispiel-Hoster GmbH, Falkenstein',
-  accessibility_checked_at: '2026-09-20',
-  complete: true,
+  email: '',
+  hosting: '',
+  complete: false,
 }
 
 export async function stubApi(page: Page) {

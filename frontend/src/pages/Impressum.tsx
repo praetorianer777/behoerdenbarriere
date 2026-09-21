@@ -1,5 +1,6 @@
 import { useBetreiber } from '../betreiber'
 import { Loading, LoadError } from '../components/Loading'
+import { BetreiberEmail } from '../components/BetreiberEmail'
 import { Platzhalterhinweis } from '../components/Platzhalterhinweis'
 
 export function Impressum() {
@@ -26,10 +27,7 @@ export function Impressum() {
 
       <h2 className="mt-8 text-xl font-semibold">Kontakt</h2>
       <p className="mt-2">
-        E-Mail:{' '}
-        <a href={`mailto:${betreiber.email}`} className="break-all underline">
-          {betreiber.email}
-        </a>
+        E-Mail: <BetreiberEmail email={betreiber.email} />
         {betreiber.phone && (
           <>
             <br />

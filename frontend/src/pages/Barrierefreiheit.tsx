@@ -1,5 +1,6 @@
 import { useBetreiber } from '../betreiber'
 import { Loading, LoadError } from '../components/Loading'
+import { BetreiberEmail } from '../components/BetreiberEmail'
 import { Platzhalterhinweis } from '../components/Platzhalterhinweis'
 import { formatDate } from '../lib'
 
@@ -68,10 +69,8 @@ export function Barrierefreiheit() {
       <h2 className="mt-8 text-xl font-semibold">Barrieren melden</h2>
       <p className="mt-2">
         Sind Ihnen Mängel beim barrierefreien Zugang aufgefallen? Schreiben Sie uns an{' '}
-        <a href={`mailto:${betreiber.email}`} className="break-all underline">
-          {betreiber.email}
-        </a>
-        . Wir antworten, so schnell wir können, und sagen Ihnen, was wir ändern — oder warum nicht.
+        <BetreiberEmail email={betreiber.email} />. Wir antworten, so schnell wir können, und sagen
+        Ihnen, was wir ändern — oder warum nicht.
       </p>
 
       <h2 className="mt-8 text-xl font-semibold">Schlichtungsverfahren</h2>

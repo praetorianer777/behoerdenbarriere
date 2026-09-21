@@ -1,5 +1,6 @@
 import { useBetreiber } from '../betreiber'
 import { Loading, LoadError } from '../components/Loading'
+import { BetreiberEmail } from '../components/BetreiberEmail'
 import { Platzhalterhinweis } from '../components/Platzhalterhinweis'
 
 export function Datenschutz() {
@@ -27,9 +28,7 @@ export function Datenschutz() {
         <br />
         {betreiber.city}
         <br />
-        <a href={`mailto:${betreiber.email}`} className="break-all underline">
-          {betreiber.email}
-        </a>
+        <BetreiberEmail email={betreiber.email} />
       </address>
 
       <h2 className="mt-8 text-xl font-semibold">Aufrufe dieser Website</h2>
