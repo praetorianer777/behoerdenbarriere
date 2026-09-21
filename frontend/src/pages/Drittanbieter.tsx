@@ -45,7 +45,9 @@ export function Drittanbieter() {
 
   return (
     <div className="max-w-3xl">
-      <h1 className="text-2xl font-bold sm:text-3xl">Drittanbieter auf Behördenseiten</h1>
+      <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+        Drittanbieter auf Behördenseiten
+      </h1>
       <p className="mt-2 text-slate-700">
         Beim Prüfen einer Seite sehen wir, welche fremden Hosts der Browser kontaktiert — und wann.
         Jeder dieser Aufrufe überträgt die IP-Adresse der Besuchenden. Grundlage sind die jeweils
@@ -77,13 +79,22 @@ export function Drittanbieter() {
               </caption>
               <thead>
                 <tr className="border-b border-slate-300">
-                  <th scope="col" className="py-2 pr-4">
+                  <th
+                    scope="col"
+                    className="py-2 pr-4 text-xs font-semibold tracking-wide text-slate-600 uppercase"
+                  >
                     Dienst
                   </th>
-                  <th scope="col" className="py-2 pr-4">
+                  <th
+                    scope="col"
+                    className="py-2 pr-4 text-xs font-semibold tracking-wide text-slate-600 uppercase"
+                  >
                     Behörden
                   </th>
-                  <th scope="col" className="py-2">
+                  <th
+                    scope="col"
+                    className="py-2 text-xs font-semibold tracking-wide text-slate-600 uppercase"
+                  >
                     Anteil
                   </th>
                 </tr>

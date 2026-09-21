@@ -10,7 +10,9 @@ import { formatDate } from '../lib'
 export function Barrierefreiheit() {
   return (
     <div className="max-w-3xl">
-      <h1 className="text-2xl font-bold sm:text-3xl">Erklärung zur Barrierefreiheit</h1>
+      <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+        Erklärung zur Barrierefreiheit
+      </h1>
       <Platzhalterhinweis />
 
       <p className="mt-4">

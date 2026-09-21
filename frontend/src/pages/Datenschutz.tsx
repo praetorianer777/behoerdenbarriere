@@ -4,7 +4,7 @@ import { Platzhalterhinweis } from '../components/Platzhalterhinweis'
 export function Datenschutz() {
   return (
     <div className="max-w-3xl">
-      <h1 className="text-2xl font-bold sm:text-3xl">Datenschutzerklärung</h1>
+      <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Datenschutzerklärung</h1>
       <Platzhalterhinweis />
 
       <p className="mt-4">

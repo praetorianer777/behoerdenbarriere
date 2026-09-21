@@ -49,13 +49,13 @@ export function GradeBadge({
     <span className="inline-flex items-center gap-2">
       <span
         className={`${gradeClass[grade] ?? 'bg-slate-600'} ${
-          big ? 'size-14 text-3xl' : 'size-8 text-base'
+          big ? 'size-16 text-4xl' : 'size-9 text-lg'
         } inline-flex items-center justify-center rounded-lg font-bold text-white`}
         aria-hidden="true"
       >
         {grade}
       </span>
-      <span className={big ? 'text-2xl font-semibold' : ''}>
+      <span className={`tabular ${big ? 'text-3xl font-semibold' : 'font-semibold'}`}>
         <span className="sr-only">Note {grade}, </span>
         {formatScore(score)}
         <span className="sr-only"> von 100 Punkten</span>

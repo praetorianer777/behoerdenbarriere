@@ -86,7 +86,7 @@ export function Ranking() {
 
   return (
     <>
-      <h1 className="text-2xl font-bold break-words hyphens-auto sm:text-3xl">
+      <h1 className="text-3xl font-bold tracking-tight break-words hyphens-auto sm:text-4xl">
         Wie barrierefrei sind deutsche Behörden?
       </h1>
       <p className="mt-2 max-w-2xl text-slate-700">
@@ -465,11 +465,15 @@ function SortHeader({
     aktuell === 'none' ? spalte[spalte.zuerst] : aktuell === 'ascending' ? spalte.ab : spalte.auf
 
   return (
-    <th scope="col" className="px-3 py-2" aria-sort={aktuell}>
+    <th
+      scope="col"
+      className="px-3 py-2 text-xs font-semibold tracking-wide text-slate-600 uppercase"
+      aria-sort={aktuell}
+    >
       <button
         type="button"
         onClick={() => onSort(naechste)}
-        className="-mx-2 flex min-h-11 items-center gap-1 px-2 font-semibold underline"
+        className="-mx-2 flex min-h-11 items-center gap-1 px-2 underline"
       >
         {spalte.label}
         {spalte.zusatz && <span className="sr-only"> {spalte.zusatz}</span>}

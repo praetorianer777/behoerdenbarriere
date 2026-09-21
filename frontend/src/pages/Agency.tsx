@@ -62,7 +62,7 @@ export function AgencyPage() {
         <span aria-hidden="true">›</span> {detail.name}
       </p>
 
-      <h1 className="mt-2 text-2xl font-bold break-words hyphens-auto sm:text-3xl">
+      <h1 className="mt-2 text-3xl font-bold tracking-tight break-words hyphens-auto sm:text-4xl">
         {detail.name}
       </h1>
       <p className="mt-1 text-slate-700">
@@ -319,13 +319,22 @@ export function AgencyPage() {
               <caption className="sr-only">Die geprüften Seiten mit ihrem Wert</caption>
               <thead>
                 <tr className="border-b border-slate-300">
-                  <th scope="col" className="px-3 py-2">
+                  <th
+                    scope="col"
+                    className="px-3 py-2 text-xs font-semibold tracking-wide text-slate-600 uppercase"
+                  >
                     Seite
                   </th>
-                  <th scope="col" className="px-3 py-2">
+                  <th
+                    scope="col"
+                    className="px-3 py-2 text-xs font-semibold tracking-wide text-slate-600 uppercase"
+                  >
                     Wert
                   </th>
-                  <th scope="col" className="px-3 py-2">
+                  <th
+                    scope="col"
+                    className="px-3 py-2 text-xs font-semibold tracking-wide text-slate-600 uppercase"
+                  >
                     Verstöße
                   </th>
                 </tr>

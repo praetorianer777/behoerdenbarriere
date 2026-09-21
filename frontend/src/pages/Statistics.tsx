@@ -35,7 +35,7 @@ export function Statistics() {
 
   return (
     <div className="max-w-3xl">
-      <h1 className="text-2xl font-bold sm:text-3xl">Nutzung dieser Seite</h1>
+      <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Nutzung dieser Seite</h1>
       <p className="mt-2 text-slate-700">
         Wir verlangen von Behörden Offenheit, also legen wir unsere eigenen Zahlen offen. Zeitraum:{' '}
         {formatDate(data.since)} bis {formatDate(data.until)}.
@@ -68,16 +68,28 @@ export function Statistics() {
             <caption className="sr-only">Besuche und Seitenaufrufe je Tag</caption>
             <thead>
               <tr className="border-b border-slate-300">
-                <th scope="col" className="px-3 py-2">
+                <th
+                  scope="col"
+                  className="px-3 py-2 text-xs font-semibold tracking-wide text-slate-600 uppercase"
+                >
                   Tag
                 </th>
-                <th scope="col" className="px-3 py-2">
+                <th
+                  scope="col"
+                  className="px-3 py-2 text-xs font-semibold tracking-wide text-slate-600 uppercase"
+                >
                   Besuche
                 </th>
-                <th scope="col" className="px-3 py-2">
+                <th
+                  scope="col"
+                  className="px-3 py-2 text-xs font-semibold tracking-wide text-slate-600 uppercase"
+                >
                   Seitenaufrufe
                 </th>
-                <th scope="col" className="px-3 py-2">
+                <th
+                  scope="col"
+                  className="px-3 py-2 text-xs font-semibold tracking-wide text-slate-600 uppercase"
+                >
                   Verlauf
                 </th>
               </tr>
@@ -186,10 +198,16 @@ function CountTable({
         <caption className="sr-only">{caption}</caption>
         <thead>
           <tr className="border-b border-slate-300">
-            <th scope="col" className="px-3 py-2">
+            <th
+              scope="col"
+              className="px-3 py-2 text-xs font-semibold tracking-wide text-slate-600 uppercase"
+            >
               {head}
             </th>
-            <th scope="col" className="px-3 py-2">
+            <th
+              scope="col"
+              className="px-3 py-2 text-xs font-semibold tracking-wide text-slate-600 uppercase"
+            >
               Aufrufe
             </th>
           </tr>

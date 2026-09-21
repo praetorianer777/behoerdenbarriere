@@ -1,6 +1,18 @@
 @import 'tailwindcss';
 
+/* Die Schrift kommt aus dem eigenen Bündel. Wir zählen auf einer eigenen Seite, wie
+   viele Behörden ihre Besucher an Google Fonts melden — eine Schrift von dort wäre hier
+   nicht zu verteidigen. Nur die aufrechte Lage: kursiv kommt auf der Seite nicht vor. */
+@import '@fontsource-variable/source-sans-3/wght.css';
+
 @theme {
+  --font-sans: 'Source Sans 3 Variable', ui-sans-serif, system-ui, sans-serif;
+
+  /* Eine Akzentfarbe neben den sechs Notenfarben — für Wortmarke, Links und die
+     aktive Navigation. Auf Weiß rund 7:1, damit sie auch für Text taugt. */
+  --color-akzent: oklch(0.42 0.13 255);
+  --color-akzent-hell: oklch(0.95 0.02 255);
+
   --color-grade-a: oklch(0.55 0.13 155);
   --color-grade-b: oklch(0.54 0.12 135);
   --color-grade-c: oklch(0.52 0.12 85);
