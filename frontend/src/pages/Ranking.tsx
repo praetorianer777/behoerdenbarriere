@@ -221,7 +221,12 @@ export function Ranking() {
                     {agency.state ? ` · ${agency.state}` : ''}
                   </p>
                   <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
-                    <GradeBadge score={agency.score} grade={agency.grade} />
+                    <GradeBadge
+                      score={agency.score}
+                      grade={agency.grade}
+                      provisional={agency.provisional}
+                      obscured={agency.obscured}
+                    />
                     <DeltaBadge delta={agency.delta} />
                   </div>
                   <p className="mt-2 text-sm text-slate-700">
